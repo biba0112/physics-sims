@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spring Force</title>
+<!--
+  IBDP Physics SL · Grade 11 · Topic A.2 Types of forces
+  Simulation 05 — Spring force, Hooke's law (pairs with carousel Station 3 and the Forces investigation spring part)
+  Self-contained: no internet, no external libraries. Open in any modern browser.
+  Built from the simulation template (Simulation 01 CSS, helpers and task engine).
+
+  File sections:
+    1 STYLE · 2 MARKUP · 3 CONFIG · 4 PHYSICS · 5 RUN · 6 SCENE · 7 FBD · 8 GRAPHS · 9 DATA · 10 TASKS · 11 UI
+-->
+<style>
+/* ============================ 1 STYLE ============================ */
+:root{
+  --navy:#1F3A5F; --accent:#E65100; --ink:#263238; --muted:#606A72;
+  --bg:#F2F5F9; --card:#FFFFFF; --line:#DDE6F0; --soft:#FFF3E0; --soft-blue:#E3F2FD;
+  --wood:#FFCC80; --wood-edge:#C68A3A;
+  --cW:#2A5D8A; --cN:#2E7D32; --cF:#C62828; --cP:#6A1B9A;   /* weight, normal, friction, pull */
+  --ok:#2E7D32; --bad:#C62828;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);
+  font:16px/1.4 "Segoe UI",Calibri,"Helvetica Neue",Arial,sans-serif;
+  -webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;min-height:100dvh}
+header{background:var(--navy);color:#fff;border-bottom:4px solid var(--accent);
+  display:flex;align-items:center;gap:16px;padding:8px 16px}
+header h1{font-size:1.25rem;margin:0;font-weight:600}
+header .sub{font-size:.85rem;opacity:.85}
+header .grow{flex:1}
+.btn{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;
+  min-height:44px;padding:6px 14px;cursor:pointer;touch-action:manipulation}
+.btn:hover{border-color:var(--navy)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.small{min-height:36px;padding:4px 10px;font-size:.9rem}
+header .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+
+/* layout: scene + state | FBD (always visible) | tabs; fills the screen height */
+main{flex:1;min-height:500px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.3fr);
+  grid-template-rows:minmax(0,1fr) auto;gap:12px;padding:12px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card h2{font-size:.95rem;margin:0;padding:6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line);
+  color:var(--navy);font-weight:600}
+.left{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.scenecard{flex:1 1 0;display:flex;flex-direction:column;min-height:0}
+.fbdcol{display:flex;flex-direction:column;min-width:0;min-height:0}
+#sceneWrap{position:relative;flex:1;min-height:150px}
+#scene{width:100%;height:100%;display:block}
+#fbdWrap{flex:1;min-height:220px}
+#fbd{width:100%;height:100%;display:block}
+.readouts{padding:6px 12px;flex:0 1 auto;min-height:0;overflow:auto}  /* natural height; the scene takes the rest */
+.readouts table{width:100%;border-collapse:collapse;font-size:.9rem}
+.readouts td.v{white-space:nowrap;padding-left:6px}
+.readouts td{padding:4px 2px;border-bottom:1px solid #EEF2F6}
+.readouts td.v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.pill{display:inline-block;white-space:nowrap;padding:3px 10px;border-radius:99px;font-size:.85rem;font-weight:600}
+.pill.rest{background:var(--soft-blue);color:#0D47A1}
+.pill.slide{background:#FFEBEE;color:#B71C1C}
+.pill.ready{background:#ECEFF1;color:var(--muted)}
+
+.right{display:flex;flex-direction:column;min-width:0;min-height:0}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 8px 6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.cardhead h2{padding:0;border:none;background:none;flex:1}
+.cardhead .btn{min-height:40px;padding:4px 10px}
+.tabs{display:flex;gap:4px;padding:6px 6px 0;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.tab{font:inherit;border:1px solid transparent;border-bottom:none;background:transparent;padding:8px 14px;
+  min-height:44px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--muted);font-weight:600}
+.tab[aria-selected="true"]{background:#fff;border-color:var(--line);color:var(--navy);margin-bottom:-1px}
+.panel{display:none;padding:10px 12px;flex:1;min-height:0;overflow:hidden}
+.panel.on{display:flex;flex-direction:column;gap:8px}
+#graphWrap{position:relative;flex:1;min-height:200px}
+#graph{width:100%;height:100%;display:block;touch-action:none}
+.hint{font-size:.85rem;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#trials{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
+#trials th,#trials td{border-bottom:1px solid var(--line);padding:4px 4px;text-align:right}
+#trials th{color:var(--navy);font-weight:600;background:#F7F9FC;position:sticky;top:0}
+#trials td:first-child,#trials th:first-child,#trials td:nth-child(2),#trials th:nth-child(2){text-align:left}
+.tableBox{max-height:150px;flex:none;overflow:auto;border:1px solid var(--line);border-radius:8px}
+#anaWrap{flex:1;min-height:180px}
+#ana{width:100%;height:100%;display:block}
+.x{border:none;background:none;color:var(--bad);font-size:1.1rem;cursor:pointer;min-width:32px;min-height:32px}
+
+/* tasks */
+#taskSets{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:.9rem;border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 14px;
+  min-height:40px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chip[aria-pressed="true"] .hint{color:#DDE6F0}
+#taskList{overflow:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.step{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.step .q{margin:0 0 6px}
+.step .n{display:inline-block;min-width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;
+  text-align:center;line-height:26px;font-size:.85rem;font-weight:700;margin-right:6px}
+.step.done .n{background:var(--ok)}
+.opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;
+  margin:4px 0;cursor:pointer;min-height:40px}
+.opt input{width:20px;height:20px}
+.opt.good{border-color:var(--ok);background:#E8F5E9}
+.opt.bad{border-color:var(--bad);background:#FFEBEE}
+.fb{margin-top:6px;padding:6px 10px;border-radius:8px;font-size:.92rem}
+.fb.ok{background:#E8F5E9;border-left:4px solid var(--ok)}
+.fb.no{background:#FFEBEE;border-left:4px solid var(--bad)}
+.fb.info{background:var(--soft-blue);border-left:4px solid #1565C0}
+.num{font:inherit;width:110px;min-height:40px;padding:4px 8px;border:1px solid #B0BEC5;border-radius:8px}
+.tag{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+
+/* controls */
+#controls{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;padding:10px 14px}
+.ctl{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ctl label,.ctl .lab{font-size:.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.ctl select{font:inherit;min-height:44px;border:1px solid #B0BEC5;border-radius:8px;padding:4px 8px;background:#fff}
+.mu{font-size:.85rem;color:var(--navy);font-weight:600}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper .btn{width:44px;padding:0;font-size:1.3rem}
+.stepper output{min-width:24px;text-align:center;font-weight:700;font-size:1.1rem}
+input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
+.seg{display:flex;border:1px solid #B0BEC5;border-radius:8px;overflow:hidden}
+.seg button{font:inherit;border:none;background:#fff;min-height:42px;padding:4px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+.switch{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.switch input{width:22px;height:22px;accent-color:var(--accent)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* help overlay */
+#help{position:fixed;inset:0;background:rgba(31,58,95,.55);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
+#help.on{display:flex}
+#help .box{background:#fff;border-radius:14px;max-width:720px;width:100%;max-height:90vh;overflow:auto;padding:18px 22px}
+#help h3{margin:.2em 0 .4em;color:var(--navy)}
+#help li{margin:.25em 0}
+.eq{font-family:"Cambria Math",Cambria,"Times New Roman",serif;font-size:1.05rem}
+
+@media (max-width:1300px){
+  .readouts table{font-size:.85rem}
+  .pill{font-size:.78rem;padding:2px 8px}
+}
+/* tablet landscape: scene + state on the left; FBD above the tabs on the right */
+@media (max-width:1099px){
+  main{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr) auto;min-height:640px}
+  .left{grid-row:1/3}
+  .fbdcol{grid-column:2;grid-row:1}
+  .right{grid-column:2;grid-row:2}
+  #fbdWrap{min-height:200px}
+  #pGraph .hint{display:none}
+  #controls{gap:8px 12px;padding:8px 12px}
+  input[type=range]{width:118px}
+  header .sub{display:none}
+}
+/* phone / narrow portrait: one scrolling column */
+@media (max-width:759px){
+  body{height:auto}
+  main{display:flex;flex-direction:column}
+  #sceneWrap{flex:none;height:260px}
+  .readouts{flex:none}
+  #fbdWrap{flex:none;height:320px}
+  .right{height:640px;flex:none}
+}
+</style>
+</head>
+<body>
+<!-- ============================ 2 MARKUP ============================ -->
+<header>
+  <div>
+    <h1>Spring force — Hooke's law</h1>
+    <div class="sub">IBDP Physics SL · A.2 Types of forces · Simulation 05 · g = 9.81 N kg⁻¹</div>
+  </div>
+  <div class="grow"></div>
+  <button class="btn" id="helpBtn" aria-label="How to use">? How to use</button>
+</header>
+
+<main>
+  <section class="left">
+    <div class="card scenecard">
+      <div class="cardhead">
+        <h2 id="sceneTitle">Experiment</h2>
+        <div class="actions" id="actions"></div>
+      </div>
+      <div id="sceneWrap"><canvas id="scene" aria-label="Spring experiment"></canvas></div>
+    </div>
+    <div class="card readouts"><table><tbody id="ro"></tbody></table></div>
+  </section>
+
+  <section class="card fbdcol" aria-label="Free-body diagram">
+    <h2 id="fbdTitle">Free-body diagram</h2>
+    <div id="fbdWrap"><canvas id="fbd" aria-label="Free-body diagram"></canvas></div>
+  </section>
+
+  <section class="card right">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="pGraph">Graph</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pData">Data &amp; analysis</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pTasks">Tasks</button>
+    </div>
+    <div class="panel on" id="pGraph">
+      <div id="graphWrap"><canvas id="graph" aria-label="Force against extension"></canvas></div>
+      <div class="hint" id="graphHint"></div>
+    </div>
+    <div class="panel" id="pData">
+      <div class="row">
+        <button class="btn small" id="clearBtn">Clear all trials</button>
+        <span style="flex:1"></span>
+        <label class="switch"><input type="checkbox" id="fitChk"> Best fit + steepest/shallowest</label>
+      </div>
+      <div class="tableBox"><table id="trials"><thead><tr><th>#</th><th>Spring</th><th>load</th><th>F / N</th>
+        <th>pointer / cm</th><th>x / cm</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div id="anaWrap"><canvas id="ana" aria-label="Load against extension graph"></canvas></div>
+    </div>
+    <div class="panel" id="pTasks">
+      <div id="taskSets"></div>
+      <div id="taskList"></div>
+    </div>
+  </section>
+
+  <section class="card" id="controls" aria-label="Controls">
+    <div class="ctl">
+      <span class="lab">Mode</span>
+      <div class="seg" id="mode">
+        <button data-mode="hang" aria-pressed="true">Hang masses</button>
+        <button data-mode="push" aria-pressed="false">Push / pull</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label for="spr">Spring</label>
+      <select id="spr"></select>
+      <span class="mu" id="kLab"></span>
+    </div>
+    <div class="sc" data-mode="hang">
+      <div class="ctl">
+        <span class="lab">Slotted masses (50 g each)</span>
+        <div class="stepper">
+          <button class="btn" id="mMinus" aria-label="Remove 50 g">−</button>
+          <output id="mOut">0 g</output>
+          <button class="btn" id="mPlus" aria-label="Add 50 g">+</button>
+        </div>
+      </div>
+      <div class="ctl">
+        <span class="lab">Mystery bag</span>
+        <label class="switch"><input type="checkbox" id="myst"> hang it instead</label>
+      </div>
+      <div class="ctl">
+        <span class="lab">Reading uncertainty</span>
+        <label class="switch"><input type="checkbox" id="noise"> ±0.1 cm</label>
+      </div>
+    </div>
+    <div class="sc" data-mode="push">
+      <div class="ctl"><label for="disp">Displacement x = <span id="dOut"></span> cm (stretch +, squash −)</label>
+        <input type="range" id="disp" min="-15" max="15" step="0.5" class="wide"></div>
+    </div>
+  </section>
+</main>
+
+<div id="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="box">
+    <h3 id="helpTitle">How to use this simulation</h3>
+    <ol>
+      <li><b>Hang masses</b>: add 50 g slotted masses with <b>+</b> and <b>−</b>. Read the pointer on the ruler; the
+        extension x is the pointer reading minus the unloaded reading. Press <b>● Record</b> for each load.</li>
+      <li>Tick <b>Mystery bag</b> to hang an object of unknown mass, and <b>±0.1 cm</b> to read the ruler like in the lab.</li>
+      <li>Load a spring beyond its <b>elastic limit</b> and then unload it: it no longer returns to its original length.
+        <b>↺ New spring</b> replaces it.</li>
+      <li><b>Push / pull</b>: hold the block on a frictionless table and stretch or squash the spring.</li>
+      <li>The <b>Data &amp; analysis</b> tab plots load F against extension x with error bars.</li>
+    </ol>
+    <h3>The physics</h3>
+    <ul>
+      <li class="eq">Hooke's law: F<sub>H</sub> = −kx. The spring force is proportional to the extension and points back towards the natural length.</li>
+      <li class="eq">Hanging at rest: F<sub>H</sub> = W = mg, so k = mg / x = gradient of the F–x graph.</li>
+      <li>Beyond the <b>limit of proportionality</b> the graph curves; beyond the <b>elastic limit</b> the spring is permanently stretched.</li>
+    </ul>
+    <p class="hint">Model: the investigation spring has k = 25.0 N m⁻¹ (like the Forces investigation); the Station 3 spring
+      29.4 N m⁻¹. Past the limit the spring is modelled as softer and keeps half of the extra stretch.</p>
+    <p style="text-align:right"><button class="btn primary" id="helpClose">Close</button></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================ 3 CONFIG ============================ */
+const G = 9.81;                 // N kg⁻¹ (IB data booklet)
+const MYSTERY = 0.230;          // kg, the mystery bag (Station 3: 150–300 g)
+const SPRINGS = [
+  {id:"inv",   name:"Investigation spring", k:25.0, Flim:6.0, maxG:800},
+  {id:"st3",   name:"Station 3 spring",     k:29.4, Flim:6.5, maxG:800},
+  {id:"soft",  name:"Soft spring",          k:10.0, Flim:3.0, maxG:400},
+  {id:"stiff", name:"Stiff spring",         k:40.0, Flim:9.0, maxG:1000},
+];
+const SOFT = 0.5;               // past the limit the spring is this many times as stiff
+const KEEP = 0.3;               // fraction of the over-stretch that stays after unloading (permanent set)
+const COL = {W:"#2A5D8A", N:"#2E7D32", F:"#C62828", P:"#6A1B9A", H:"#00838F", navy:"#1F3A5F", accent:"#E65100",
+             ink:"#263238", muted:"#606A72", grid:"#E3E9F0", wood:"#FFCC80", woodEdge:"#C68A3A", grey:"#90A4AE"};
+const sprById = id => SPRINGS.find(s => s.id === id);
+
+/* ============================ 4 PHYSICS ============================ */
+const f2 = x => (Math.round(x * 100) / 100).toFixed(2);
+const f3 = x => (Math.round(x * 1000) / 1000).toFixed(3);
+// extension (m) of a spring with permanent set "set" under load F (N)
+function extension(sp, F, set){
+  const xl = sp.Flim / sp.k;
+  return F <= sp.Flim ? set + F / sp.k : set + xl + (F - sp.Flim) / (SOFT * sp.k);
+}
+function linFit(pts){ const n = pts.length; if (n < 2) return null;
+  const mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+  const sxx = pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0); if (!sxx) return null;
+  const k = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / sxx; return {k, b:my - k * mx}; }
+function originFit(pts){ const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0);
+  return sxx && pts.length >= 2 ? {k:pts.reduce((a, p) => a + p[0] * p[1], 0) / sxx, b:0} : null; }
+// steepest / shallowest lines by the end-point method used in the Forces investigation mark scheme:
+// through the error bars of the first and last points (x ± dx), Δk = ½(k_max − k_min)
+function minMaxK(pts, dx){ if (pts.length < 2) return null;
+  const p = [...pts].sort((a, b) => a[0] - b[0]), A = p[0], B = p[p.length - 1];
+  if (B[0] - A[0] <= 2 * dx) return null;
+  return {kmax:(B[1] - A[1]) / ((B[0] - dx) - (A[0] + dx)), kmin:(B[1] - A[1]) / ((B[0] + dx) - (A[0] - dx)),
+          steep:[[A[0] + dx, A[1]], [B[0] - dx, B[1]]], shallow:[[A[0] - dx, A[1]], [B[0] + dx, B[1]]]}; }
+
+/* ============================ 5 RUN ============================ */
+const set = {mode:"hang", spr:"inv", g:0, myst:false, noise:false, d:0};
+const S = {set:{inv:0, st3:0, soft:0, stiff:0}, worst:{inv:0, st3:0, soft:0, stiff:0},
+           x:0, v:0, offset:0, history:[]};        // spring state, the hanging mass's motion, reading error
+const load = () => set.myst ? MYSTERY : set.g / 1000;
+function target(){ const sp = sprById(set.spr), F = load() * G;
+  const xe = extension(sp, F, S.set[set.spr]);
+  const beyond = xe - S.set[set.spr] - sp.Flim / sp.k;            // how far past the limit right now
+  if (beyond > S.worst[set.spr]) S.worst[set.spr] = beyond;
+  return xe; }
+function relax(){                                                   // after unloading, keep half of the worst over-stretch
+  S.set[set.spr] = Math.max(S.set[set.spr], KEEP * S.worst[set.spr]);
+}
+function changeLoad(){
+  if (load() * G <= sprById(set.spr).Flim) relax();
+  target(); S.offset = set.noise ? (Math.random() * 2 - 1) * 0.001 : 0; renderActions();
+}
+function step(dt){                                                  // the mass bounces and settles (damped)
+  if (set.mode !== "hang") return;
+  const sp = sprById(set.spr), xe = target(), m = Math.max(load(), 0.02), kk = sp.k;
+  const acc = -kk * (S.x - xe) / m - 6 * S.v;
+  S.v += acc * dt; S.x += S.v * dt;
+}
+const settled = () => Math.abs(S.x - target()) < 2e-4 && Math.abs(S.v) < 2e-3;
+const reading = () => 30 + 100 * (S.x + S.offset);                 // pointer reading in cm; the unloaded spring reads 30.0 cm
+function forcesNow(){
+  const sp = sprById(set.spr);
+  if (set.mode === "push"){ const x = set.d / 100, FH = -sp.k * x; return {x, FH, Fhand:-FH, W:0.5 * G}; }
+  const m = load(), W = m * G, ext = S.x - S.set[set.spr];
+  // spring force from the actual stretch (inverse of the extension law)
+  const xl = sp.Flim / sp.k, FH = ext <= xl ? sp.k * ext : sp.Flim + SOFT * sp.k * (ext - xl);
+  return {m, W, FH:Math.max(0, FH), x:S.x};
+}
+
+/* ============================ 6 SCENE ============================ */
+function fitCanvas(cv){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {ctx, w:r.width, h:r.height};
+}
+function arrow(ctx, x1, y1, x2, y2, color, width = 4, dashed = false){
+  const L = Math.hypot(x2 - x1, y2 - y1); if (L < 2) return;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, hs = Math.min(13, 6 + width * 1.6);
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = "round";
+  if (dashed) ctx.setLineDash([6, 5]);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * hs * 0.8, y2 - uy * hs * 0.8); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - ux * hs - uy * hs * 0.5, y2 - uy * hs + ux * hs * 0.5);
+  ctx.lineTo(x2 - ux * hs + uy * hs * 0.5, y2 - uy * hs - ux * hs * 0.5); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function label(ctx, txt, x, y, color, align = "center", size = 15, base = "middle"){
+  ctx.save(); ctx.font = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = color;
+  ctx.textAlign = align; ctx.textBaseline = base;
+  // white halo so labels stay readable over lines
+  ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.strokeText(txt, x, y); ctx.fillText(txt, x, y);
+  ctx.restore();
+}
+// Labels with a subscript, e.g. sub(ctx,"F","N"," = 2.45 N",…)
+function subLabel(ctx, main, sub, rest, x, y, color, align = "center", size = 15){
+  ctx.save(); const f1 = `italic 600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`,
+    f2 = `600 ${Math.round(size * .72)}px "Segoe UI",Calibri,Arial,sans-serif`, f3 = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+  ctx.font = f1; const w1 = ctx.measureText(main).width; ctx.font = f2; const w2 = sub ? ctx.measureText(sub).width : 0;
+  ctx.font = f3; const w3 = ctx.measureText(rest).width; const W = w1 + w2 + w3;
+  let x0 = align === "center" ? x - W / 2 : align === "right" ? x - W : x;
+  ctx.textBaseline = "middle"; ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.fillStyle = color;
+  ctx.font = f1; ctx.strokeText(main, x0, y); ctx.fillText(main, x0, y);
+  if (sub){ ctx.font = f2; ctx.strokeText(sub, x0 + w1, y + size * .3); ctx.fillText(sub, x0 + w1, y + size * .3); }
+  ctx.font = f3; ctx.strokeText(rest, x0 + w1 + w2, y); ctx.fillText(rest, x0 + w1 + w2, y);
+  ctx.restore();
+}
+// Mixed text: parts = [[text, "n" normal | "i" italic | "s" subscript], …], centred on (x, y)
+function rich(ctx, parts, x, y, color, size = 14){
+  const font = st => st === "i" ? `italic 600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`
+    : st === "s" ? `600 ${Math.round(size * .72)}px "Segoe UI",Calibri,Arial,sans-serif` : `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+  ctx.save(); ctx.fillStyle = color; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  const ws = parts.map(([t, st]) => { ctx.font = font(st); return ctx.measureText(t).width; });
+  let cx = x - ws.reduce((a, b) => a + b, 0) / 2;
+  parts.forEach(([t, st], i) => { ctx.font = font(st); ctx.fillText(t, cx, st === "s" ? y + size * .3 : y); cx += ws[i]; });
+  ctx.restore();
+}
+function bg(ctx, w, h){ const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#FAFCFF"); g.addColorStop(1, "#EEF3F8");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); }
+function bench(ctx, w, y, h){ ctx.fillStyle = "#E8DCC4"; ctx.fillRect(0, y, w, 8); ctx.fillStyle = "#8D6E63"; ctx.fillRect(0, y + 8, w, 16);
+  ctx.fillStyle = "#6D4C41"; ctx.fillRect(w * 0.06, y + 24, 12, h); ctx.fillRect(w * 0.9, y + 24, 12, h); }
+function woodBox(ctx, x, y, w, h, txt){
+  ctx.fillStyle = COL.wood; ctx.strokeStyle = COL.woodEdge; ctx.lineWidth = 2; ctx.fillRect(x, y, w, h); ctx.strokeRect(x, y, w, h);
+  if (txt) label(ctx, txt, x + w / 2, y + h / 2, "#6D4C41", "center", 13);
+}
+// kitchen / bathroom scale with a digital display; (x, y) = top-left of the platform
+function scale(ctx, x, y, w, h, reading){
+  ctx.fillStyle = "#ECEFF1"; ctx.strokeStyle = "#90A4AE"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, 4) : ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke();
+  const dw = Math.min(70, w * 0.5), dh = Math.max(10, h - 8);
+  ctx.fillStyle = "#263238"; ctx.fillRect(x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  ctx.fillStyle = "#76FF03"; ctx.font = `600 ${Math.min(13, dh - 2)}px Consolas,"Courier New",monospace`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(reading, x + w / 2, y + h / 2 + 1);
+}
+function hand(ctx, x, y, k){ ctx.fillStyle = "#F1C27D"; ctx.strokeStyle = "#C99A5B"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(x, y, 20 * k, 13 * k, 0, 0, 7); ctx.fill(); ctx.stroke(); }
+function coil(ctx, x1, y1, x2, y2, turns, r, col){            // a spring drawn as a zig-zag between two points
+  const L = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / L, uy = (y2 - y1) / L, nx = -uy, ny = ux, lead = Math.min(10, L * 0.1);
+  ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.lineJoin = "round"; ctx.beginPath(); ctx.moveTo(x1, y1);
+  ctx.lineTo(x1 + ux * lead, y1 + uy * lead);
+  const n = turns * 2, seg = (L - 2 * lead) / n;
+  for (let i = 1; i <= n; i++){ const s = lead + seg * (i - 0.5), side = i % 2 ? 1 : -1;
+    ctx.lineTo(x1 + ux * s + nx * r * side, y1 + uy * s + ny * r * side); }
+  ctx.lineTo(x2 - ux * lead, y2 - uy * lead); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore();
+}
+function drawScene(){
+  const {ctx, w, h} = fitCanvas($("scene")); ctx.clearRect(0, 0, w, h); bg(ctx, w, h);
+  (set.mode === "hang" ? sceneHang : scenePush)(ctx, w, h);
+}
+function sceneHang(ctx, w, h){
+  const sp = sprById(set.spr), xMaxShow = extension(sp, sp.maxG / 1000 * G, KEEP * (extension(sp, sp.maxG / 1000 * G, 0) - sp.Flim / sp.k)) + 0.02;
+  const top = 34, L0 = 0.20, ppm = (h - top - 70) / (L0 + Math.max(0.5, xMaxShow)), cx = w * 0.36;
+  // clamp stand
+  ctx.fillStyle = "#546E7A"; ctx.fillRect(w * 0.08, top - 8, 8, h - top); ctx.fillRect(w * 0.08, top - 10, cx - w * 0.08 + 10, 8);
+  ctx.fillRect(w * 0.04, h - 10, w * 0.2, 8);
+  const y0 = top, y1 = top + (L0 + S.x) * ppm;
+  coil(ctx, cx, y0, cx, y1, 14, 9, S.set[set.spr] > 1e-4 ? "#8D6E63" : "#455A64");
+  // hanger + masses or mystery bag
+  ctx.strokeStyle = "#455A64"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, y1); ctx.lineTo(cx, y1 + 10); ctx.stroke();
+  if (set.myst){ ctx.fillStyle = "#A1887F"; ctx.beginPath(); ctx.ellipse(cx, y1 + 30, 22, 20, 0, 0, 7); ctx.fill();
+    label(ctx, "?", cx, y1 + 31, "#fff", "center", 18); }
+  else if (set.g > 0){ const n = set.g / 50;
+    for (let i = 0; i < n; i++){ ctx.fillStyle = i % 2 ? "#90A4AE" : "#A7B6BE"; ctx.strokeStyle = "#546E7A"; ctx.lineWidth = 1;
+      const yy = y1 + 10 + i * 6; ctx.fillRect(cx - 18, yy, 36, 5.5); ctx.strokeRect(cx - 18, yy, 36, 5.5); }
+    label(ctx, `${set.g} g`, cx + 26, y1 + 14 + n * 3, COL.ink, "left", 12); }
+  // ruler with pointer
+  const rx = cx + 64, cmTop = 20, cmBot = Math.min(150, Math.floor(30 + 100 * ((h - 14 - top) / ppm - L0)));
+  const Y = cm => top + (L0 + (cm - 30) / 100) * ppm;
+  ctx.fillStyle = "#FFF8E1"; ctx.strokeStyle = "#BCAAA4"; ctx.lineWidth = 1;
+  ctx.fillRect(rx, Y(cmTop), 34, Y(cmBot) - Y(cmTop)); ctx.strokeRect(rx, Y(cmTop), 34, Y(cmBot) - Y(cmTop));
+  ctx.strokeStyle = "#5D4037"; ctx.fillStyle = "#5D4037"; ctx.font = `10px "Segoe UI",Arial,sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  const every = ppm > 600 ? 1 : 2;
+  for (let c = cmTop; c <= cmBot; c++){ const y = Y(c), big = c % 5 === 0;
+    if (c % every === 0 || big){ ctx.beginPath(); ctx.moveTo(rx, y); ctx.lineTo(rx + (big ? 12 : 6), y); ctx.stroke(); }
+    if (c % 10 === 0) ctx.fillText(c, rx + 15, y); }
+  const ry = Y(reading());
+  ctx.strokeStyle = COL.F; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + 6, y1 + 4); ctx.lineTo(rx - 2, ry); ctx.stroke();
+  arrow(ctx, rx - 20, ry, rx - 1, ry, COL.F, 2);
+  label(ctx, `pointer: ${reading().toFixed(1)} cm`, w - 10, 18, COL.F, "right", 16);
+  label(ctx, `unloaded: ${(30 + 100 * S.set[set.spr]).toFixed(1)} cm`, w - 10, 40, COL.muted, "right", 13);
+  const sp2 = sprById(set.spr), past = forcesNow().FH > sp2.Flim + 1e-6;
+  if (S.set[set.spr] > 1e-4) label(ctx, "permanently stretched — ↺ New spring", 10, 40, COL.accent, "left", 12);
+  else if (past) label(ctx, "past the limit of proportionality!", 10, 40, COL.accent, "left", 13);
+  label(ctx, settled() ? "At rest" : "Bouncing…", 10, 18, COL.navy, "left", 15);
+}
+function scenePush(ctx, w, h){
+  const sp = sprById(set.spr), ty = h * 0.62, wallX = w * 0.08, ppm = (w * 0.4) / 0.30, x0 = wallX + 0.30 * ppm;   // natural length 0.30 m
+  ctx.fillStyle = "#8D6E63"; ctx.fillRect(0, ty, w, 16); ctx.fillStyle = "#ECEFF1"; ctx.fillRect(0, ty - 3, w, 3);
+  ctx.fillStyle = "#78909C"; ctx.fillRect(wallX - 14, ty - 120, 14, 120);
+  const bx = x0 + set.d / 100 * ppm, bs = 56;
+  coil(ctx, wallX, ty - bs / 2, bx, ty - bs / 2, 12, 10, "#455A64");
+  woodBox(ctx, bx, ty - bs, bs, bs, "");
+  hand(ctx, bx + bs + 16, ty - bs / 2, 1);
+  ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = COL.muted; ctx.beginPath(); ctx.moveTo(x0, ty - bs - 30); ctx.lineTo(x0, ty + 8); ctx.stroke(); ctx.restore();
+  label(ctx, "natural length", x0, ty - bs - 40, COL.muted, "center", 12);
+  if (Math.abs(set.d) > 0.1){ arrow(ctx, x0, ty + 34, bx, ty + 34, COL.navy, 2.5); label(ctx, `x = ${set.d > 0 ? "+" : ""}${set.d.toFixed(1)} cm`, (x0 + bx) / 2, ty + 50, COL.navy, "center", 13); }
+  const F = forcesNow();
+  label(ctx, `spring force on the block: ${f2(Math.abs(F.FH))} N ${F.FH < 0 ? "← (towards the wall)" : F.FH > 0 ? "→ (away from the wall)" : ""}`, 10, 18, COL.H, "left", 14);
+  label(ctx, set.d > 0 ? "Stretched: the spring pulls back" : set.d < 0 ? "Squashed: the spring pushes back" : "Natural length: no spring force", 10, 40, COL.navy, "left", 14);
+}
+
+/* ============================ 7 FBD ============================ */
+function drawFBD(){
+  const {ctx, w, h} = fitCanvas($("fbd")); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const f = forcesNow(), cx = w * 0.45, cy = h * 0.5;
+  if (set.mode === "hang"){
+    $("fbdTitle").textContent = set.myst ? "Free-body diagram of the mystery bag" : "Free-body diagram of the hanging masses";
+    if (!set.myst && set.g === 0){ label(ctx, "Add masses to see the forces", w / 2, h / 2, COL.muted, "center", 14); return; }
+    const sc = h * 0.36 / Math.max(f.W, f.FH, 0.01), L = v => v * sc;
+    ctx.fillStyle = "#90A4AE"; ctx.strokeStyle = "#455A64"; ctx.lineWidth = 2; ctx.fillRect(cx - 14, cy - 14, 28, 28); ctx.strokeRect(cx - 14, cy - 14, 28, 28);
+    arrow(ctx, cx, cy, cx, cy + L(f.W), COL.W, 4); subLabel(ctx, "W", "", ` = mg = ${f3(f.W)} N`, cx + 10, cy + L(f.W) - 4, COL.W, "left");
+    if (f.FH > 1e-3){ arrow(ctx, cx, cy, cx, cy - L(f.FH), COL.H, 4); subLabel(ctx, "F", "H", ` = kx = ${f3(f.FH)} N`, cx + 10, cy - L(f.FH) + 8, COL.H, "left"); }
+    const R = f.FH - f.W;
+    if (Math.abs(R) > 0.01){ const rx = w * 0.85; arrow(ctx, rx, cy, rx, cy - Math.sign(R) * Math.max(14, L(Math.abs(R))), COL.grey, 4, true);
+      label(ctx, `ΣF = ${f2(Math.abs(R))} N`, rx, cy + Math.sign(R) * 16, COL.muted, "center", 12); }
+    label(ctx, Math.abs(R) < 0.01 ? "At rest: FH = W, so kx = mg" : "Bouncing: FH ≠ W, the mass accelerates", w / 2, 13, COL.navy, "center", 13);
+  } else {
+    $("fbdTitle").textContent = "Free-body diagram of the block (horizontal forces)";
+    const big = Math.max(Math.abs(f.FH), 0.5), sc = Math.min(w * 0.36, h * 0.3) / big, L = v => v * sc;
+    ctx.fillStyle = COL.wood; ctx.strokeStyle = COL.woodEdge; ctx.lineWidth = 2; ctx.fillRect(cx - 14, cy - 14, 28, 28); ctx.strokeRect(cx - 14, cy - 14, 28, 28);
+    if (Math.abs(f.FH) > 1e-3){
+      arrow(ctx, cx, cy - 6, cx + Math.sign(f.FH) * L(Math.abs(f.FH)), cy - 6, COL.H, 4);
+      const cl = v => Math.min(w - 70, Math.max(70, v));                 // keep labels inside the panel
+      subLabel(ctx, "F", "H", ` = ${f2(Math.abs(f.FH))} N`, cl(cx + Math.sign(f.FH) * L(Math.abs(f.FH)) * 0.6), cy - 28, COL.H, "center");
+      arrow(ctx, cx, cy + 6, cx + Math.sign(f.Fhand) * L(Math.abs(f.Fhand)), cy + 6, COL.P, 4);
+      subLabel(ctx, "F", "hand", ` = ${f2(Math.abs(f.Fhand))} N`, cl(cx + Math.sign(f.Fhand) * L(Math.abs(f.Fhand)) * 0.6), cy + 28, COL.P, "center");
+    } else label(ctx, "x = 0: no spring force, no hand force needed", w / 2, cy + 40, COL.muted, "center", 13);
+    label(ctx, "FH = −kx: the spring force always points back towards the natural length", w / 2, 13, COL.navy, "center", 12);
+    label(ctx, "(W and FN cancel vertically — not shown)", w / 2, h - 12, COL.muted, "center", 11);
+  }
+}
+
+/* ============================ 8 GRAPHS ============================ */
+function niceUp(x){ const p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+function niceStep(range, n){ return niceUp(range / n); }
+function niceCeil(x, n = 5){ const st = niceUp(x / n); return Math.ceil(x / st - 1e-9) * st; }  // e.g. 11.4 → 12.5
+function axes(ctx, box, xMax, yMax, xLab, yLab){
+  const {x, y, w, h} = box;
+  ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted;
+  ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+  const xs = niceStep(xMax, 8), ys = niceStep(yMax, 6);
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (let v = 0; v <= xMax + 1e-9; v += xs){ const X = x + w * v / xMax; ctx.beginPath(); ctx.moveTo(X, y); ctx.lineTo(X, y + h); ctx.stroke(); ctx.fillText(+v.toFixed(2), X, y + h + 4); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let v = 0; v <= yMax + 1e-9; v += ys){ const Y = y + h - h * v / yMax; ctx.beginPath(); ctx.moveTo(x, Y); ctx.lineTo(x + w, Y); ctx.stroke(); ctx.fillText(+v.toFixed(2), x - 5, Y); }
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.stroke();
+  ctx.restore();
+  rich(ctx, xLab, x + w / 2, y + h + 30, COL.ink);
+  ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
+}
+function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
+  const {x, y, w, h} = box, X = v => x + w * (v - x0) / (x1 - x0), Y = v => y + h - h * (v - y0) / (y1 - y0);
+  ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted; ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+  const xs = niceStep(x1 - x0, 8), ys = niceStep(y1 - y0, 6);
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + 1e-9; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(+v.toFixed(2), X(v), y + h + 4); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + 1e-9; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(+v.toFixed(2), x - 5, Y(v)); }
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath();
+  const zx = x0 <= 0 && x1 >= 0 ? X(0) : x, zy = y0 <= 0 && y1 >= 0 ? Y(0) : y + h;
+  ctx.moveTo(zx, y); ctx.lineTo(zx, y + h); ctx.moveTo(x, zy); ctx.lineTo(x + w, zy); ctx.stroke();
+  ctx.restore();
+  rich(ctx, xLab, x + w / 2, y + h + 30, COL.ink);
+  ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
+  return {X, Y};
+}
+function drawGraph(){
+  const cv = $("graph"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const sp = sprById(set.spr), box = {x:62, y:22, w:w - 78, h:h - 74};
+  if (set.mode === "push"){
+    const g = axesR(ctx, box, -15, 15, -niceCeil(sp.k * 0.15), niceCeil(sp.k * 0.15), [["displacement ", "n"], ["x", "i"], [" / cm", "n"]], [["F", "i"], ["H", "s"], [" / N", "n"]]);
+    ctx.save(); ctx.strokeStyle = COL.H; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(g.X(-15), g.Y(sp.k * 0.15)); ctx.lineTo(g.X(15), g.Y(-sp.k * 0.15)); ctx.stroke(); ctx.restore();
+    const F = forcesNow(); ctx.fillStyle = COL.accent; ctx.beginPath(); ctx.arc(g.X(set.d), g.Y(F.FH), 6, 0, 7); ctx.fill();
+    label(ctx, `gradient = −k = −${sp.k.toFixed(1)} N m⁻¹`, box.x + box.w - 6, box.y + 14, COL.H, "right", 13);
+    $("graphHint").textContent = "FH = −kx: stretch (x > 0) gives a negative (backwards) force, squash (x < 0) a positive one.";
+    return;
+  }
+  const xM = Math.max(10, niceCeil(100 * extension(sp, sp.maxG / 1000 * G, S.set[set.spr]) * 1.05)), FM = niceCeil(sp.maxG / 1000 * G * 1.08);
+  const g = axesR(ctx, box, 0, xM, 0, FM, [["extension ", "n"], ["x", "i"], [" / cm", "n"]], [["load ", "n"], ["F", "i"], [" / N", "n"]]);
+  // the loads tried so far (settled points), and where the mass is now
+  ctx.fillStyle = "rgba(0,131,143,.35)"; for (const p of S.history){ ctx.beginPath(); ctx.arc(g.X(p.x), g.Y(p.F), 4, 0, 7); ctx.fill(); }
+  const F = forcesNow();
+  ctx.fillStyle = COL.accent; ctx.beginPath(); ctx.arc(g.X(100 * (S.x - S.set[set.spr])), g.Y(load() * G), 6, 0, 7); ctx.fill();
+  ctx.save(); ctx.strokeStyle = "rgba(230,81,0,.45)"; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(g.X(0), g.Y(sp.Flim)); ctx.lineTo(g.X(xM), g.Y(sp.Flim)); ctx.stroke(); ctx.restore();
+  label(ctx, "limit of proportionality", g.X(xM) - 4, g.Y(sp.Flim) - 10, COL.accent, "right", 12);
+  $("graphHint").textContent = "Each load you try leaves a dot once the mass is at rest. Extension is measured from the spring's current unloaded length.";
+}
+function drawAna(){
+  const cv = $("ana"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const tr = trials.filter(t => t.spr === set.spr && t.F !== null), pts = tr.map(t => [t.x / 100, t.F]);   // mystery rows have no known F
+  const xM = niceCeil(Math.max(5, ...tr.map(t => t.x)) * 1.1), FM = niceCeil(Math.max(1, ...pts.map(p => p[1])) * 1.15);
+  const box = {x:62, y:46, w:w - 78, h:h - 96};
+  const g = axesR(ctx, box, 0, xM, 0, FM, [["extension ", "n"], ["x", "i"], [" / cm", "n"]], [["load ", "n"], ["F", "i"], [" / N", "n"]]);
+  label(ctx, `Spring: ${sprById(set.spr).name}`, box.x + 4, 12, COL.navy, "left", 13);
+  if (!pts.length){ label(ctx, "Record loads to plot them here", box.x + box.w / 2, box.y + box.h / 2, COL.muted, "center", 14); return; }
+  for (const t of tr){ const X = g.X(t.x), Y = g.Y(t.F);
+    ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(g.X(t.x - 0.1), Y); ctx.lineTo(g.X(t.x + 0.1), Y);
+    ctx.moveTo(g.X(t.x - 0.1), Y - 4); ctx.lineTo(g.X(t.x - 0.1), Y + 4); ctx.moveTo(g.X(t.x + 0.1), Y - 4); ctx.lineTo(g.X(t.x + 0.1), Y + 4); ctx.stroke();
+    ctx.fillStyle = COL.H; ctx.beginPath(); ctx.arc(X, Y, 4, 0, 7); ctx.fill(); }
+  if ($("fitChk").checked){
+    const fit = originFit(pts), mm = minMaxK(pts, 0.001);
+    if (!fit){ label(ctx, "Need at least 2 loads for a best-fit line", box.x + 4, 30, COL.muted, "left", 13); return; }
+    const line = (k, col, dash) => { const xe = Math.min(xM / 100, FM / k); ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 2; if (dash) ctx.setLineDash([6, 4]);
+      ctx.beginPath(); ctx.moveTo(g.X(0), g.Y(0)); ctx.lineTo(g.X(100 * xe), g.Y(k * xe)); ctx.stroke(); ctx.restore(); };
+    line(fit.k, COL.accent, false);
+    const seg = (pq, col) => { const [[x1, y1], [x2, y2]] = pq, k = (y2 - y1) / (x2 - x1), xa = Math.max(0, x1 - 0.01), xb = x2 + 0.01;
+      ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.setLineDash([6, 4]); ctx.beginPath();
+      ctx.moveTo(g.X(100 * xa), g.Y(y1 + k * (xa - x1))); ctx.lineTo(g.X(100 * xb), g.Y(y1 + k * (xb - x1))); ctx.stroke(); ctx.restore(); };
+    if (mm){ seg(mm.steep, COL.grey); seg(mm.shallow, COL.grey);
+      label(ctx, `best fit k = ${fit.k.toFixed(1)} N m⁻¹ · steepest ${mm.kmax.toFixed(1)} · shallowest ${mm.kmin.toFixed(1)} → Δk = ${((mm.kmax - mm.kmin) / 2).toFixed(1)} N m⁻¹`, box.x + 4, 30, COL.accent, "left", 12); }
+    else label(ctx, `best fit k = ${fit.k.toFixed(1)} N m⁻¹`, box.x + 4, 30, COL.accent, "left", 12);
+  } else label(ctx, "Error bars: ±0.1 cm. F = kx: the gradient is k (convert x to metres!).", box.x + 4, 30, COL.muted, "left", 12);
+}
+
+/* ============================ 9 DATA ============================ */
+let trials = [];
+function recordTrial(){
+  const r = Math.round(reading() * 10) / 10, x = Math.round((r - 30 - 100 * S.set[set.spr]) * 10) / 10;
+  trials.push({spr:set.spr, load:set.myst ? "mystery" : `${set.g} g`, F:set.myst ? null : load() * G, ptr:r, x});
+  if (set.myst) trials[trials.length - 1].F = null;
+  save(); renderTrials(); renderActions(true);
+}
+function renderTrials(){
+  $("trials").querySelector("tbody").innerHTML = trials.map((t, i) => `<tr><td>${i + 1}</td><td>${sprById(t.spr).name}</td><td>${t.load}</td>
+    <td>${t.F === null ? "?" : f3(t.F)}</td><td>${t.ptr.toFixed(1)}</td><td>${t.x.toFixed(1)}</td>
+    <td><button class="x" data-del="${i}" aria-label="Delete trial ${i + 1}">×</button></td></tr>`).join("");
+}
+
+/* ============================ 10 TASKS ============================ */
+// Step types: "do" (instruction + done tick), "predict" (lock in a choice, then check), "num" (checked within ±5 %).
+const TASKS = [
+ {id:"pre", title:"1 · Pre-lab: predict", time:"≈ 15 min", steps:[
+  {type:"do", setup:{mode:"hang", spr:"inv", g:100, myst:false, noise:false},
+   text:"Investigation spring, 100 g hanging. Watch the mass bounce and settle, and the free-body diagram. Then add 50 g at a time."},
+  {type:"predict", text:"Predict: once the mass hangs at rest, the spring force on it is…",
+   opts:["bigger than its weight", "equal to its weight", "smaller than its weight", "zero"], correct:1,
+   why:"At rest the resultant force is zero: FH = W = mg. That is why we can use the weight of the masses as the load F in F = kx."},
+  {type:"predict", text:"Predict: you double the load from 100 g to 200 g. The extension…",
+   opts:["stays the same", "doubles", "halves", "increases four times"], correct:1,
+   why:"Hooke's law: x = F/k, so x ∝ F (below the limit of proportionality). 0.981 N → 3.92 cm, 1.962 N → 7.85 cm."},
+  {type:"predict", setup:{mode:"hang", spr:"soft", g:0, myst:false, noise:false},
+   text:"Soft spring (limit ≈ 3 N). Predict: you load it with 400 g (3.9 N), then take all the masses off. The spring…",
+   opts:["returns to its original length", "stays longer than before", "becomes shorter than before"], correct:1,
+   why:"Past the elastic limit the spring is permanently deformed; it does not return to its original length. The F–x graph also curves past the limit of proportionality."},
+  {type:"predict", setup:{mode:"push", spr:"inv", d:-6},
+   text:"Push / pull: you squash the spring by 6.0 cm. Which way does the spring push the block?",
+   opts:["Towards the wall (same way as the squash)", "Away from the wall (back towards the natural length)", "It does not push at all"], correct:1,
+   why:"FH = −kx: the spring force is always opposite to the displacement, towards the natural length. That is the meaning of the minus sign."},
+  {type:"num", setup:{mode:"hang", spr:"inv", g:200, myst:false, noise:false},
+   text:"Investigation spring, k = 25.0 N m⁻¹. Calculate the extension (in cm) with 200 g hanging. Then check.",
+   answer:() => 100 * 0.2 * G / 25.0, unit:"cm", hint:"x = F/k = mg/k, then convert m → cm"},
+ ]},
+ {id:"lab", title:"2 · During the lab: Station 3 / investigation", time:"≈ 10 min", steps:[
+  {type:"do", setup:{mode:"hang", spr:"inv", g:100, myst:false, noise:true},
+   text:"Investigation spring, reading uncertainty ON. Record 100, 150, 200, 250 and 300 g (● Record each time). Compare with your own table."},
+  {type:"num", text:"Extension for 200 g (in cm):", answer:() => 100 * 0.2 * G / 25.0, unit:"cm", hint:"pointer reading − unloaded reading"},
+  {type:"num", text:"Data tab: spring constant k from the best-fit line:", answer:() => 25.0, unit:"N m⁻¹", hint:"k = gradient = F/x with x in metres"},
+  {type:"do", setup:{mode:"hang", spr:"inv", g:0, myst:true, noise:true}, text:"Hang the mystery bag. Read its extension and record it."},
+  {type:"num", text:"Use k to find the mass of the mystery bag (in kg):", answer:() => MYSTERY, unit:"kg", hint:"F = kx, then m = F/g"},
+  {type:"predict", text:"Station 3 asks: would your method still work for a 5 kg load?",
+   opts:["Yes — Hooke's law always holds", "No — 5 kg is far past the limit of proportionality (and the elastic limit)", "Only if you measure more carefully"], correct:1,
+   why:"5 kg gives 49 N, eight times the limit of about 6 N. The F–x graph is no longer straight, so F = kx no longer applies — and the spring would be permanently damaged."},
+ ]},
+ {id:"hw", title:"3 · Homework: analyse", time:"≈ 30 min", steps:[
+  {type:"do", setup:{mode:"hang", spr:"st3", g:0, myst:false, noise:true},
+   text:"Station 3 spring, uncertainty ON. Record loads of 100 g to 400 g in 50 g steps. Plot F against x with error bars of ±0.1 cm on your worksheet."},
+  {type:"num", text:"Gradient of your best-fit line = k:", answer:() => 29.4, unit:"N m⁻¹", hint:"Use a large gradient triangle; x in metres."},
+  {type:"do", text:"Draw the steepest and shallowest lines through the origin that pass through all error bars. Δk = ½(k_max − k_min). Check with the Data tab."},
+  {type:"num", setup:{mode:"push", spr:"inv", d:6}, text:"Investigation spring stretched by 6.0 cm (push/pull mode). Calculate the size of the spring force.",
+   answer:() => 25.0 * 0.06, unit:"N", hint:"|FH| = kx"},
+  {type:"num", setup:{mode:"hang", spr:"stiff", g:0, myst:false, noise:false},
+   text:"The stiff spring (k = 40.0 N m⁻¹) stretches by 4.5 cm when an object hangs from it. Calculate the object's mass.",
+   answer:() => 40 * 0.045 / G, unit:"kg", hint:"mg = kx"},
+  {type:"predict", setup:{mode:"hang", spr:"soft", g:0, myst:false, noise:false},
+   text:"Soft spring: load it to 400 g, unload it, then load 100 g again. Compared with a new spring, the extension measured from the original 30.0 cm mark…",
+   opts:["is the same", "is larger (the spring is permanently longer)", "is smaller"], correct:1,
+   why:"The overloaded spring has a permanent extension, so every reading starts from a lower point. Measure extensions from the spring's own unloaded position — or better, use a new spring."},
+ ]},
+];
+let taskState = {}, curSet = "pre";
+function renderTaskSets(){
+  document.getElementById("taskSets").innerHTML = TASKS.map(s =>
+    `<button class="chip" data-set="${s.id}" aria-pressed="${s.id === curSet}">${s.title} <span class="hint">${s.time}</span></button>`).join("");
+}
+function renderTasks(){
+  const ts = TASKS.find(s => s.id === curSet), box = document.getElementById("taskList"); box.innerHTML = "";
+  ts.steps.forEach((st, i) => {
+    const key = `${ts.id}.${i}`, S = taskState[key] || (taskState[key] = {});
+    const d = document.createElement("div"); d.className = "step" + (S.done ? " done" : "");
+    let html = `<p class="q"><span class="n">${i + 1}</span>${st.type === "predict" ? '<span class="tag">Predict · </span>' : ""}${st.text}</p>`;
+    if (st.setup) html += `<button class="btn small" data-setup="${key}">⚙ Set up the sim for me</button> `;
+    if (st.type === "do"){
+      html += `<label class="switch"><input type="checkbox" data-done="${key}" ${S.done ? "checked" : ""}> Done</label>`;
+    } else if (st.type === "predict"){
+      st.opts.forEach((o, j) => {
+        const cls = S.checked ? (j === st.correct ? " good" : j === S.choice ? " bad" : "") : "";
+        html += `<label class="opt${cls}"><input type="radio" name="r${key}" value="${j}" data-choice="${key}" ${S.choice === j ? "checked" : ""} ${S.locked ? "disabled" : ""}> ${o}</label>`;
+      });
+      if (!S.locked) html += `<button class="btn small primary" data-lock="${key}" ${S.choice === undefined ? "disabled" : ""}>🔒 Lock in my prediction</button>`;
+      else if (!S.checked) html += `<div class="fb info">Prediction locked. Now test it in the sim, then press Check.</div><button class="btn small navy" data-check="${key}">Check</button>`;
+      else html += `<div class="fb ${S.choice === st.correct ? "ok" : "no"}">${S.choice === st.correct ? "✔ Your prediction was right. " : "✘ Not what happens. "}${st.why}</div>`;
+    } else if (st.type === "num"){
+      const a = st.answer(), shown = `${+a.toPrecision(3)}${st.unit ? " " + st.unit : ""}`;
+      html += `<div class="row"><input class="num" inputmode="decimal" data-num="${key}" value="${S.value ?? ""}" aria-label="answer"> ${st.unit}
+               <button class="btn small navy" data-chknum="${key}">Check</button>
+               ${st.hint ? `<button class="btn small" data-hint="${key}">💡 Hint</button>` : ""}</div>`;
+      if (S.showHint && st.hint) html += `<div class="fb info">${st.hint}</div>`;
+      if (S.status === "ok") html += `<div class="fb ok">✔ Correct (within 5 %). Model answer: ${shown}.</div>`;
+      else if (S.status) html += `<div class="fb no">✘ ${S.status === "high" ? "Too high" : S.status === "low" ? "Too low" : "Enter a number"}. ${S.tries >= 2 ? `Model answer: ${shown}.` : "Try again or use the hint."}</div>`;
+    }
+    d.innerHTML = html; box.appendChild(d);
+  });
+}
+function taskClick(e){
+  const t = e.target.closest("[data-setup],[data-lock],[data-check],[data-chknum],[data-hint],[data-set]"); if (!t) return;
+  if (t.dataset.set){ curSet = t.dataset.set; renderTaskSets(); renderTasks(); save(); return; }
+  const key = t.dataset.setup || t.dataset.lock || t.dataset.check || t.dataset.chknum || t.dataset.hint;
+  const [sid, idx] = key.split("."), st = TASKS.find(s => s.id === sid).steps[+idx], S = taskState[key];
+  if (t.dataset.setup){ applySetup(st.setup); }
+  if (t.dataset.lock){ S.locked = true; }
+  if (t.dataset.check){ S.checked = true; S.done = true; }
+  if (t.dataset.hint){ S.showHint = true; }
+  if (t.dataset.chknum){
+    const raw = document.querySelector(`[data-num="${key}"]`).value.replace(",", "."), v = parseFloat(raw), a = st.answer();
+    S.value = raw; S.tries = (S.tries || 0) + 1;
+    if (!isFinite(v)) S.status = "nan";
+    else if (Math.abs(v - a) <= (st.tol ?? 0.05) * Math.abs(a)) { S.status = "ok"; S.done = true; }
+    else S.status = v > a ? "high" : "low";
+  }
+  save(); renderTasks();
+}
+function taskChange(e){
+  const t = e.target;
+  if (t.dataset.choice){ taskState[t.dataset.choice].choice = +t.value; renderTasks(); save(); }
+  if (t.dataset.done){ taskState[t.dataset.done].done = t.checked; renderTasks(); save(); }
+}
+
+/* ============================ 11 UI ============================ */
+const $ = id => document.getElementById(id);
+function save(){ try { localStorage.setItem("sim05-spring", JSON.stringify({trials, taskState, curSet})); } catch (e) {} }
+function load_(){ try { const d = JSON.parse(localStorage.getItem("sim05-spring") || "{}");
+  trials = d.trials || []; taskState = d.taskState || {}; curSet = d.curSet || "pre"; } catch (e) {} }
+function applySetup(st){ Object.assign(set, st); if (st.spr) S.history = []; changeLoad(); syncControls(); }
+function syncControls(){
+  document.querySelectorAll("#mode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === set.mode));
+  document.querySelectorAll(".sc").forEach(d => d.style.display = d.dataset.mode === set.mode ? "contents" : "none");
+  $("spr").value = set.spr; const sp = sprById(set.spr);
+  $("kLab").innerHTML = `k = ${sp.k.toFixed(1)} N m⁻¹ · limit ≈ ${sp.Flim.toFixed(1)} N`;
+  $("mOut").textContent = `${set.g} g`; $("mMinus").disabled = set.g <= 0 || set.myst; $("mPlus").disabled = set.g >= sp.maxG || set.myst;
+  $("myst").checked = set.myst; $("noise").checked = set.noise;
+  $("disp").value = set.d; $("dOut").textContent = (set.d > 0 ? "+" : "") + set.d.toFixed(1);
+  $("sceneTitle").textContent = set.mode === "hang" ? "Spring on a clamp stand, ruler and pointer" : "Spring and block on a frictionless table";
+  renderActions();
+}
+function renderActions(recorded = false){
+  const a = $("actions");
+  if (set.mode === "hang") a.innerHTML = `<button class="btn" data-act="new" title="Replace a damaged spring">↺ New spring</button>
+    <button class="btn navy" data-act="rec" ${recorded ? "disabled" : ""}>${recorded ? "✔ Recorded" : "● Record"}</button>`;
+  else a.innerHTML = `<button class="btn" data-act="zero">↺ x = 0</button>`;
+}
+function readouts(){
+  const sp = sprById(set.spr), f = forcesNow(); let rows;
+  if (set.mode === "hang"){
+    const ext = Math.abs(S.x - S.set[set.spr]) < 5e-4 ? 0 : S.x - S.set[set.spr];   // no "−0.0 cm"
+    rows = [["Load", set.myst ? "mystery bag (?)" : `${set.g} g → <i>F</i> = ${f3(load() * G)} N`, COL.W],
+            ["Pointer · unloaded reading", `${reading().toFixed(1)} cm · ${(30 + 100 * S.set[set.spr]).toFixed(1)} cm`, COL.F],
+            ["Extension <i>x</i>", `${(100 * ext).toFixed(1)} cm = ${f3(ext)} m`],
+            ["Spring force <i>F</i><sub>H</sub>", set.myst ? "?" : `${f3(f.FH)} N`, COL.H],
+            ["Spring constant <i>k</i>", `${sp.k.toFixed(1)} N m⁻¹`]];
+  } else rows = [["Displacement <i>x</i>", `${set.d.toFixed(1)} cm = ${f3(set.d / 100)} m`],
+                 ["<i>F</i><sub>H</sub> = −<i>kx</i>", `${f2(f.FH)} N`, COL.H], ["Hand force", `${f2(f.Fhand)} N`, COL.P],
+                 ["Spring constant <i>k</i>", `${sp.k.toFixed(1)} N m⁻¹`]];
+  $("ro").innerHTML = rows.map(([a, b, c]) => `<tr><td>${a}</td><td class="v"${c ? ` style="color:${c}"` : ""}>${b}</td></tr>`).join("");
+}
+
+$("spr").innerHTML = SPRINGS.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+$("spr").addEventListener("change", e => { set.spr = e.target.value; set.g = Math.min(set.g, sprById(set.spr).maxG); S.history = []; S.x = S.set[set.spr]; S.v = 0; changeLoad(); syncControls(); });
+document.querySelectorAll("#mode button").forEach(b => b.addEventListener("click", () => { set.mode = b.dataset.mode; syncControls(); }));
+$("mMinus").addEventListener("click", () => { set.g = Math.max(0, set.g - 50); changeLoad(); syncControls(); });
+$("mPlus").addEventListener("click", () => { set.g = Math.min(sprById(set.spr).maxG, set.g + 50); changeLoad(); syncControls(); });
+$("myst").addEventListener("change", e => { set.myst = e.target.checked; changeLoad(); syncControls(); });
+$("noise").addEventListener("change", e => { set.noise = e.target.checked; changeLoad(); });
+$("disp").addEventListener("input", e => { set.d = +e.target.value; syncControls(); });
+$("actions").addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (!b) return;
+  if (b.dataset.act === "rec") recordTrial();
+  if (b.dataset.act === "new"){ S.set[set.spr] = 0; S.worst[set.spr] = 0; S.history = []; changeLoad(); }
+  if (b.dataset.act === "zero"){ set.d = 0; syncControls(); } });
+$("clearBtn").addEventListener("click", () => { if (confirm("Delete all recorded trials?")){ trials = []; save(); renderTrials(); } });
+$("trials").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b){ trials.splice(+b.dataset.del, 1); save(); renderTrials(); } });
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === t.dataset.tab)); }));
+$("pTasks").addEventListener("click", taskClick); $("pTasks").addEventListener("change", taskChange);
+$("helpBtn").addEventListener("click", () => $("help").classList.add("on"));
+$("helpClose").addEventListener("click", () => $("help").classList.remove("on"));
+$("help").addEventListener("click", e => { if (e.target.id === "help") $("help").classList.remove("on"); });
+
+load_(); syncControls(); changeLoad(); renderTrials(); renderTaskSets(); renderTasks();
+let last = performance.now(), wasSettled = false;
+function frame(now){
+  let dt = Math.min(0.05, (now - last) / 1000); last = now;
+  while (dt > 1e-6){ const hh = Math.min(0.002, dt); step(hh); dt -= hh; }
+  const st = set.mode === "hang" && settled();
+  if (st && !wasSettled && !set.myst){ const x = 100 * (S.x - S.set[set.spr]);     // remember each settled load for the Graph tab
+    if (!S.history.some(p => Math.abs(p.F - load() * G) < 1e-6)) S.history.push({x, F:load() * G}); }
+  wasSettled = st;
+  drawScene(); drawFBD(); drawGraph(); drawAna(); readouts();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

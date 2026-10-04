@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pendulum Tension</title>
+<!--
+  IBDP Physics SL · Grade 11 · Topic A.2 Forces (tension) — links circular motion (Block 5) and energy (Block 10)
+  Simulation 09 — Pendulum tension (pairs with a newton-meter pendulum: 100–300 g on a 10 N meter)
+  Self-contained: no internet, no external libraries. Open in any modern browser.
+  Built from the simulation template (Simulation 01 CSS, helpers and task engine).
+
+  File sections:
+    1 STYLE · 2 MARKUP · 3 CONFIG · 4 PHYSICS · 5 RUN · 6 SCENE · 7 FBD · 8 GRAPHS · 9 DATA · 10 TASKS · 11 UI
+-->
+<style>
+/* ============================ 1 STYLE ============================ */
+:root{
+  --navy:#1F3A5F; --accent:#E65100; --ink:#263238; --muted:#606A72;
+  --bg:#F2F5F9; --card:#FFFFFF; --line:#DDE6F0; --soft:#FFF3E0; --soft-blue:#E3F2FD;
+  --wood:#FFCC80; --wood-edge:#C68A3A;
+  --cW:#2A5D8A; --cN:#2E7D32; --cF:#C62828; --cP:#6A1B9A;   /* weight, normal, friction, pull */
+  --ok:#2E7D32; --bad:#C62828;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);
+  font:16px/1.4 "Segoe UI",Calibri,"Helvetica Neue",Arial,sans-serif;
+  -webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;min-height:100dvh}
+header{background:var(--navy);color:#fff;border-bottom:4px solid var(--accent);
+  display:flex;align-items:center;gap:16px;padding:8px 16px}
+header h1{font-size:1.25rem;margin:0;font-weight:600}
+header .sub{font-size:.85rem;opacity:.85}
+header .grow{flex:1}
+.btn{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;
+  min-height:44px;padding:6px 14px;cursor:pointer;touch-action:manipulation}
+.btn:hover{border-color:var(--navy)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.small{min-height:36px;padding:4px 10px;font-size:.9rem}
+header .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+
+/* layout: scene + state | FBD (always visible) | tabs; fills the screen height */
+main{flex:1;min-height:500px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.3fr);
+  grid-template-rows:minmax(0,1fr) auto;gap:12px;padding:12px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card h2{font-size:.95rem;margin:0;padding:6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line);
+  color:var(--navy);font-weight:600}
+.left{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.scenecard{flex:1 1 0;display:flex;flex-direction:column;min-height:0}
+.fbdcol{display:flex;flex-direction:column;min-width:0;min-height:0}
+#sceneWrap{position:relative;flex:1;min-height:150px}
+#scene{width:100%;height:100%;display:block}
+#fbdWrap{flex:1;min-height:220px}
+#fbd{width:100%;height:100%;display:block}
+.readouts{padding:6px 12px;flex:0 1 auto;min-height:0;overflow:auto}  /* natural height; the scene takes the rest */
+.readouts table{width:100%;border-collapse:collapse;font-size:.9rem}
+.readouts td.v{white-space:nowrap;padding-left:6px}
+.readouts td{padding:4px 2px;border-bottom:1px solid #EEF2F6}
+.readouts td.v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.pill{display:inline-block;white-space:nowrap;padding:3px 10px;border-radius:99px;font-size:.85rem;font-weight:600}
+.pill.rest{background:var(--soft-blue);color:#0D47A1}
+.pill.slide{background:#FFEBEE;color:#B71C1C}
+.pill.ready{background:#ECEFF1;color:var(--muted)}
+
+.right{display:flex;flex-direction:column;min-width:0;min-height:0}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 8px 6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.cardhead h2{padding:0;border:none;background:none;flex:1}
+.cardhead .btn{min-height:40px;padding:4px 10px}
+.tabs{display:flex;gap:4px;padding:6px 6px 0;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.tab{font:inherit;border:1px solid transparent;border-bottom:none;background:transparent;padding:8px 14px;
+  min-height:44px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--muted);font-weight:600}
+.tab[aria-selected="true"]{background:#fff;border-color:var(--line);color:var(--navy);margin-bottom:-1px}
+.panel{display:none;padding:10px 12px;flex:1;min-height:0;overflow:hidden}
+.panel.on{display:flex;flex-direction:column;gap:8px}
+#graphWrap{position:relative;flex:1;min-height:200px}
+#graph{width:100%;height:100%;display:block;touch-action:none}
+.hint{font-size:.85rem;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#trials{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
+#trials th,#trials td{border-bottom:1px solid var(--line);padding:4px 4px;text-align:right}
+#trials th{color:var(--navy);font-weight:600;background:#F7F9FC;position:sticky;top:0}
+#trials td:first-child,#trials th:first-child,#trials td:nth-child(2),#trials th:nth-child(2){text-align:left}
+.tableBox{max-height:150px;flex:none;overflow:auto;border:1px solid var(--line);border-radius:8px}
+#anaWrap{flex:1;min-height:180px}
+#ana{width:100%;height:100%;display:block}
+.x{border:none;background:none;color:var(--bad);font-size:1.1rem;cursor:pointer;min-width:32px;min-height:32px}
+
+/* tasks */
+#taskSets{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:.9rem;border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 14px;
+  min-height:40px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chip[aria-pressed="true"] .hint{color:#DDE6F0}
+#taskList{overflow:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.step{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.step .q{margin:0 0 6px}
+.step .n{display:inline-block;min-width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;
+  text-align:center;line-height:26px;font-size:.85rem;font-weight:700;margin-right:6px}
+.step.done .n{background:var(--ok)}
+.opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;
+  margin:4px 0;cursor:pointer;min-height:40px}
+.opt input{width:20px;height:20px}
+.opt.good{border-color:var(--ok);background:#E8F5E9}
+.opt.bad{border-color:var(--bad);background:#FFEBEE}
+.fb{margin-top:6px;padding:6px 10px;border-radius:8px;font-size:.92rem}
+.fb.ok{background:#E8F5E9;border-left:4px solid var(--ok)}
+.fb.no{background:#FFEBEE;border-left:4px solid var(--bad)}
+.fb.info{background:var(--soft-blue);border-left:4px solid #1565C0}
+.num{font:inherit;width:110px;min-height:40px;padding:4px 8px;border:1px solid #B0BEC5;border-radius:8px}
+.tag{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+
+/* controls */
+#controls{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;padding:10px 14px}
+.ctl{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ctl label,.ctl .lab{font-size:.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.ctl select{font:inherit;min-height:44px;border:1px solid #B0BEC5;border-radius:8px;padding:4px 8px;background:#fff}
+.mu{font-size:.85rem;color:var(--navy);font-weight:600}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper .btn{width:44px;padding:0;font-size:1.3rem}
+.stepper output{min-width:24px;text-align:center;font-weight:700;font-size:1.1rem}
+input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
+.seg{display:flex;border:1px solid #B0BEC5;border-radius:8px;overflow:hidden}
+.seg button{font:inherit;border:none;background:#fff;min-height:42px;padding:4px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+.switch{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.switch input{width:22px;height:22px;accent-color:var(--accent)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* help overlay */
+#help{position:fixed;inset:0;background:rgba(31,58,95,.55);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
+#help.on{display:flex}
+#help .box{background:#fff;border-radius:14px;max-width:720px;width:100%;max-height:90vh;overflow:auto;padding:18px 22px}
+#help h3{margin:.2em 0 .4em;color:var(--navy)}
+#help li{margin:.25em 0}
+.eq{font-family:"Cambria Math",Cambria,"Times New Roman",serif;font-size:1.05rem}
+
+@media (max-width:1300px){
+  .readouts table{font-size:.85rem}
+  .pill{font-size:.78rem;padding:2px 8px}
+}
+/* tablet landscape: scene + state on the left; FBD above the tabs on the right */
+@media (max-width:1099px){
+  main{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr) auto;min-height:640px}
+  .left{grid-row:1/3}
+  .fbdcol{grid-column:2;grid-row:1}
+  .right{grid-column:2;grid-row:2}
+  #fbdWrap{min-height:200px}
+  #pGraph .hint{display:none}
+  #controls{gap:8px 12px;padding:8px 12px}
+  input[type=range]{width:118px}
+  header .sub{display:none}
+}
+/* phone / narrow portrait: one scrolling column */
+@media (max-width:759px){
+  body{height:auto}
+  main{display:flex;flex-direction:column}
+  #sceneWrap{flex:none;height:260px}
+  .readouts{flex:none}
+  #fbdWrap{flex:none;height:320px}
+  .right{height:640px;flex:none}
+}
+</style>
+</head>
+<body>
+<!-- ============================ 2 MARKUP ============================ -->
+<header>
+  <div>
+    <h1>Pendulum tension — held aside and swinging</h1>
+    <div class="sub">IBDP Physics SL · A.2 Forces · Simulation 09 · g = 9.81 N kg⁻¹ · links circular motion (Block 5) and energy (Block 10)</div>
+  </div>
+  <div class="grow"></div>
+  <button class="btn" id="helpBtn" aria-label="How to use">? How to use</button>
+</header>
+
+<main>
+  <section class="left">
+    <div class="card scenecard">
+      <div class="cardhead">
+        <h2>Experiment</h2>
+        <div class="actions" id="actions"></div>
+      </div>
+      <div id="sceneWrap"><canvas id="scene" aria-label="Pendulum hanging from a newton meter"></canvas></div>
+    </div>
+    <div class="card readouts"><table><tbody id="ro"></tbody></table></div>
+  </section>
+
+  <section class="card fbdcol" aria-label="Free-body diagram">
+    <h2>Free-body diagram of the bob</h2>
+    <div id="fbdWrap"><canvas id="fbd" aria-label="Free-body diagram"></canvas></div>
+  </section>
+
+  <section class="card right">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="pGraph">Graph</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pData">Data &amp; analysis</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pTasks">Tasks</button>
+    </div>
+    <div class="panel on" id="pGraph">
+      <div id="graphWrap"><canvas id="graph" aria-label="Tension and angle against time"></canvas></div>
+      <div class="hint">Top: tension (what the newton meter reads). It peaks every time the bob passes the bottom — twice per period.
+        Dashed: <i>mg</i> and the predicted peak <i>mg</i>(3 − 2 cos θ₀). Bottom: the angle of the string.</div>
+    </div>
+    <div class="panel" id="pData">
+      <div class="row">
+        <button class="btn small" id="clearBtn">Clear all trials</button>
+        <span style="flex:1"></span>
+        <label class="switch"><input type="checkbox" id="fitChk"> Show best-fit line</label>
+      </div>
+      <div class="tableBox"><table id="trials"><thead><tr><th>#</th><th>object</th><th>m / kg</th><th>L / m</th><th>θ₀ / °</th>
+        <th>T<sub>max</sub> / N</th><th>T<sub>max</sub>/mg</th><th>1 − cos θ₀</th><th>period / s</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div id="anaWrap"><canvas id="ana" aria-label="Peak tension over weight against 1 minus cos theta"></canvas></div>
+    </div>
+    <div class="panel" id="pTasks">
+      <div id="taskSets"></div>
+      <div id="taskList"></div>
+    </div>
+  </section>
+
+  <section class="card" id="controls" aria-label="Controls">
+    <div class="ctl"><label for="obj">Object</label><select id="obj"></select><span class="mu" id="objLab"></span></div>
+    <div class="ctl" id="sizeC"><label for="size" id="sizeLab">Radius</label><input type="range" id="size" min="1" max="5" step="0.5"></div>
+    <div class="ctl"><label for="len">String length = <span id="lOut"></span> m</label>
+      <input type="range" id="len" min="0.2" max="2" step="0.05"></div>
+    <div class="ctl"><label for="ang">Angle θ₀ = <span id="aOut"></span>°</label>
+      <input type="range" id="ang" min="0" max="80" step="1"></div>
+  </section>
+</main>
+
+<div id="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="box">
+    <h3 id="helpTitle">How to use this simulation</h3>
+    <ol>
+      <li>Choose the <b>object</b> and its <b>size</b>, the <b>string length</b> and the <b>angle θ₀</b>.</li>
+      <li><b>✋ Hold aside</b>: a hand holds the bob still at θ₀ with a horizontal pull. Read the newton meter.</li>
+      <li><b>▶ Release</b>: the bob swings. The newton meter reading changes all the time; the Graph tab shows it.
+        After a few swings press <b>● Record</b> (peak tension and period).</li>
+    </ol>
+    <h3>The physics</h3>
+    <ul>
+      <li class="eq">Length to the centre of the bob: L = string + r.</li>
+      <li class="eq">Held aside (equilibrium): T cos θ = mg and T sin θ = F<sub>hand</sub> ⇒ T = mg / cos θ.</li>
+      <li class="eq">Swinging: along the string the bob moves in a circle, so T − mg cos θ = mv²/L ⇒ T = mg cos θ + mv²/L.</li>
+      <li class="eq">At the bottom (energy: v² = 2gL(1 − cos θ₀)): T = mg(3 − 2 cos θ₀) — independent of L!</li>
+      <li class="eq">Period for small swings: T<sub>period</sub> = 2π√(L/g) (topic C.1 preview) — independent of m.</li>
+    </ul>
+    <p class="hint">Model: air drag ½ρC<sub>d</sub>Av² (ρ = 1.2 kg m⁻³, C<sub>d</sub> = 0.47) slows large light objects; it acts along
+      the path, so it does not change T directly. The balloon's weight is its rubber (the air inside floats), but the air inside still has to
+      be moved, which makes it sluggish. Light, inextensible string.</p>
+    <p style="text-align:right"><button class="btn primary" id="helpClose">Close</button></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================ 3 CONFIG ============================ */
+const G = 9.81;                 // N kg⁻¹ (IB data booklet)
+const AIR = 1.2, CD = 0.47;
+const OBJECTS = [
+  {id:"hook",    name:"Slotted mass on a hook", kind:"mass", r:0.015, col:"#90A4AE"},
+  {id:"steel",   name:"Steel ball",     rho:7850, col:"#78909C"},
+  {id:"brass",   name:"Brass ball",     rho:8500, col:"#C9A227"},
+  {id:"alu",     name:"Aluminium ball", rho:2700, col:"#CFD8DC"},
+  {id:"wood",    name:"Wooden ball",    rho:600,  col:"#FFCC80"},
+  {id:"rubber",  name:"Rubber ball",    rho:1100, col:"#E57373"},
+  {id:"pong",    name:"Ping-pong ball", kind:"fixed", m:0.0027, r:0.020, col:"#FFFFFF"},
+  {id:"balloon", name:"Balloon (air-filled)", kind:"fixed", m:0.005, r:0.12, col:"#EF5350"},
+];
+const COL = {W:"#2A5D8A", N:"#2E7D32", F:"#C62828", P:"#6A1B9A", T:"#6A1B9A", navy:"#1F3A5F", accent:"#E65100",
+             ink:"#263238", muted:"#606A72", grid:"#E3E9F0", v:"#1565C0", grey:"#90A4AE", d:"#AD1457"};
+const objById = id => OBJECTS.find(o => o.id === id);
+
+/* ============================ 4 PHYSICS ============================ */
+const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+const f2 = x => (Math.round(x * 100) / 100).toFixed(2);
+const f3 = x => (Math.round(x * 1000) / 1000).toFixed(3);
+function bob(){                                     // mass, radius, inertial mass, length to centre
+  const o = objById(set.obj); let m, r;
+  if (o.kind === "mass"){ m = set.size / 1000; r = o.r; }
+  else if (o.kind === "fixed"){ m = o.m; r = o.r; }
+  else { r = set.size / 100; m = o.rho * 4 / 3 * Math.PI * r ** 3; }
+  const V = 4 / 3 * Math.PI * r ** 3;
+  const mi = m + (o.id === "balloon" ? AIR * V : 0) + 0.5 * AIR * V;   // air inside the balloon + air pushed aside
+  return {m, r, mi, L:set.L + r, A:Math.PI * r * r};
+}
+const Tbottom = (m, th0) => m * G * (3 - 2 * Math.cos(rad(th0)));     // no drag
+function linFit(pts){ const n = pts.length; if (n < 2) return null;
+  const mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+  const sxx = pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0); if (!sxx) return null;
+  const k = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / sxx; return {k, b:my - k * mx}; }
+function originFit(pts){ const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0);
+  return sxx && pts.length >= 2 ? {k:pts.reduce((a, p) => a + p[0] * p[1], 0) / sxx, b:0} : null; }
+
+/* ============================ 5 RUN ============================ */
+const set = {obj:"steel", size:2, L:0.98, th:30};
+const R = {phase:"rest", th:0, w:0, t:0, hold:false, samples:[], cross:[], Tmax:0, amp0:0};
+function forcesNow(){
+  const b = bob(), W = b.m * G;
+  if (R.phase === "held"){ const c = Math.cos(R.th); return {...b, W, T:W / c, Fh:W * Math.tan(R.th), v:0}; }
+  const v = b.L * R.w;
+  return {...b, W, T:W * Math.cos(R.th) + b.mi * v * v / b.L, Fh:0, v, Fd:0.5 * AIR * CD * b.A * v * v};
+}
+function deriv(th, w){
+  const b = bob(), v = b.L * w, Fd = 0.5 * AIR * CD * b.A * v * Math.abs(v);
+  return [w, (-b.m * G * Math.sin(th) - Fd) / (b.mi * b.L)];
+}
+function step(dt){
+  if (R.phase !== "swing" || R.hold) return;
+  let left = dt; const h0 = 0.001;
+  while (left > 1e-9){ const h = Math.min(h0, left); left -= h;
+    const [a1, b1] = deriv(R.th, R.w), [a2, b2] = deriv(R.th + a1 * h / 2, R.w + b1 * h / 2),
+          [a3, b3] = deriv(R.th + a2 * h / 2, R.w + b2 * h / 2), [a4, b4] = deriv(R.th + a3 * h, R.w + b3 * h);
+    const th0 = R.th;
+    R.th += h * (a1 + 2 * a2 + 2 * a3 + a4) / 6; R.w += h * (b1 + 2 * b2 + 2 * b3 + b4) / 6; R.t += h;
+    if (th0 < 0 && R.th >= 0) R.cross.push(R.t - R.th / Math.max(R.w, 1e-9));            // upward crossings → period
+    const T = forcesNow().T; if (T > R.Tmax) R.Tmax = T;
+  }
+  const last = R.samples[R.samples.length - 1];
+  if (!last || R.t - last.t >= 0.02) R.samples.push({t:R.t, T:forcesNow().T, th:deg(R.th)});
+  if (R.samples.length > 4000) R.samples.shift();
+}
+const period = () => R.cross.length >= 2 ? (R.cross[R.cross.length - 1] - R.cross[0]) / (R.cross.length - 1) : null;
+function reset(){ Object.assign(R, {phase:"rest", th:0, w:0, t:0, hold:false, samples:[], cross:[], Tmax:0}); renderActions(); }
+function holdAside(){ Object.assign(R, {phase:"held", th:rad(set.th), w:0, t:0, hold:false, samples:[], cross:[], Tmax:0}); renderActions(); }
+function release(){ if (R.phase !== "held") R.th = rad(set.th);
+  Object.assign(R, {phase:"swing", w:0, t:0, hold:false, samples:[], cross:[], Tmax:0, amp0:set.th}); renderActions(); }
+
+/* ============================ 6 SCENE ============================ */
+function fitCanvas(cv){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {ctx, w:r.width, h:r.height};
+}
+function arrow(ctx, x1, y1, x2, y2, color, width = 4, dashed = false){
+  const L = Math.hypot(x2 - x1, y2 - y1); if (L < 2) return;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, hs = Math.min(13, 6 + width * 1.6);
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = "round";
+  if (dashed) ctx.setLineDash([6, 5]);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * hs * 0.8, y2 - uy * hs * 0.8); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - ux * hs - uy * hs * 0.5, y2 - uy * hs + ux * hs * 0.5);
+  ctx.lineTo(x2 - ux * hs + uy * hs * 0.5, y2 - uy * hs - ux * hs * 0.5); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function label(ctx, txt, x, y, color, align = "center", size = 15, base = "middle"){
+  ctx.save(); ctx.font = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = color;
+  ctx.textAlign = align; ctx.textBaseline = base;
+  // white halo so labels stay readable over lines
+  ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.strokeText(txt, x, y); ctx.fillText(txt, x, y);
+  ctx.restore();
+}
+// Labels with a subscript, e.g. sub(ctx,"F","N"," = 2.45 N",…)
+function subLabel(ctx, main, sub, rest, x, y, color, align = "center", size = 15){
+  ctx.save(); const f1 = `italic 600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`,
+    f2 = `600 ${Math.round(size * .72)}px "Segoe UI",Calibri,Arial,sans-serif`, f3 = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+  ctx.font = f1; const w1 = ctx.measureText(main).width; ctx.font = f2; const w2 = sub ? ctx.measureText(sub).width : 0;
+  ctx.font = f3; const w3 = ctx.measureText(rest).width; const W = w1 + w2 + w3;
+  let x0 = align === "center" ? x - W / 2 : align === "right" ? x - W : x;
+  ctx.textBaseline = "middle"; ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.fillStyle = color;
+  ctx.font = f1; ctx.strokeText(main, x0, y); ctx.fillText(main, x0, y);
+  if (sub){ ctx.font = f2; ctx.strokeText(sub, x0 + w1, y + size * .3); ctx.fillText(sub, x0 + w1, y + size * .3); }
+  ctx.font = f3; ctx.strokeText(rest, x0 + w1 + w2, y); ctx.fillText(rest, x0 + w1 + w2, y);
+  ctx.restore();
+}
+// Mixed text: parts = [[text, "n" normal | "i" italic | "s" subscript], …], centred on (x, y)
+function rich(ctx, parts, x, y, color, size = 14){
+  const font = st => st === "i" ? `italic 600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`
+    : st === "s" ? `600 ${Math.round(size * .72)}px "Segoe UI",Calibri,Arial,sans-serif` : `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+  ctx.save(); ctx.fillStyle = color; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  const ws = parts.map(([t, st]) => { ctx.font = font(st); return ctx.measureText(t).width; });
+  let cx = x - ws.reduce((a, b) => a + b, 0) / 2;
+  parts.forEach(([t, st], i) => { ctx.font = font(st); ctx.fillText(t, cx, st === "s" ? y + size * .3 : y); cx += ws[i]; });
+  ctx.restore();
+}
+function bg(ctx, w, h){ const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#FAFCFF"); g.addColorStop(1, "#EEF3F8");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); }
+function bench(ctx, w, y, h){ ctx.fillStyle = "#E8DCC4"; ctx.fillRect(0, y, w, 8); ctx.fillStyle = "#8D6E63"; ctx.fillRect(0, y + 8, w, 16);
+  ctx.fillStyle = "#6D4C41"; ctx.fillRect(w * 0.06, y + 24, 12, h); ctx.fillRect(w * 0.9, y + 24, 12, h); }
+function woodBox(ctx, x, y, w, h, txt){
+  ctx.fillStyle = COL.wood; ctx.strokeStyle = COL.woodEdge; ctx.lineWidth = 2; ctx.fillRect(x, y, w, h); ctx.strokeRect(x, y, w, h);
+  if (txt) label(ctx, txt, x + w / 2, y + h / 2, "#6D4C41", "center", 13);
+}
+// kitchen / bathroom scale with a digital display; (x, y) = top-left of the platform
+function scale(ctx, x, y, w, h, reading){
+  ctx.fillStyle = "#ECEFF1"; ctx.strokeStyle = "#90A4AE"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, 4) : ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke();
+  const dw = Math.min(70, w * 0.5), dh = Math.max(10, h - 8);
+  ctx.fillStyle = "#263238"; ctx.fillRect(x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  ctx.fillStyle = "#76FF03"; ctx.font = `600 ${Math.min(13, dh - 2)}px Consolas,"Courier New",monospace`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(reading, x + w / 2, y + h / 2 + 1);
+}
+function hand(ctx, x, y, k){ ctx.fillStyle = "#F1C27D"; ctx.strokeStyle = "#C99A5B"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(x, y, 20 * k, 13 * k, 0, 0, 7); ctx.fill(); ctx.stroke(); }
+function drawScene(){
+  const {ctx, w, h} = fitCanvas($("scene")); ctx.clearRect(0, 0, w, h); bg(ctx, w, h);
+  const b = bob(), o = objById(set.obj), px = w * 0.5, py = 64, ppm = Math.min((h - py - 16) / 2.15, (w / 2 - 16) / 2.15);
+  // stand and newton meter at the pivot
+  ctx.fillStyle = "#546E7A"; ctx.fillRect(w * 0.06, 8, 6, h - 8); ctx.fillRect(w * 0.06, 8, px - w * 0.06 + 6, 6); ctx.fillRect(w * 0.02, h - 8, w * 0.18, 6);
+  ctx.fillStyle = "#ECEFF1"; ctx.strokeStyle = "#78909C"; ctx.lineWidth = 1.5; ctx.fillRect(px - 9, 14, 18, py - 18); ctx.strokeRect(px - 9, 14, 18, py - 18);
+  const F = forcesNow(), ind = 18 + (py - 26) * Math.min(1, F.T / Math.max(10, Tbottom(b.m, 80)));
+  ctx.strokeStyle = COL.F; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(px - 7, ind); ctx.lineTo(px + 7, ind); ctx.stroke();
+  // swing path and angle
+  const Lp = b.L * ppm;
+  if (R.phase !== "rest"){ ctx.save(); ctx.strokeStyle = "rgba(96,106,114,.35)"; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(px, py, Lp, Math.PI / 2 - rad(set.th), Math.PI / 2 + rad(set.th)); ctx.stroke(); ctx.restore(); }
+  ctx.save(); ctx.strokeStyle = COL.muted; ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py + Lp + 10); ctx.stroke(); ctx.restore();
+  const bx = px + Lp * Math.sin(R.th), by = py + Lp * Math.cos(R.th), rp = Math.max(8, b.r * ppm);                 // small bobs drawn at least 8 px so they stay visible
+  const sx = px + (Lp - rp) * Math.sin(R.th), sy = py + (Lp - rp) * Math.cos(R.th);
+  ctx.strokeStyle = "#37474F"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(sx, sy); ctx.stroke();
+  if (Math.abs(R.th) > 0.02){ ctx.strokeStyle = COL.navy; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(px, py, 34, Math.PI / 2, Math.PI / 2 - R.th, R.th > 0); ctx.stroke();
+    label(ctx, `${Math.abs(deg(R.th)).toFixed(0)}°`, px + (R.th > 0 ? 18 : -18), py + 46, COL.navy, "center", 12); }
+  if (o.kind === "mass"){ ctx.fillStyle = "#90A4AE"; ctx.strokeStyle = "#455A64"; ctx.fillRect(bx - rp, by - rp * 0.8, 2 * rp, 1.6 * rp); ctx.strokeRect(bx - rp, by - rp * 0.8, 2 * rp, 1.6 * rp); }
+  else { ctx.fillStyle = o.col; ctx.strokeStyle = "#37474F"; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(bx, by, rp, 0, 7); ctx.fill(); ctx.stroke();
+    if (o.id === "balloon"){ ctx.fillStyle = "rgba(255,255,255,.4)"; ctx.beginPath(); ctx.ellipse(bx - rp * 0.35, by - rp * 0.35, rp * 0.25, rp * 0.15, -0.6, 0, 7); ctx.fill(); } }
+  ctx.fillStyle = "#263238"; ctx.beginPath(); ctx.arc(bx, by, 2, 0, 7); ctx.fill();               // centre of mass
+  if (R.phase === "held"){ hand(ctx, bx + Math.sign(R.th || 1) * (rp + 20), by, 0.8);
+    arrow(ctx, bx + Math.sign(R.th || 1) * (rp + 2), by, bx + Math.sign(R.th || 1) * (rp + 2 + 30), by, COL.P, 2.5); }
+  // 1 m scale bar and readings
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(w - 16 - ppm, h - 16); ctx.lineTo(w - 16, h - 16); ctx.stroke();
+  label(ctx, "1 m", w - 16 - ppm / 2, h - 28, COL.ink, "center", 12);
+  label(ctx, `newton meter: ${f2(F.T)} N`, w - 10, 20, COL.P, "right", 17);
+  label(ctx, `mg = ${f2(F.W)} N`, w - 10, 42, COL.W, "right", 13);
+  const p = period();
+  const st = {rest:"Hanging at rest", held:"Held aside by a horizontal pull", swing:R.hold ? "Paused" : "Swinging"}[R.phase];
+  label(ctx, st, 22, h - (R.phase === "swing" ? 46 : 30), COL.navy, "left", 14);                    // lower left, clear of the meter
+  if (R.phase === "swing") label(ctx, `swings: ${Math.max(0, R.cross.length - 1)}${p ? ` · period ${p.toFixed(3)} s` : ""}`, 22, h - 28, COL.muted, "left", 12);
+}
+
+/* ============================ 7 FBD ============================ */
+function drawFBD(){
+  const {ctx, w, h} = fitCanvas($("fbd")); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const f = forcesNow(), cx = w * 0.5, cy = h * 0.5, th = R.th;
+  const big = Math.max(f.W, Tbottom(f.m, set.th), f.T, 1e-6), sc = Math.min(h * 0.38, w * 0.36) / big, L = v => v * sc;
+  const ux = -Math.sin(th), uy = -Math.cos(th);                         // unit vector from the bob to the pivot
+  ctx.save(); ctx.strokeStyle = "#CFD8DC"; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + ux * h, cy + uy * h); ctx.stroke(); ctx.restore();
+  ctx.fillStyle = objById(set.obj).col; ctx.strokeStyle = "#37474F"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(cx, cy, 13, 0, 7); ctx.fill(); ctx.stroke();
+  arrow(ctx, cx, cy, cx, cy + L(f.W), COL.W, 4); subLabel(ctx, "W", "", ` = mg = ${f2(f.W)} N`, cx + 10, cy + L(f.W) - 4, COL.W, "left");
+  arrow(ctx, cx, cy, cx + ux * L(f.T), cy + uy * L(f.T), COL.T, 4);
+  subLabel(ctx, "T", "", ` = ${f2(f.T)} N`, cx + ux * L(f.T) + (ux > 0 ? 8 : -8), cy + uy * L(f.T) - 4, COL.T, ux > 0 ? "left" : "right");
+  let msg;
+  if (R.phase === "held"){ const s = Math.sign(th || 1);
+    arrow(ctx, cx, cy, cx + s * L(f.Fh), cy, COL.accent, 4); subLabel(ctx, "F", "hand", ` = ${f2(f.Fh)} N`, cx + s * (L(f.Fh) + 6), cy + 16, COL.accent, s > 0 ? "left" : "right");
+    msg = "Held still: T cos θ = mg, T sin θ = F_hand ⇒ T > mg"; }
+  else if (R.phase === "swing"){
+    const Rx = ux * f.T, Ry = uy * f.T + f.W;                          // resultant = T + W (screen y down)
+    const Rm = Math.hypot(Rx, Ry);
+    if (Rm * sc > 6){ arrow(ctx, cx, cy, cx + Rx * sc, cy + Ry * sc, COL.grey, 3.5, true); label(ctx, "ΣF", cx + Rx * sc * 1.1 + 10, cy + Ry * sc * 1.1, COL.muted, "left", 12); }
+    msg = Math.abs(deg(th)) < 3 ? "Bottom: T − mg = mv²/L (towards the pivot)" : "T − mg cos θ = mv²/L along the string";
+  } else msg = "Hanging at rest: T = mg";
+  label(ctx, msg, w / 2, 13, COL.navy, "center", 12);
+  if (R.phase === "swing") label(ctx, `v = ${Math.abs(f.v).toFixed(2)} m s⁻¹ · mv²/L = ${f2(f.mi * f.v * f.v / f.L)} N`, w / 2, h - 12, COL.v, "center", 12);
+}
+
+/* ============================ 8 GRAPHS ============================ */
+function niceUp(x){ const p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+function niceStep(range, n){ return niceUp(range / n); }
+function niceCeil(x, n = 5){ const st = niceUp(x / n); return Math.ceil(x / st - 1e-9) * st; }  // e.g. 11.4 → 12.5
+function axes(ctx, box, xMax, yMax, xLab, yLab){
+  const {x, y, w, h} = box;
+  ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted;
+  ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+  const xs = niceStep(xMax, 8), ys = niceStep(yMax, 6);
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (let v = 0; v <= xMax + 1e-9; v += xs){ const X = x + w * v / xMax; ctx.beginPath(); ctx.moveTo(X, y); ctx.lineTo(X, y + h); ctx.stroke(); ctx.fillText(+v.toFixed(2), X, y + h + 4); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let v = 0; v <= yMax + 1e-9; v += ys){ const Y = y + h - h * v / yMax; ctx.beginPath(); ctx.moveTo(x, Y); ctx.lineTo(x + w, Y); ctx.stroke(); ctx.fillText(+v.toFixed(2), x - 5, Y); }
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.stroke();
+  ctx.restore();
+  rich(ctx, xLab, x + w / 2, y + h + 30, COL.ink);
+  ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
+}
+function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
+  const {x, y, w, h} = box, X = v => x + w * (v - x0) / (x1 - x0), Y = v => y + h - h * (v - y0) / (y1 - y0);
+  ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted; ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+  const xs = niceStep(x1 - x0, 8), ys = niceStep(y1 - y0, 6);
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + 1e-9; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(+v.toFixed(2), X(v), y + h + 4); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + 1e-9; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(+v.toFixed(2), x - 5, Y(v)); }
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath();
+  const zx = x0 <= 0 && x1 >= 0 ? X(0) : x, zy = y0 <= 0 && y1 >= 0 ? Y(0) : y + h;
+  ctx.moveTo(zx, y); ctx.lineTo(zx, y + h); ctx.moveTo(x, zy); ctx.lineTo(x + w, zy); ctx.stroke();
+  ctx.restore();
+  rich(ctx, xLab, x + w / 2, y + h + 30, COL.ink);
+  ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
+  return {X, Y};
+}
+function drawGraph(){
+  const cv = $("graph"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const b = bob(), W = b.m * G, Tb = Tbottom(b.m, set.th), tEnd = R.samples.length ? R.samples[R.samples.length - 1].t : 0;
+  const t0 = Math.max(0, tEnd - 12), t1 = Math.max(12, tEnd), hh = (h - 20) / 2;
+  const Tm = niceCeil(Math.max(Tb, W) * 1.15);
+  const g1 = axesR(ctx, {x:62, y:12, w:w - 78, h:hh - 50}, t0, t1, 0, Tm, [["time ", "n"], ["t", "i"], [" / s", "n"]], [["tension ", "n"], ["T", "i"], [" / N", "n"]]);
+  for (const [val, col, txt] of [[W, COL.W, "mg"], [Tb, COL.accent, "mg(3 − 2 cos θ₀)"]]){
+    ctx.save(); ctx.strokeStyle = col; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(g1.X(t0), g1.Y(val)); ctx.lineTo(g1.X(t1), g1.Y(val)); ctx.stroke(); ctx.restore();
+    label(ctx, txt, g1.X(t1) - 4, g1.Y(val) - 9, col, "right", 12); }
+  const g2 = axesR(ctx, {x:62, y:hh + 24, w:w - 78, h:hh - 50}, t0, t1, -90, 90, [["time ", "n"], ["t", "i"], [" / s", "n"]], [["angle θ / °", "n"]]);
+  if (!R.samples.length){ label(ctx, R.phase === "held" ? "Press ▶ Release" : "Press ✋ Hold aside, then ▶ Release", g1.X((t0 + t1) / 2), g1.Y(Tm / 2), COL.muted, "center", 14); return; }
+  for (const [g, key, col] of [[g1, "T", COL.T], [g2, "th", COL.v]]){
+    ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); let first = true;
+    for (const p of R.samples){ if (p.t < t0) continue; first ? ctx.moveTo(g.X(p.t), g.Y(p[key])) : ctx.lineTo(g.X(p.t), g.Y(p[key])); first = false; }
+    ctx.stroke(); ctx.restore(); }
+}
+function drawAna(){
+  const cv = $("ana"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const pts = trials.map(t => [1 - Math.cos(rad(t.th0)), t.Tmax / (t.m * G)]);
+  const box = {x:62, y:34, w:w - 78, h:h - 84};
+  const g = axesR(ctx, box, 0, 1, 0, niceCeil(Math.max(3, ...pts.map(p => p[1])) * 1.05), [["1 − cos θ₀", "n"]], [["T", "i"], ["max", "s"], [" / mg", "n"]]);
+  if (!pts.length){ label(ctx, "Record swings from different angles to plot them here", box.x + box.w / 2, box.y + box.h / 2, COL.muted, "center", 14); return; }
+  ctx.fillStyle = COL.T; for (const [x, y] of pts){ ctx.beginPath(); ctx.arc(g.X(x), g.Y(y), 5, 0, 7); ctx.fill(); }
+  if ($("fitChk").checked){ const fit = linFit(pts);
+    if (!fit){ label(ctx, "Need 2 different angles", box.x + 4, 14, COL.muted, "left", 13); return; }
+    ctx.save(); ctx.strokeStyle = COL.accent; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(g.X(0), g.Y(fit.b)); ctx.lineTo(g.X(1), g.Y(fit.k + fit.b)); ctx.stroke(); ctx.restore();
+    label(ctx, `gradient = ${fit.k.toFixed(2)} · intercept = ${fit.b.toFixed(2)}  (theory: 2 and 1)`, box.x + 4, 14, COL.accent, "left", 13);
+  } else label(ctx, "Tmax/mg = 1 + 2(1 − cos θ₀): what should the gradient and intercept be?", box.x + 4, 14, COL.muted, "left", 13);
+}
+
+/* ============================ 9 DATA ============================ */
+let trials = [];
+function recordTrial(){
+  const b = bob(), o = objById(set.obj), p = period();
+  trials.push({obj:o.name, m:b.m, L:b.L, th0:R.amp0, Tmax:R.Tmax, per:p});
+  save(); renderTrials(); renderActions(true);
+}
+function renderTrials(){
+  $("trials").querySelector("tbody").innerHTML = trials.map((t, i) => `<tr><td>${i + 1}</td><td>${t.obj}</td><td>${f3(t.m)}</td><td>${f2(t.L)}</td><td>${t.th0}</td>
+    <td>${f3(t.Tmax)}</td><td>${f3(t.Tmax / (t.m * G))}</td><td>${f3(1 - Math.cos(rad(t.th0)))}</td><td>${t.per ? t.per.toFixed(3) : "—"}</td>
+    <td><button class="x" data-del="${i}" aria-label="Delete trial ${i + 1}">×</button></td></tr>`).join("");
+}
+
+/* ============================ 10 TASKS ============================ */
+// Step types: "do" (instruction + done tick), "predict" (lock in a choice, then check), "num" (checked within ±5 %).
+const TASKS = [
+ {id:"pre", title:"1 · Pre-lab: predict", time:"≈ 15 min", steps:[
+  {type:"do", setup:{obj:"hook", size:200, L:0.50, th:30}, text:"A 200 g slotted mass on a 0.50 m string. Read the newton meter at rest, then press ✋ Hold aside (30°)."},
+  {type:"predict", text:"Predict: held still at 30° by a horizontal pull, the tension is…",
+   opts:["less than mg", "equal to mg", "more than mg"], correct:2,
+   why:"Only the vertical part of T holds up the weight: T cos θ = mg, so T = mg/cos θ > mg. The rest of T balances the hand's horizontal pull."},
+  {type:"predict", text:"Predict: released from 30°, the tension at the bottom of the swing is…",
+   opts:["less than mg", "equal to mg", "more than mg"], correct:2,
+   why:"At the bottom the bob moves in a circle, so the resultant force must point up to the pivot: T − mg = mv²/L > 0."},
+  {type:"predict", setup:{obj:"hook", size:200, L:1.50, th:30}, text:"Predict: you triple the string length (0.50 m → 1.50 m), same 30° release. The peak tension…",
+   opts:["is 3 times bigger", "is the same", "is 3 times smaller"], correct:1,
+   why:"v² = 2gL(1 − cos θ₀) grows with L, but mv²/L does not: the L cancels. T_bottom = mg(3 − 2 cos θ₀) for any length."},
+  {type:"predict", text:"Predict: you double the mass of the bob. Peak tension and period?",
+   opts:["both double", "tension doubles, period stays the same", "tension stays, period doubles", "neither changes"], correct:1,
+   why:"Every force on the bob is proportional to m, so T doubles. The motion (and the period 2π√(L/g)) does not depend on m."},
+  {type:"predict", setup:{obj:"pong", size:2, L:1.00, th:40}, text:"Predict: a ping-pong ball and a steel ball of the same size swing from 40°. Which one keeps swinging longer?",
+   opts:["the ping-pong ball", "the steel ball", "the same"], correct:1,
+   why:"Air resistance depends on size and speed, not mass. For the light ping-pong ball it is a large fraction of its weight, so it loses energy quickly; the heavy steel ball hardly notices it."},
+  {type:"num", setup:{obj:"hook", size:200, L:0.50, th:30}, text:"Calculate the tension when the 200 g mass is held still at 30°.", answer:() => 0.2 * G / Math.cos(rad(30)), unit:"N", hint:"T = mg / cos θ"},
+ ]},
+ {id:"lab", title:"2 · During the lab: newton meter pendulum", time:"≈ 10 min", steps:[
+  {type:"do", setup:{obj:"hook", size:200, L:0.50, th:20}, text:"Hang 200 g from your newton meter like the sim. Read it at rest, then held aside at 20° and 40° (measure the angle with a protractor)."},
+  {type:"num", text:"Tension at rest:", answer:() => 0.2 * G, unit:"N"},
+  {type:"num", setup:{obj:"hook", size:200, L:0.50, th:20}, text:"Tension when held aside at 20°:", answer:() => 0.2 * G / Math.cos(rad(20)), unit:"N"},
+  {type:"num", setup:{obj:"hook", size:200, L:0.50, th:40}, text:"Tension when held aside at 40°:", answer:() => 0.2 * G / Math.cos(rad(40)), unit:"N"},
+  {type:"num", text:"Release from 40°: the peak tension at the bottom (Graph tab):", answer:() => Tbottom(0.2, 40), unit:"N", hint:"mg(3 − 2 cos θ₀)"},
+  {type:"do", text:"Compare with your newton meter. Why is the peak so hard to read on a real newton meter? Write your answer on the worksheet."},
+ ]},
+ {id:"hw", title:"3 · Homework: analyse", time:"≈ 30 min", steps:[
+  {type:"do", setup:{obj:"steel", size:2, L:0.98, th:10}, text:"Steel ball, L = 1.00 m. Release from θ₀ = 10°, 20°, …, 70°; after a few swings ● Record each. Plot Tmax/mg against (1 − cos θ₀)."},
+  {type:"num", text:"Gradient of your line:", answer:() => 2, unit:"", hint:"Tmax/mg = 1 + 2(1 − cos θ₀)"},
+  {type:"num", text:"Intercept:", answer:() => 1, unit:""},
+  {type:"num", text:"Block 10 problem: a pendulum with L = 1.0 m released from 25°. Calculate its speed at the bottom.",
+   answer:() => Math.sqrt(2 * G * 1.0 * (1 - Math.cos(rad(25)))), unit:"m s⁻¹", hint:"½mv² = mgL(1 − cos θ)"},
+  {type:"num", text:"…and the tension at the bottom if the bob's mass is 1.0 kg:", answer:() => Tbottom(1.0, 25), unit:"N", hint:"T = mg + mv²/L"},
+  {type:"num", setup:{obj:"steel", size:2, L:0.98, th:5}, text:"Small swings, L = 1.00 m: calculate the period 2π√(L/g), then check with the timer.",
+   answer:() => 2 * Math.PI * Math.sqrt(1.0 / G), unit:"s"},
+  {type:"predict", setup:{obj:"balloon", size:2, L:1.00, th:40}, text:"Why does the balloon stop swinging after only a few swings?",
+   opts:["Its weight is too small for gravity to act", "Air resistance on its large surface takes its energy quickly; its weight is tiny", "The string is too long"], correct:1,
+   why:"Drag ∝ area × v². The balloon has a huge area and very little weight, so drag is large compared with the forces driving the swing: the energy is dissipated within a few swings."},
+ ]},
+];
+let taskState = {}, curSet = "pre";
+function renderTaskSets(){
+  document.getElementById("taskSets").innerHTML = TASKS.map(s =>
+    `<button class="chip" data-set="${s.id}" aria-pressed="${s.id === curSet}">${s.title} <span class="hint">${s.time}</span></button>`).join("");
+}
+function renderTasks(){
+  const ts = TASKS.find(s => s.id === curSet), box = document.getElementById("taskList"); box.innerHTML = "";
+  ts.steps.forEach((st, i) => {
+    const key = `${ts.id}.${i}`, S = taskState[key] || (taskState[key] = {});
+    const d = document.createElement("div"); d.className = "step" + (S.done ? " done" : "");
+    let html = `<p class="q"><span class="n">${i + 1}</span>${st.type === "predict" ? '<span class="tag">Predict · </span>' : ""}${st.text}</p>`;
+    if (st.setup) html += `<button class="btn small" data-setup="${key}">⚙ Set up the sim for me</button> `;
+    if (st.type === "do"){
+      html += `<label class="switch"><input type="checkbox" data-done="${key}" ${S.done ? "checked" : ""}> Done</label>`;
+    } else if (st.type === "predict"){
+      st.opts.forEach((o, j) => {
+        const cls = S.checked ? (j === st.correct ? " good" : j === S.choice ? " bad" : "") : "";
+        html += `<label class="opt${cls}"><input type="radio" name="r${key}" value="${j}" data-choice="${key}" ${S.choice === j ? "checked" : ""} ${S.locked ? "disabled" : ""}> ${o}</label>`;
+      });
+      if (!S.locked) html += `<button class="btn small primary" data-lock="${key}" ${S.choice === undefined ? "disabled" : ""}>🔒 Lock in my prediction</button>`;
+      else if (!S.checked) html += `<div class="fb info">Prediction locked. Now test it in the sim, then press Check.</div><button class="btn small navy" data-check="${key}">Check</button>`;
+      else html += `<div class="fb ${S.choice === st.correct ? "ok" : "no"}">${S.choice === st.correct ? "✔ Your prediction was right. " : "✘ Not what happens. "}${st.why}</div>`;
+    } else if (st.type === "num"){
+      const a = st.answer(), shown = `${+a.toPrecision(3)}${st.unit ? " " + st.unit : ""}`;
+      html += `<div class="row"><input class="num" inputmode="decimal" data-num="${key}" value="${S.value ?? ""}" aria-label="answer"> ${st.unit}
+               <button class="btn small navy" data-chknum="${key}">Check</button>
+               ${st.hint ? `<button class="btn small" data-hint="${key}">💡 Hint</button>` : ""}</div>`;
+      if (S.showHint && st.hint) html += `<div class="fb info">${st.hint}</div>`;
+      if (S.status === "ok") html += `<div class="fb ok">✔ Correct (within 5 %). Model answer: ${shown}.</div>`;
+      else if (S.status) html += `<div class="fb no">✘ ${S.status === "high" ? "Too high" : S.status === "low" ? "Too low" : "Enter a number"}. ${S.tries >= 2 ? `Model answer: ${shown}.` : "Try again or use the hint."}</div>`;
+    }
+    d.innerHTML = html; box.appendChild(d);
+  });
+}
+function taskClick(e){
+  const t = e.target.closest("[data-setup],[data-lock],[data-check],[data-chknum],[data-hint],[data-set]"); if (!t) return;
+  if (t.dataset.set){ curSet = t.dataset.set; renderTaskSets(); renderTasks(); save(); return; }
+  const key = t.dataset.setup || t.dataset.lock || t.dataset.check || t.dataset.chknum || t.dataset.hint;
+  const [sid, idx] = key.split("."), st = TASKS.find(s => s.id === sid).steps[+idx], S = taskState[key];
+  if (t.dataset.setup){ applySetup(st.setup); }
+  if (t.dataset.lock){ S.locked = true; }
+  if (t.dataset.check){ S.checked = true; S.done = true; }
+  if (t.dataset.hint){ S.showHint = true; }
+  if (t.dataset.chknum){
+    const raw = document.querySelector(`[data-num="${key}"]`).value.replace(",", "."), v = parseFloat(raw), a = st.answer();
+    S.value = raw; S.tries = (S.tries || 0) + 1;
+    if (!isFinite(v)) S.status = "nan";
+    else if (Math.abs(v - a) <= (st.tol ?? 0.05) * Math.abs(a)) { S.status = "ok"; S.done = true; }
+    else S.status = v > a ? "high" : "low";
+  }
+  save(); renderTasks();
+}
+function taskChange(e){
+  const t = e.target;
+  if (t.dataset.choice){ taskState[t.dataset.choice].choice = +t.value; renderTasks(); save(); }
+  if (t.dataset.done){ taskState[t.dataset.done].done = t.checked; renderTasks(); save(); }
+}
+
+/* ============================ 11 UI ============================ */
+const $ = id => document.getElementById(id);
+function save(){ try { localStorage.setItem("sim09-pendulum", JSON.stringify({trials, taskState, curSet})); } catch (e) {} }
+function load_(){ try { const d = JSON.parse(localStorage.getItem("sim09-pendulum") || "{}");
+  trials = d.trials || []; taskState = d.taskState || {}; curSet = d.curSet || "pre"; } catch (e) {} }
+function applySetup(s){ Object.assign(set, s); reset(); syncControls(); }
+function syncControls(){
+  const o = objById(set.obj), b = bob(), sz = $("size");
+  $("obj").value = set.obj; $("sizeC").style.display = o.kind === "fixed" ? "none" : "";
+  if (o.kind === "mass"){ sz.min = 50; sz.max = 300; sz.step = 50; if (set.size < 50) set.size = 200; $("sizeLab").textContent = `Mass = ${set.size} g`; }
+  else { sz.min = 1; sz.max = 5; sz.step = 0.5; if (set.size > 5) set.size = 2; $("sizeLab").textContent = `Radius r = ${set.size.toFixed(1)} cm`; }
+  sz.value = set.size;
+  $("objLab").innerHTML = `m = ${b.m < 0.1 ? (1000 * b.m).toFixed(1) + " g" : f3(b.m) + " kg"} · r = ${(100 * b.r).toFixed(1)} cm · L to centre = ${f2(b.L)} m`;
+  $("len").value = set.L; $("lOut").textContent = set.L.toFixed(2); $("ang").value = set.th; $("aOut").textContent = set.th;
+  renderActions();
+}
+function renderActions(recorded = false){
+  const p = R.phase, can = p === "swing" && R.cross.length >= 2;
+  $("actions").innerHTML = `<button class="btn" data-act="hold" ${p === "swing" && !R.hold ? "disabled" : ""}>✋ Hold aside</button>
+    <button class="btn primary" data-act="go" ${p === "swing" ? "disabled" : ""}>▶ Release</button>
+    <button class="btn" data-act="pause" ${p === "swing" ? "" : "disabled"} aria-label="Pause">${R.hold ? "▶" : "⏸"}</button>
+    <button class="btn" data-act="reset" title="Hang at rest">↺</button>
+    <button class="btn navy" data-act="rec" ${can && !recorded ? "" : "disabled"}>${recorded ? "✔ Recorded" : "● Record"}</button>`;
+}
+function readouts(){
+  const f = forcesNow(), p = period();
+  const rows = [["Weight <i>mg</i>", `${f3(f.W)} N`, COL.W],
+    ["Tension <i>T</i> now", `${f3(f.T)} N`, COL.T],
+    R.phase === "held" ? ["Hand pull <i>F</i> = <i>mg</i> tan θ", `${f3(f.Fh)} N`, COL.accent]
+                       : ["Peak <i>T</i> so far · predicted", `${R.Tmax ? f3(R.Tmax) : "—"} · ${f3(Tbottom(f.m, set.th))} N`, COL.accent],
+    ["Speed <i>v</i>", `${Math.abs(f.v).toFixed(2)} m s⁻¹`, COL.v],
+    ["Period: measured · 2π√(L/g)", `${p ? p.toFixed(3) : "—"} · ${(2 * Math.PI * Math.sqrt(f.L / G)).toFixed(3)} s`]];
+  $("ro").innerHTML = rows.map(([a, b, c]) => `<tr><td>${a}</td><td class="v"${c ? ` style="color:${c}"` : ""}>${b}</td></tr>`).join("");
+}
+
+$("obj").innerHTML = OBJECTS.map(o => `<option value="${o.id}">${o.name}</option>`).join("");
+$("obj").addEventListener("change", e => { set.obj = e.target.value; set.size = objById(set.obj).kind === "mass" ? 200 : 2; reset(); syncControls(); });
+$("size").addEventListener("input", e => { set.size = +e.target.value; reset(); syncControls(); });
+$("len").addEventListener("input", e => { set.L = +e.target.value; reset(); syncControls(); });
+$("ang").addEventListener("input", e => { set.th = +e.target.value; if (R.phase === "held") R.th = rad(set.th); else if (R.phase === "swing") reset(); syncControls(); });
+$("actions").addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (!b) return; const a = b.dataset.act;
+  if (a === "hold") holdAside(); if (a === "go") release(); if (a === "reset") reset(); if (a === "rec") recordTrial();
+  if (a === "pause"){ R.hold = !R.hold; renderActions(); } });
+$("clearBtn").addEventListener("click", () => { if (confirm("Delete all recorded trials?")){ trials = []; save(); renderTrials(); } });
+$("trials").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b){ trials.splice(+b.dataset.del, 1); save(); renderTrials(); } });
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === t.dataset.tab)); }));
+$("pTasks").addEventListener("click", taskClick); $("pTasks").addEventListener("change", taskChange);
+$("helpBtn").addEventListener("click", () => $("help").classList.add("on"));
+$("helpClose").addEventListener("click", () => $("help").classList.remove("on"));
+$("help").addEventListener("click", e => { if (e.target.id === "help") $("help").classList.remove("on"); });
+
+load_(); syncControls(); renderTrials(); renderTaskSets(); renderTasks();
+let last = performance.now(), prevCross = 0;
+function frame(t){
+  const dt = Math.min(0.05, (t - last) / 1000); last = t; step(dt);
+  if (R.cross.length !== prevCross){ prevCross = R.cross.length; renderActions(); }
+  drawScene(); drawFBD(); drawGraph(); drawAna(); readouts();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

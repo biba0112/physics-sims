@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Springs Series Parallel</title>
+<!--
+  IBDP Physics SL · Grade 11 · Topic A.2 Types of forces (extension beyond the SL guide)
+  Simulation 06 — Springs in series and in parallel (pairs with two school springs and the car-suspension problem)
+  Self-contained: no internet, no external libraries. Open in any modern browser.
+  Built from the simulation template (Simulation 01 CSS, helpers and task engine).
+
+  File sections:
+    1 STYLE · 2 MARKUP · 3 CONFIG · 4 PHYSICS · 5 RUN · 6 SCENE · 7 FBD · 8 GRAPHS · 9 DATA · 10 TASKS · 11 UI
+-->
+<style>
+/* ============================ 1 STYLE ============================ */
+:root{
+  --navy:#1F3A5F; --accent:#E65100; --ink:#263238; --muted:#606A72;
+  --bg:#F2F5F9; --card:#FFFFFF; --line:#DDE6F0; --soft:#FFF3E0; --soft-blue:#E3F2FD;
+  --wood:#FFCC80; --wood-edge:#C68A3A;
+  --cW:#2A5D8A; --cN:#2E7D32; --cF:#C62828; --cP:#6A1B9A;   /* weight, normal, friction, pull */
+  --ok:#2E7D32; --bad:#C62828;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);
+  font:16px/1.4 "Segoe UI",Calibri,"Helvetica Neue",Arial,sans-serif;
+  -webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;min-height:100dvh}
+header{background:var(--navy);color:#fff;border-bottom:4px solid var(--accent);
+  display:flex;align-items:center;gap:16px;padding:8px 16px}
+header h1{font-size:1.25rem;margin:0;font-weight:600}
+header .sub{font-size:.85rem;opacity:.85}
+header .grow{flex:1}
+.btn{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;
+  min-height:44px;padding:6px 14px;cursor:pointer;touch-action:manipulation}
+.btn:hover{border-color:var(--navy)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.small{min-height:36px;padding:4px 10px;font-size:.9rem}
+header .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+
+/* layout: scene + state | FBD (always visible) | tabs; fills the screen height */
+main{flex:1;min-height:500px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.3fr);
+  grid-template-rows:minmax(0,1fr) auto;gap:12px;padding:12px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card h2{font-size:.95rem;margin:0;padding:6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line);
+  color:var(--navy);font-weight:600}
+.left{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.scenecard{flex:1 1 0;display:flex;flex-direction:column;min-height:0}
+.fbdcol{display:flex;flex-direction:column;min-width:0;min-height:0}
+#sceneWrap{position:relative;flex:1;min-height:150px}
+#scene{width:100%;height:100%;display:block}
+#fbdWrap{flex:1;min-height:220px}
+#fbd{width:100%;height:100%;display:block}
+.readouts{padding:6px 12px;flex:0 1 auto;min-height:0;overflow:auto}  /* natural height; the scene takes the rest */
+.readouts table{width:100%;border-collapse:collapse;font-size:.9rem}
+.readouts td.v{white-space:nowrap;padding-left:6px}
+.readouts td{padding:4px 2px;border-bottom:1px solid #EEF2F6}
+.readouts td.v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.pill{display:inline-block;white-space:nowrap;padding:3px 10px;border-radius:99px;font-size:.85rem;font-weight:600}
+.pill.rest{background:var(--soft-blue);color:#0D47A1}
+.pill.slide{background:#FFEBEE;color:#B71C1C}
+.pill.ready{background:#ECEFF1;color:var(--muted)}
+
+.right{display:flex;flex-direction:column;min-width:0;min-height:0}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 8px 6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.cardhead h2{padding:0;border:none;background:none;flex:1}
+.cardhead .btn{min-height:40px;padding:4px 10px}
+.tabs{display:flex;gap:4px;padding:6px 6px 0;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.tab{font:inherit;border:1px solid transparent;border-bottom:none;background:transparent;padding:8px 14px;
+  min-height:44px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--muted);font-weight:600}
+.tab[aria-selected="true"]{background:#fff;border-color:var(--line);color:var(--navy);margin-bottom:-1px}
+.panel{display:none;padding:10px 12px;flex:1;min-height:0;overflow:hidden}
+.panel.on{display:flex;flex-direction:column;gap:8px}
+#graphWrap{position:relative;flex:1;min-height:200px}
+#graph{width:100%;height:100%;display:block;touch-action:none}
+.hint{font-size:.85rem;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#trials{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
+#trials th,#trials td{border-bottom:1px solid var(--line);padding:4px 4px;text-align:right}
+#trials th{color:var(--navy);font-weight:600;background:#F7F9FC;position:sticky;top:0}
+#trials td:first-child,#trials th:first-child,#trials td:nth-child(2),#trials th:nth-child(2){text-align:left}
+.tableBox{max-height:150px;flex:none;overflow:auto;border:1px solid var(--line);border-radius:8px}
+#anaWrap{flex:1;min-height:180px}
+#ana{width:100%;height:100%;display:block}
+.x{border:none;background:none;color:var(--bad);font-size:1.1rem;cursor:pointer;min-width:32px;min-height:32px}
+
+/* tasks */
+#taskSets{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:.9rem;border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 14px;
+  min-height:40px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chip[aria-pressed="true"] .hint{color:#DDE6F0}
+#taskList{overflow:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.step{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.step .q{margin:0 0 6px}
+.step .n{display:inline-block;min-width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;
+  text-align:center;line-height:26px;font-size:.85rem;font-weight:700;margin-right:6px}
+.step.done .n{background:var(--ok)}
+.opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;
+  margin:4px 0;cursor:pointer;min-height:40px}
+.opt input{width:20px;height:20px}
+.opt.good{border-color:var(--ok);background:#E8F5E9}
+.opt.bad{border-color:var(--bad);background:#FFEBEE}
+.fb{margin-top:6px;padding:6px 10px;border-radius:8px;font-size:.92rem}
+.fb.ok{background:#E8F5E9;border-left:4px solid var(--ok)}
+.fb.no{background:#FFEBEE;border-left:4px solid var(--bad)}
+.fb.info{background:var(--soft-blue);border-left:4px solid #1565C0}
+.num{font:inherit;width:110px;min-height:40px;padding:4px 8px;border:1px solid #B0BEC5;border-radius:8px}
+.tag{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+
+/* controls */
+#controls{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;padding:10px 14px}
+.ctl{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ctl label,.ctl .lab{font-size:.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.ctl select{font:inherit;min-height:44px;border:1px solid #B0BEC5;border-radius:8px;padding:4px 8px;background:#fff}
+.mu{font-size:.85rem;color:var(--navy);font-weight:600}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper .btn{width:44px;padding:0;font-size:1.3rem}
+.stepper output{min-width:24px;text-align:center;font-weight:700;font-size:1.1rem}
+input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
+.seg{display:flex;border:1px solid #B0BEC5;border-radius:8px;overflow:hidden}
+.seg button{font:inherit;border:none;background:#fff;min-height:42px;padding:4px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+.switch{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.switch input{width:22px;height:22px;accent-color:var(--accent)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* help overlay */
+#help{position:fixed;inset:0;background:rgba(31,58,95,.55);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
+#help.on{display:flex}
+#help .box{background:#fff;border-radius:14px;max-width:720px;width:100%;max-height:90vh;overflow:auto;padding:18px 22px}
+#help h3{margin:.2em 0 .4em;color:var(--navy)}
+#help li{margin:.25em 0}
+.eq{font-family:"Cambria Math",Cambria,"Times New Roman",serif;font-size:1.05rem}
+
+@media (max-width:1300px){
+  .readouts table{font-size:.85rem}
+  .pill{font-size:.78rem;padding:2px 8px}
+}
+/* tablet landscape: scene + state on the left; FBD above the tabs on the right */
+@media (max-width:1099px){
+  main{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr) auto;min-height:640px}
+  .left{grid-row:1/3}
+  .fbdcol{grid-column:2;grid-row:1}
+  .right{grid-column:2;grid-row:2}
+  #fbdWrap{min-height:200px}
+  #pGraph .hint{display:none}
+  #controls{gap:8px 12px;padding:8px 12px}
+  input[type=range]{width:118px}
+  header .sub{display:none}
+}
+/* phone / narrow portrait: one scrolling column */
+@media (max-width:759px){
+  body{height:auto}
+  main{display:flex;flex-direction:column}
+  #sceneWrap{flex:none;height:260px}
+  .readouts{flex:none}
+  #fbdWrap{flex:none;height:320px}
+  .right{height:640px;flex:none}
+}
+</style>
+</head>
+<body>
+<!-- ============================ 2 MARKUP ============================ -->
+<header>
+  <div>
+    <h1>Springs in series and in parallel</h1>
+    <div class="sub">IBDP Physics SL · A.2 Types of forces · Simulation 06 · g = 9.81 N kg⁻¹ · extension beyond the IB SL guide</div>
+  </div>
+  <div class="grow"></div>
+  <button class="btn" id="helpBtn" aria-label="How to use">? How to use</button>
+</header>
+
+<main>
+  <section class="left">
+    <div class="card scenecard">
+      <div class="cardhead">
+        <h2 id="sceneTitle">Experiment</h2>
+        <div class="actions"><button class="btn navy" id="recBtn">● Record</button></div>
+      </div>
+      <div id="sceneWrap"><canvas id="scene" aria-label="Springs on a clamp stand"></canvas></div>
+    </div>
+    <div class="card readouts"><table><tbody id="ro"></tbody></table></div>
+  </section>
+
+  <section class="card fbdcol" aria-label="Free-body diagram">
+    <h2>Free-body diagram of the load</h2>
+    <div id="fbdWrap"><canvas id="fbd" aria-label="Free-body diagram"></canvas></div>
+  </section>
+
+  <section class="card right">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="pGraph">Graph</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pData">Data &amp; analysis</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pTasks">Tasks</button>
+    </div>
+    <div class="panel on" id="pGraph">
+      <div id="graphWrap"><canvas id="graph" aria-label="Force against extension for each arrangement"></canvas></div>
+      <div class="hint">Load against total extension for spring A alone, spring B alone, both in series and both in parallel.
+        The thick line is the arrangement you are using; the dot is the load now. Gradient = effective spring constant.</div>
+    </div>
+    <div class="panel" id="pData">
+      <div class="row">
+        <button class="btn small" id="clearBtn">Clear all trials</button>
+        <span style="flex:1"></span>
+        <label class="switch"><input type="checkbox" id="fitChk"> Show best-fit lines</label>
+      </div>
+      <div class="tableBox"><table id="trials"><thead><tr><th>#</th><th>arrangement</th><th>springs</th><th>F / N</th>
+        <th>x / cm</th><th>F/x / N m⁻¹</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div id="anaWrap"><canvas id="ana" aria-label="Load against extension"></canvas></div>
+    </div>
+    <div class="panel" id="pTasks">
+      <div id="taskSets"></div>
+      <div id="taskList"></div>
+    </div>
+  </section>
+
+  <section class="card" id="controls" aria-label="Controls">
+    <div class="ctl">
+      <span class="lab">Arrangement</span>
+      <div class="seg" id="arr">
+        <button data-arr="single" aria-pressed="true">A alone</button>
+        <button data-arr="series" aria-pressed="false">Series</button>
+        <button data-arr="parallel" aria-pressed="false">Parallel</button>
+      </div>
+    </div>
+    <div class="ctl"><label for="sA">Spring A</label><select id="sA"></select></div>
+    <div class="ctl" id="sBc"><label for="sB">Spring B</label><select id="sB"></select></div>
+    <div class="ctl">
+      <span class="lab">Load (50 g masses)</span>
+      <div class="stepper">
+        <button class="btn" id="mMinus" aria-label="Remove 50 g">−</button>
+        <output id="mOut">0 g</output>
+        <button class="btn" id="mPlus" aria-label="Add 50 g">+</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="box">
+    <h3 id="helpTitle">How to use this simulation</h3>
+    <ol>
+      <li>Choose the <b>arrangement</b> (A alone, series or parallel) and the two <b>springs</b>.</li>
+      <li>Add a load with <b>+</b>. Read the total extension <i>x</i> and press <b>● Record</b>.</li>
+      <li>Repeat for several loads and arrangements. The <b>Data &amp; analysis</b> tab fits a line for each arrangement:
+        its gradient is the <b>effective spring constant</b> <i>k</i><sub>eff</sub>.</li>
+    </ol>
+    <h3>The physics</h3>
+    <ul>
+      <li><b>Series</b> (one below the other): each spring carries the <b>whole load</b>, so the extensions add:
+        <span class="eq">x = F/k<sub>A</sub> + F/k<sub>B</sub> ⇒ 1/k<sub>eff</sub> = 1/k<sub>A</sub> + 1/k<sub>B</sub></span>.</li>
+      <li><b>Parallel</b> (side by side, bar kept level): both springs have the <b>same extension</b> and share the load:
+        <span class="eq">F = k<sub>A</sub>x + k<sub>B</sub>x ⇒ k<sub>eff</sub> = k<sub>A</sub> + k<sub>B</sub></span>.</li>
+      <li>A <b>rubber band</b> does not obey Hooke's law: its F–x graph curves, so it has no single k.</li>
+    </ul>
+    <p class="hint">Series and parallel springs are not in the IB SL guide; they extend Hooke's law and match the "car suspension"
+      problem (four springs share the car's weight). Model: light springs and bar, below the elastic limit.</p>
+    <p style="text-align:right"><button class="btn primary" id="helpClose">Close</button></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================ 3 CONFIG ============================ */
+const G = 9.81;                 // N kg⁻¹ (IB data booklet)
+const MAXG = 300;               // g, largest load
+const SPRINGS = [
+  {id:"inv",   name:"Steel — medium (investigation, 25 N m⁻¹)", k:25, col:"#455A64"},
+  {id:"inv2",  name:"Steel — medium, second one (25 N m⁻¹)",    k:25, col:"#546E7A"},
+  {id:"soft",  name:"Steel — soft (12 N m⁻¹)",                  k:12, col:"#78909C"},
+  {id:"stiff", name:"Steel — stiff (40 N m⁻¹)",                 k:40, col:"#263238"},
+  {id:"brass", name:"Brass (18 N m⁻¹)",                         k:18, col:"#B8860B"},
+  {id:"band",  name:"Rubber band (not Hooke's law)",            k:null, col:"#8D6E63"},
+];
+const BAND = {a:8, b:250};       // rubber band: F = a x + b x² (N, x in m)
+const COL = {W:"#2A5D8A", N:"#2E7D32", F:"#C62828", P:"#6A1B9A", H:"#00838F", H2:"#26A69A", navy:"#1F3A5F", accent:"#E65100",
+             ink:"#263238", muted:"#606A72", grid:"#E3E9F0", grey:"#90A4AE", A:"#00838F", B:"#7B1FA2", ser:"#E65100", par:"#2E7D32"};
+const sprById = id => SPRINGS.find(s => s.id === id);
+
+/* ============================ 4 PHYSICS ============================ */
+const f2 = x => (Math.round(x * 100) / 100).toFixed(2);
+const f3 = x => (Math.round(x * 1000) / 1000).toFixed(3);
+const Fof = (sp, x) => sp.k ? sp.k * x : BAND.a * x + BAND.b * x * x;                       // force for extension x
+const xof = (sp, F) => sp.k ? F / sp.k : (-BAND.a + Math.sqrt(BAND.a * BAND.a + 4 * BAND.b * F)) / (2 * BAND.b);
+function solve(arr, A, B, F){                                                               // returns total x and each spring's share
+  if (arr === "single") return {x:xof(A, F), FA:F, FB:0, xA:xof(A, F), xB:0};
+  if (arr === "series"){ const xA = xof(A, F), xB = xof(B, F); return {x:xA + xB, FA:F, FB:F, xA, xB}; }
+  let lo = 0, hi = 2;                                                                       // parallel: same x, forces add
+  for (let i = 0; i < 60; i++){ const m = (lo + hi) / 2; (Fof(A, m) + Fof(B, m) < F) ? lo = m : hi = m; }
+  const x = (lo + hi) / 2; return {x, FA:Fof(A, x), FB:Fof(B, x), xA:x, xB:x};
+}
+function linFit(pts){ const n = pts.length; if (n < 2) return null;
+  const mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+  const sxx = pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0); if (!sxx) return null;
+  const k = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / sxx; return {k, b:my - k * mx}; }
+function originFit(pts){ const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0);
+  return sxx && pts.length >= 2 ? {k:pts.reduce((a, p) => a + p[0] * p[1], 0) / sxx, b:0} : null; }
+
+/* ============================ 5 RUN ============================ */
+const set = {arr:"single", A:"inv", B:"inv2", g:100};
+const st = {x:0, v:0};                                    // the load bounces and settles
+const loadF = () => set.g / 1000 * G;
+const now = () => solve(set.arr, sprById(set.A), sprById(set.B), loadF());
+function step(dt){
+  const xe = now().x, m = Math.max(set.g / 1000, 0.02), F = loadF();
+  const keff = F > 0 && xe > 0 ? F / xe : 20;
+  st.v += (-keff * (st.x - xe) / m - 7 * st.v) * dt; st.x += st.v * dt;
+}
+const settled = () => Math.abs(st.x - now().x) < 2e-4 && Math.abs(st.v) < 2e-3;
+
+/* ============================ 6 SCENE ============================ */
+function fitCanvas(cv){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {ctx, w:r.width, h:r.height};
+}
+function arrow(ctx, x1, y1, x2, y2, color, width = 4, dashed = false){
+  const L = Math.hypot(x2 - x1, y2 - y1); if (L < 2) return;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, hs = Math.min(13, 6 + width * 1.6);
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = "round";
+  if (dashed) ctx.setLineDash([6, 5]);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * hs * 0.8, y2 - uy * hs * 0.8); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - ux * hs - uy * hs * 0.5, y2 - uy * hs + ux * hs * 0.5);
+  ctx.lineTo(x2 - ux * hs + uy * hs * 0.5, y2 - uy * hs - ux * hs * 0.5); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function label(ctx, txt, x, y, color, align = "center", size = 15, base = "middle"){
+  ctx.save(); ctx.font = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = color;
+  ctx.textAlign = align; ctx.textBaseline = base;
+  // white halo so labels stay readable over lines
+  ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.strokeText(txt, x, y); ctx.fillText(txt, x, y);
+  ctx.restore();
+}
+// Labels with a subscript, e.g. sub(ctx,"F","N"," = 2.45 N",…)
+function subLabel(ctx, main, sub, rest, x, y, color, align = "center", size = 15){
+  ctx.save(); const f1 = `italic 600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`,
+    f2 = `600 ${Math.round(size * .72)}px "Segoe UI",Calibri,Arial,sans-serif`, f3 = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+  ctx.font = f1; const w1 = ctx.measureText(main).width; ctx.font = f2; const w2 = sub ? ctx.measureText(sub).width : 0;
+  ctx.font = f3; const w3 = ctx.measureText(rest).width; const W = w1 + w2 + w3;
+  let x0 = align === "center" ? x - W / 2 : align === "right" ? x - W : x;
+  ctx.textBaseline = "middle"; ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.fillStyle = color;
+  ctx.font = f1; ctx.strokeText(main, x0, y); ctx.fillText(main, x0, y);
+  if (sub){ ctx.font = f2; ctx.strokeText(sub, x0 + w1, y + size * .3); ctx.fillText(sub, x0 + w1, y + size * .3); }
+  ctx.font = f3; ctx.strokeText(rest, x0 + w1 + w2, y); ctx.fillText(rest, x0 + w1 + w2, y);
+  ctx.restore();
+}
+// Mixed text: parts = [[text, "n" normal | "i" italic | "s" subscript], …], centred on (x, y)
+function rich(ctx, parts, x, y, color, size = 14){
+  const font = st => st === "i" ? `italic 600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`
+    : st === "s" ? `600 ${Math.round(size * .72)}px "Segoe UI",Calibri,Arial,sans-serif` : `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+  ctx.save(); ctx.fillStyle = color; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  const ws = parts.map(([t, st]) => { ctx.font = font(st); return ctx.measureText(t).width; });
+  let cx = x - ws.reduce((a, b) => a + b, 0) / 2;
+  parts.forEach(([t, st], i) => { ctx.font = font(st); ctx.fillText(t, cx, st === "s" ? y + size * .3 : y); cx += ws[i]; });
+  ctx.restore();
+}
+function bg(ctx, w, h){ const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#FAFCFF"); g.addColorStop(1, "#EEF3F8");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); }
+function bench(ctx, w, y, h){ ctx.fillStyle = "#E8DCC4"; ctx.fillRect(0, y, w, 8); ctx.fillStyle = "#8D6E63"; ctx.fillRect(0, y + 8, w, 16);
+  ctx.fillStyle = "#6D4C41"; ctx.fillRect(w * 0.06, y + 24, 12, h); ctx.fillRect(w * 0.9, y + 24, 12, h); }
+function woodBox(ctx, x, y, w, h, txt){
+  ctx.fillStyle = COL.wood; ctx.strokeStyle = COL.woodEdge; ctx.lineWidth = 2; ctx.fillRect(x, y, w, h); ctx.strokeRect(x, y, w, h);
+  if (txt) label(ctx, txt, x + w / 2, y + h / 2, "#6D4C41", "center", 13);
+}
+// kitchen / bathroom scale with a digital display; (x, y) = top-left of the platform
+function scale(ctx, x, y, w, h, reading){
+  ctx.fillStyle = "#ECEFF1"; ctx.strokeStyle = "#90A4AE"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, 4) : ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke();
+  const dw = Math.min(70, w * 0.5), dh = Math.max(10, h - 8);
+  ctx.fillStyle = "#263238"; ctx.fillRect(x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  ctx.fillStyle = "#76FF03"; ctx.font = `600 ${Math.min(13, dh - 2)}px Consolas,"Courier New",monospace`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(reading, x + w / 2, y + h / 2 + 1);
+}
+function hand(ctx, x, y, k){ ctx.fillStyle = "#F1C27D"; ctx.strokeStyle = "#C99A5B"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(x, y, 20 * k, 13 * k, 0, 0, 7); ctx.fill(); ctx.stroke(); }
+function coil(ctx, x1, y1, x2, y2, turns, r, col){
+  const L = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / L, uy = (y2 - y1) / L, nx = -uy, ny = ux, lead = Math.min(8, L * 0.1);
+  ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.lineJoin = "round"; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 + ux * lead, y1 + uy * lead);
+  const n = turns * 2, seg = (L - 2 * lead) / n;
+  for (let i = 1; i <= n; i++){ const s = lead + seg * (i - 0.5), side = i % 2 ? 1 : -1; ctx.lineTo(x1 + ux * s + nx * r * side, y1 + uy * s + ny * r * side); }
+  ctx.lineTo(x2 - ux * lead, y2 - uy * lead); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore();
+}
+function band(ctx, x1, y1, x2, y2){ ctx.save(); ctx.strokeStyle = "#8D6E63"; ctx.lineWidth = 3; ctx.beginPath();
+  ctx.moveTo(x1 - 5, y1); ctx.lineTo(x2 - 3, y2); ctx.moveTo(x1 + 5, y1); ctx.lineTo(x2 + 3, y2); ctx.stroke(); ctx.restore(); }
+function spring(ctx, sp, x, y1, y2){ sp.k ? coil(ctx, x, y1, x, y2, 10, 8, sp.col) : band(ctx, x, y1, x, y2); }
+function drawScene(){
+  const {ctx, w, h} = fitCanvas($("scene")); ctx.clearRect(0, 0, w, h); bg(ctx, w, h);
+  const A = sprById(set.A), B = sprById(set.B), top = 30, L0 = 0.12;                       // each spring 12 cm long unloaded
+  let worst = 0; for (const arr of ["single", "series", "parallel"]) worst = Math.max(worst, solve(arr, A, B, MAXG / 1000 * G).x);
+  const nat = set.arr === "series" ? 2 * L0 + 0.02 : L0, ppm = (h - top - 70) / (2 * L0 + 0.02 + Math.max(0.3, worst)), cx = w * 0.34;
+  ctx.fillStyle = "#546E7A"; ctx.fillRect(w * 0.06, top - 8, 8, h - top); ctx.fillRect(w * 0.06, top - 10, cx - w * 0.06 + 50, 8); ctx.fillRect(w * 0.02, h - 10, w * 0.2, 8);
+  const sol = solve(set.arr, A, B, loadF()), k = sol.x > 0 ? st.x / sol.x : 1;               // share the bounce between the springs
+  let yLoad;
+  if (set.arr === "single"){ yLoad = top + (L0 + st.x) * ppm; spring(ctx, A, cx, top, yLoad); label(ctx, "A", cx - 18, top + L0 * ppm / 2, COL.A, "right", 13); }
+  else if (set.arr === "series"){
+    const yMid = top + (L0 + sol.xA * k) * ppm; spring(ctx, A, cx, top, yMid);
+    ctx.fillStyle = "#37474F"; ctx.beginPath(); ctx.arc(cx, yMid + 3, 4, 0, 7); ctx.fill();
+    yLoad = yMid + 6 + (L0 + sol.xB * k) * ppm; spring(ctx, B, cx, yMid + 6, yLoad);
+    label(ctx, "A", cx - 18, (top + yMid) / 2, COL.A, "right", 13); label(ctx, "B", cx - 18, (yMid + yLoad) / 2, COL.B, "right", 13);
+  } else {
+    const yb = top + (L0 + st.x) * ppm; spring(ctx, A, cx - 26, top, yb); spring(ctx, B, cx + 26, top, yb);
+    ctx.fillStyle = "#37474F"; ctx.fillRect(cx - 36, yb, 72, 6); yLoad = yb + 6;
+    label(ctx, "A", cx - 44, top + L0 * ppm / 2, COL.A, "right", 13); label(ctx, "B", cx + 44, top + L0 * ppm / 2, COL.B, "left", 13);
+  }
+  ctx.strokeStyle = "#455A64"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, yLoad); ctx.lineTo(cx, yLoad + 10); ctx.stroke();
+  const n = set.g / 50;
+  for (let i = 0; i < n; i++){ ctx.fillStyle = i % 2 ? "#90A4AE" : "#A7B6BE"; ctx.strokeStyle = "#546E7A"; ctx.lineWidth = 1;
+    ctx.fillRect(cx - 18, yLoad + 10 + i * 6, 36, 5.5); ctx.strokeRect(cx - 18, yLoad + 10 + i * 6, 36, 5.5); }
+  if (n) label(ctx, `${set.g} g`, cx + 24, yLoad + 14 + n * 3, COL.ink, "left", 12);
+  // ruler: zero at the unloaded position of the hook
+  const rx = cx + 84, y0 = top + nat * ppm + (set.arr === "parallel" ? 6 : 0);
+  const cmMax = Math.floor(100 * (h - 16 - y0) / ppm);
+  ctx.fillStyle = "#FFF8E1"; ctx.strokeStyle = "#BCAAA4"; ctx.lineWidth = 1; ctx.fillRect(rx, y0 - 6, 30, cmMax / 100 * ppm + 12); ctx.strokeRect(rx, y0 - 6, 30, cmMax / 100 * ppm + 12);
+  ctx.strokeStyle = "#5D4037"; ctx.fillStyle = "#5D4037"; ctx.font = `10px "Segoe UI",Arial,sans-serif`; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  for (let c = 0; c <= cmMax; c++){ const y = y0 + c / 100 * ppm; if (c % 5 === 0 || ppm > 500){ ctx.beginPath(); ctx.moveTo(rx, y); ctx.lineTo(rx + (c % 5 ? 5 : 10), y); ctx.stroke(); }
+    if (c % 10 === 0) ctx.fillText(c, rx + 13, y); }
+  arrow(ctx, cx + 8, yLoad + 4, rx - 1, yLoad + 4, COL.F, 2);
+  label(ctx, `x = ${(100 * st.x).toFixed(1)} cm`, w - 10, 18, COL.F, "right", 16);
+  label(ctx, settled() ? "At rest" : "Bouncing…", w - 10, 40, COL.navy, "right", 14);
+}
+
+/* ============================ 7 FBD ============================ */
+function drawFBD(){
+  const {ctx, w, h} = fitCanvas($("fbd")); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  if (!set.g){ label(ctx, "Add a load to see the forces", w / 2, h / 2, COL.muted, "center", 14); return; }
+  const W = loadF(), sol = now(), cx = w * 0.45, cy = h * 0.52, sc = h * 0.36 / W, L = v => v * sc;
+  ctx.fillStyle = "#90A4AE"; ctx.strokeStyle = "#455A64"; ctx.lineWidth = 2; ctx.fillRect(cx - 16, cy - 14, 32, 28); ctx.strokeRect(cx - 16, cy - 14, 32, 28);
+  arrow(ctx, cx, cy, cx, cy + L(W), COL.W, 4); subLabel(ctx, "W", "", ` = ${f3(W)} N`, cx + 10, cy + L(W) - 4, COL.W, "left");
+  if (set.arr === "parallel"){
+    arrow(ctx, cx - 9, cy, cx - 9, cy - L(sol.FA), COL.A, 4); subLabel(ctx, "F", "A", ` = ${f3(sol.FA)} N`, cx - 16, cy - L(sol.FA) + 8, COL.A, "right");
+    arrow(ctx, cx + 9, cy, cx + 9, cy - L(sol.FB), COL.B, 4); subLabel(ctx, "F", "B", ` = ${f3(sol.FB)} N`, cx + 16, cy - L(sol.FB) + 8, COL.B, "left");
+    label(ctx, "Parallel: the springs SHARE the load (same x)", w / 2, 13, COL.navy, "center", 13);
+    label(ctx, "the stiffer spring pulls harder: F = kx", w / 2, h - 12, COL.muted, "center", 12);
+  } else {
+    const sp = set.arr === "series" ? "B" : "A";
+    arrow(ctx, cx, cy, cx, cy - L(W), set.arr === "series" ? COL.B : COL.A, 4);
+    subLabel(ctx, "F", sp, ` = ${f3(W)} N`, cx + 10, cy - L(W) + 8, set.arr === "series" ? COL.B : COL.A, "left");
+    label(ctx, set.arr === "series" ? "Series: spring B (and A above it) each carry the WHOLE load" : "One spring carries the whole load", w / 2, 13, COL.navy, "center", 13);
+    if (set.arr === "series") label(ctx, "the extensions add: x = xA + xB", w / 2, h - 12, COL.muted, "center", 12);
+  }
+}
+
+/* ============================ 8 GRAPHS ============================ */
+function niceUp(x){ const p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+function niceStep(range, n){ return niceUp(range / n); }
+function niceCeil(x, n = 5){ const st = niceUp(x / n); return Math.ceil(x / st - 1e-9) * st; }  // e.g. 11.4 → 12.5
+function axes(ctx, box, xMax, yMax, xLab, yLab){
+  const {x, y, w, h} = box;
+  ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted;
+  ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+  const xs = niceStep(xMax, 8), ys = niceStep(yMax, 6);
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (let v = 0; v <= xMax + 1e-9; v += xs){ const X = x + w * v / xMax; ctx.beginPath(); ctx.moveTo(X, y); ctx.lineTo(X, y + h); ctx.stroke(); ctx.fillText(+v.toFixed(2), X, y + h + 4); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let v = 0; v <= yMax + 1e-9; v += ys){ const Y = y + h - h * v / yMax; ctx.beginPath(); ctx.moveTo(x, Y); ctx.lineTo(x + w, Y); ctx.stroke(); ctx.fillText(+v.toFixed(2), x - 5, Y); }
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.stroke();
+  ctx.restore();
+  rich(ctx, xLab, x + w / 2, y + h + 30, COL.ink);
+  ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
+}
+function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
+  const {x, y, w, h} = box, X = v => x + w * (v - x0) / (x1 - x0), Y = v => y + h - h * (v - y0) / (y1 - y0);
+  ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted; ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+  const xs = niceStep(x1 - x0, 8), ys = niceStep(y1 - y0, 6);
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + 1e-9; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(+v.toFixed(2), X(v), y + h + 4); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + 1e-9; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(+v.toFixed(2), x - 5, Y(v)); }
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath();
+  const zx = x0 <= 0 && x1 >= 0 ? X(0) : x, zy = y0 <= 0 && y1 >= 0 ? Y(0) : y + h;
+  ctx.moveTo(zx, y); ctx.lineTo(zx, y + h); ctx.moveTo(x, zy); ctx.lineTo(x + w, zy); ctx.stroke();
+  ctx.restore();
+  rich(ctx, xLab, x + w / 2, y + h + 30, COL.ink);
+  ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
+  return {X, Y};
+}
+function drawGraph(){
+  const cv = $("graph"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const A = sprById(set.A), B = sprById(set.B), Fm = MAXG / 1000 * G;
+  const xm = niceCeil(100 * Math.max(...["single", "series", "parallel"].map(a => solve(a, A, B, Fm).x), xof(B, Fm)) * 1.05);
+  const box = {x:62, y:34, w:w - 78, h:h - 84};
+  const g = axesR(ctx, box, 0, xm, 0, niceCeil(Fm * 1.1), [["total extension ", "n"], ["x", "i"], [" / cm", "n"]], [["load ", "n"], ["F", "i"], [" / N", "n"]]);
+  const lines = [["A alone", "single", A, B, COL.A], ["B alone", "single", B, A, COL.B], ["series", "series", A, B, COL.ser], ["parallel", "parallel", A, B, COL.par]];
+  let lx = box.x + 6;
+  for (const [name, arr, p, q, col] of lines){
+    const active = (arr === set.arr && p === A) || (name === "A alone" && set.arr === "single");
+    ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = active ? 3.5 : 1.4; if (!active) ctx.setLineDash([5, 4]); ctx.beginPath();
+    for (let i = 0; i <= 60; i++){ const F = Fm * i / 60, x = 100 * solve(arr, p, q, F).x; i ? ctx.lineTo(g.X(x), g.Y(F)) : ctx.moveTo(g.X(x), g.Y(F)); }
+    ctx.stroke(); ctx.restore();
+    label(ctx, name, lx, 14, col, "left", 13); ctx.font = `600 13px "Segoe UI",Calibri,Arial,sans-serif`; lx += ctx.measureText(name).width + 22;
+  }
+  ctx.fillStyle = COL.ink; ctx.beginPath(); ctx.arc(g.X(100 * now().x), g.Y(loadF()), 6, 0, 7); ctx.fill();
+}
+function drawAna(){
+  const cv = $("ana"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const xm = niceCeil(Math.max(10, ...trials.map(t => t.x)) * 1.1), Fm = niceCeil(Math.max(1, ...trials.map(t => t.F)) * 1.15);
+  const box = {x:62, y:52, w:w - 78, h:h - 100};
+  const g = axesR(ctx, box, 0, xm, 0, Fm, [["total extension ", "n"], ["x", "i"], [" / cm", "n"]], [["load ", "n"], ["F", "i"], [" / N", "n"]]);
+  if (!trials.length){ label(ctx, "Record loads for each arrangement to plot them here", box.x + box.w / 2, box.y + box.h / 2, COL.muted, "center", 14); return; }
+  const groups = {};
+  for (const t of trials){ const key = `${t.arr}|${t.springs}`; (groups[key] = groups[key] || []).push(t); }
+  let row = 0;
+  for (const [key, ts] of Object.entries(groups)){
+    const arr = key.split("|")[0], col = arr === "series" ? COL.ser : arr === "parallel" ? COL.par : (row % 2 ? COL.B : COL.A);
+    ctx.fillStyle = col; for (const t of ts){ ctx.beginPath(); ctx.arc(g.X(t.x), g.Y(t.F), 4.5, 0, 7); ctx.fill(); }
+    if ($("fitChk").checked){ const fit = originFit(ts.map(t => [t.x / 100, t.F]));
+      if (fit){ const xe = Math.min(xm / 100, Fm / fit.k); ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(g.X(0), g.Y(0)); ctx.lineTo(g.X(100 * xe), g.Y(fit.k * xe)); ctx.stroke(); ctx.restore();
+        label(ctx, `${arr === "single" ? "alone" : arr} (${key.split("|")[1]}): k = ${fit.k.toFixed(1)} N m⁻¹`, box.x + 4 + (row % 2) * box.w / 2, 12 + Math.floor(row / 2) * 16, col, "left", 12); } }
+    row++;
+  }
+  if (!$("fitChk").checked) label(ctx, "Each arrangement gets its own best-fit line: gradient = kₑff", box.x + 4, 14, COL.muted, "left", 12);
+}
+
+/* ============================ 9 DATA ============================ */
+let trials = [];
+const short = id => ({inv:"25", inv2:"25", soft:"12", stiff:"40", brass:"18", band:"band"})[id];
+function recordTrial(){
+  const sol = now(), springs = set.arr === "single" ? short(set.A) : `${short(set.A)}+${short(set.B)}`;
+  trials.push({arr:set.arr, springs, F:loadF(), x:Math.round(1000 * sol.x) / 10});
+  save(); renderTrials(); $("recBtn").textContent = "✔ Recorded"; setTimeout(() => $("recBtn").textContent = "● Record", 700);
+}
+function renderTrials(){
+  $("trials").querySelector("tbody").innerHTML = trials.map((t, i) => `<tr><td>${i + 1}</td><td>${t.arr === "single" ? "alone" : t.arr}</td><td>${t.springs}</td>
+    <td>${f3(t.F)}</td><td>${t.x.toFixed(1)}</td><td>${t.x ? (t.F / (t.x / 100)).toFixed(1) : "—"}</td>
+    <td><button class="x" data-del="${i}" aria-label="Delete trial ${i + 1}">×</button></td></tr>`).join("");
+}
+
+/* ============================ 10 TASKS ============================ */
+// Step types: "do" (instruction + done tick), "predict" (lock in a choice, then check), "num" (checked within ±5 %).
+const kSer = (a, b) => 1 / (1 / a + 1 / b);
+const TASKS = [
+ {id:"pre", title:"1 · Pre-lab: predict", time:"≈ 15 min", steps:[
+  {type:"do", setup:{arr:"single", A:"inv", B:"inv2", g:100}, text:"One investigation spring (k = 25 N m⁻¹) with 100 g. Note the extension, then switch between Series and Parallel (two identical springs)."},
+  {type:"predict", text:"Predict: two identical springs in SERIES carry the same 100 g. Compared with one spring, the total extension…",
+   opts:["is the same", "doubles", "halves"], correct:1,
+   why:"In series each spring carries the whole load, so each stretches as much as a single spring would: the extensions add. Same F, twice the x ⇒ half the k."},
+  {type:"predict", text:"Predict: the two identical springs in PARALLEL carry the same 100 g. The extension…",
+   opts:["is the same", "doubles", "halves"], correct:2,
+   why:"In parallel the springs share the load: each carries half, so each stretches half as much. Same F, half the x ⇒ twice the k."},
+  {type:"predict", setup:{arr:"series", A:"inv", B:"inv2", g:200}, text:"Predict: in SERIES with a 200 g load (1.96 N), the force in the TOP spring is…",
+   opts:["0.98 N (half the load)", "1.96 N (the whole load)", "3.92 N (twice the load)"], correct:1,
+   why:"The top spring holds up everything below it: the bottom spring and the load. With light springs that is the whole 1.96 N — the same force runs through both springs."},
+  {type:"predict", setup:{arr:"parallel", A:"soft", B:"stiff", g:200}, text:"Predict: a soft (12 N m⁻¹) and a stiff (40 N m⁻¹) spring in parallel share a 200 g load. Which spring pulls harder?",
+   opts:["the soft one", "the stiff one", "they pull equally"], correct:1,
+   why:"In parallel both springs have the same extension x, so each pulls with F = kx: the stiffer spring takes the bigger share (40/52 of the load)."},
+  {type:"num", setup:{arr:"series", A:"inv", B:"inv2", g:100}, text:"Calculate the effective spring constant of the two 25 N m⁻¹ springs in series.",
+   answer:() => kSer(25, 25), unit:"N m⁻¹", hint:"1/k = 1/k_A + 1/k_B"},
+ ]},
+ {id:"lab", title:"2 · During the lab: two school springs", time:"≈ 10 min", steps:[
+  {type:"do", setup:{arr:"single", A:"inv", B:"inv2", g:100}, text:"One spring: record 100, 200 and 300 g. Then hang two springs in series and in parallel in the lab (or in the sim) and record the same loads."},
+  {type:"num", text:"Data tab: k for one spring =", answer:() => 25, unit:"N m⁻¹", hint:"gradient of F against x (x in m)"},
+  {type:"num", setup:{arr:"series", A:"inv", B:"inv2", g:100}, text:"k for the two springs in series =", answer:() => 12.5, unit:"N m⁻¹"},
+  {type:"num", setup:{arr:"parallel", A:"inv", B:"inv2", g:100}, text:"k for the two springs in parallel =", answer:() => 50, unit:"N m⁻¹"},
+  {type:"predict", text:"Which rule fits your results for two identical springs (k each)?",
+   opts:["series k/2, parallel 2k", "series 2k, parallel k/2", "both k", "series k, parallel 2k"], correct:0,
+   why:"Series: the extension doubles, so k halves. Parallel: the extension halves, so k doubles."},
+  {type:"do", text:"Compare the sim's three values with your measured ones. Give one reason why the measured parallel value might be smaller than 2k."},
+ ]},
+ {id:"hw", title:"3 · Homework: analyse", time:"≈ 30 min", steps:[
+  {type:"num", setup:{arr:"series", A:"soft", B:"stiff", g:200}, text:"Soft (12 N m⁻¹) and stiff (40 N m⁻¹) springs in SERIES: calculate k_eff.",
+   answer:() => kSer(12, 40), unit:"N m⁻¹", hint:"1/k = 1/12 + 1/40"},
+  {type:"num", text:"…and the total extension (in cm) with 200 g hanging:", answer:() => 100 * 0.2 * G / kSer(12, 40), unit:"cm", hint:"x = F/k_eff"},
+  {type:"num", setup:{arr:"parallel", A:"soft", B:"stiff", g:200}, text:"The same two springs in PARALLEL: k_eff =", answer:() => 52, unit:"N m⁻¹"},
+  {type:"num", text:"In parallel with 200 g: the force in the STIFF spring =", answer:() => 0.2 * G * 40 / 52, unit:"N", hint:"same x = F/k_eff; F_stiff = 40 × x"},
+  {type:"num", text:"Car suspension (notes): a 1200 kg car rests on 4 identical springs, each compressed by 3.0 cm. Calculate k of ONE spring.",
+   answer:() => 1200 * G / 4 / 0.03, unit:"N m⁻¹", hint:"The 4 springs are in parallel: each carries W/4."},
+  {type:"predict", setup:{arr:"single", A:"band", B:"inv2", g:100}, text:"Rubber band: load 50 g at a time up to 300 g and watch the Graph tab. What is true?",
+   opts:["It obeys Hooke's law with k ≈ 25 N m⁻¹", "Its F–x graph curves, so it has no single spring constant", "Its extension does not change"], correct:1,
+   why:"F/x changes with the load — the graph is not a straight line through the origin, so Hooke's law does not apply. (This rubber band gets stiffer as it stretches.)"},
+ ]},
+];
+let taskState = {}, curSet = "pre";
+function renderTaskSets(){
+  document.getElementById("taskSets").innerHTML = TASKS.map(s =>
+    `<button class="chip" data-set="${s.id}" aria-pressed="${s.id === curSet}">${s.title} <span class="hint">${s.time}</span></button>`).join("");
+}
+function renderTasks(){
+  const ts = TASKS.find(s => s.id === curSet), box = document.getElementById("taskList"); box.innerHTML = "";
+  ts.steps.forEach((st, i) => {
+    const key = `${ts.id}.${i}`, S = taskState[key] || (taskState[key] = {});
+    const d = document.createElement("div"); d.className = "step" + (S.done ? " done" : "");
+    let html = `<p class="q"><span class="n">${i + 1}</span>${st.type === "predict" ? '<span class="tag">Predict · </span>' : ""}${st.text}</p>`;
+    if (st.setup) html += `<button class="btn small" data-setup="${key}">⚙ Set up the sim for me</button> `;
+    if (st.type === "do"){
+      html += `<label class="switch"><input type="checkbox" data-done="${key}" ${S.done ? "checked" : ""}> Done</label>`;
+    } else if (st.type === "predict"){
+      st.opts.forEach((o, j) => {
+        const cls = S.checked ? (j === st.correct ? " good" : j === S.choice ? " bad" : "") : "";
+        html += `<label class="opt${cls}"><input type="radio" name="r${key}" value="${j}" data-choice="${key}" ${S.choice === j ? "checked" : ""} ${S.locked ? "disabled" : ""}> ${o}</label>`;
+      });
+      if (!S.locked) html += `<button class="btn small primary" data-lock="${key}" ${S.choice === undefined ? "disabled" : ""}>🔒 Lock in my prediction</button>`;
+      else if (!S.checked) html += `<div class="fb info">Prediction locked. Now test it in the sim, then press Check.</div><button class="btn small navy" data-check="${key}">Check</button>`;
+      else html += `<div class="fb ${S.choice === st.correct ? "ok" : "no"}">${S.choice === st.correct ? "✔ Your prediction was right. " : "✘ Not what happens. "}${st.why}</div>`;
+    } else if (st.type === "num"){
+      const a = st.answer(), shown = `${+a.toPrecision(3)}${st.unit ? " " + st.unit : ""}`;
+      html += `<div class="row"><input class="num" inputmode="decimal" data-num="${key}" value="${S.value ?? ""}" aria-label="answer"> ${st.unit}
+               <button class="btn small navy" data-chknum="${key}">Check</button>
+               ${st.hint ? `<button class="btn small" data-hint="${key}">💡 Hint</button>` : ""}</div>`;
+      if (S.showHint && st.hint) html += `<div class="fb info">${st.hint}</div>`;
+      if (S.status === "ok") html += `<div class="fb ok">✔ Correct (within 5 %). Model answer: ${shown}.</div>`;
+      else if (S.status) html += `<div class="fb no">✘ ${S.status === "high" ? "Too high" : S.status === "low" ? "Too low" : "Enter a number"}. ${S.tries >= 2 ? `Model answer: ${shown}.` : "Try again or use the hint."}</div>`;
+    }
+    d.innerHTML = html; box.appendChild(d);
+  });
+}
+function taskClick(e){
+  const t = e.target.closest("[data-setup],[data-lock],[data-check],[data-chknum],[data-hint],[data-set]"); if (!t) return;
+  if (t.dataset.set){ curSet = t.dataset.set; renderTaskSets(); renderTasks(); save(); return; }
+  const key = t.dataset.setup || t.dataset.lock || t.dataset.check || t.dataset.chknum || t.dataset.hint;
+  const [sid, idx] = key.split("."), st = TASKS.find(s => s.id === sid).steps[+idx], S = taskState[key];
+  if (t.dataset.setup){ applySetup(st.setup); }
+  if (t.dataset.lock){ S.locked = true; }
+  if (t.dataset.check){ S.checked = true; S.done = true; }
+  if (t.dataset.hint){ S.showHint = true; }
+  if (t.dataset.chknum){
+    const raw = document.querySelector(`[data-num="${key}"]`).value.replace(",", "."), v = parseFloat(raw), a = st.answer();
+    S.value = raw; S.tries = (S.tries || 0) + 1;
+    if (!isFinite(v)) S.status = "nan";
+    else if (Math.abs(v - a) <= (st.tol ?? 0.05) * Math.abs(a)) { S.status = "ok"; S.done = true; }
+    else S.status = v > a ? "high" : "low";
+  }
+  save(); renderTasks();
+}
+function taskChange(e){
+  const t = e.target;
+  if (t.dataset.choice){ taskState[t.dataset.choice].choice = +t.value; renderTasks(); save(); }
+  if (t.dataset.done){ taskState[t.dataset.done].done = t.checked; renderTasks(); save(); }
+}
+
+/* ============================ 11 UI ============================ */
+const $ = id => document.getElementById(id);
+function save(){ try { localStorage.setItem("sim06-springs", JSON.stringify({trials, taskState, curSet})); } catch (e) {} }
+function load_(){ try { const d = JSON.parse(localStorage.getItem("sim06-springs") || "{}");
+  trials = d.trials || []; taskState = d.taskState || {}; curSet = d.curSet || "pre"; } catch (e) {} }
+function applySetup(s){ Object.assign(set, s); syncControls(); }
+function syncControls(){
+  document.querySelectorAll("#arr button").forEach(b => b.setAttribute("aria-pressed", b.dataset.arr === set.arr));
+  $("sA").value = set.A; $("sB").value = set.B; $("sBc").style.display = set.arr === "single" ? "none" : "";
+  $("mOut").textContent = `${set.g} g`; $("mMinus").disabled = set.g <= 0; $("mPlus").disabled = set.g >= MAXG;
+  $("sceneTitle").textContent = {single:"One spring", series:"Two springs in series", parallel:"Two springs in parallel"}[set.arr];
+}
+function readouts(){
+  const sol = now(), F = loadF(), A = sprById(set.A), B = sprById(set.B);
+  const rows = [["Load <i>F</i> = <i>mg</i>", `${set.g} g → ${f3(F)} N`, COL.W],
+    ["Total extension <i>x</i>", `${(100 * sol.x).toFixed(1)} cm = ${f3(sol.x)} m`, COL.F],
+    ["Effective <i>k</i> = <i>F</i>/<i>x</i>", F > 0 ? `${(F / sol.x).toFixed(1)} N m⁻¹` : "—"],
+    ["Spring A: force · extension", `${f3(sol.FA)} N · ${(100 * sol.xA).toFixed(1)} cm`, COL.A]];
+  if (set.arr !== "single") rows.push(["Spring B: force · extension", `${f3(sol.FB)} N · ${(100 * sol.xB).toFixed(1)} cm`, COL.B]);
+  $("ro").innerHTML = rows.map(([a, b, c]) => `<tr><td>${a}</td><td class="v"${c ? ` style="color:${c}"` : ""}>${b}</td></tr>`).join("");
+}
+
+for (const id of ["sA", "sB"]) $(id).innerHTML = SPRINGS.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+$("sA").addEventListener("change", e => { set.A = e.target.value; syncControls(); });
+$("sB").addEventListener("change", e => { set.B = e.target.value; syncControls(); });
+document.querySelectorAll("#arr button").forEach(b => b.addEventListener("click", () => { set.arr = b.dataset.arr; syncControls(); }));
+$("mMinus").addEventListener("click", () => { set.g = Math.max(0, set.g - 50); syncControls(); });
+$("mPlus").addEventListener("click", () => { set.g = Math.min(MAXG, set.g + 50); syncControls(); });
+$("recBtn").addEventListener("click", recordTrial);
+$("clearBtn").addEventListener("click", () => { if (confirm("Delete all recorded trials?")){ trials = []; save(); renderTrials(); } });
+$("trials").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b){ trials.splice(+b.dataset.del, 1); save(); renderTrials(); } });
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === t.dataset.tab)); }));
+$("pTasks").addEventListener("click", taskClick); $("pTasks").addEventListener("change", taskChange);
+$("helpBtn").addEventListener("click", () => $("help").classList.add("on"));
+$("helpClose").addEventListener("click", () => $("help").classList.remove("on"));
+$("help").addEventListener("click", e => { if (e.target.id === "help") $("help").classList.remove("on"); });
+
+load_(); syncControls(); renderTrials(); renderTaskSets(); renderTasks();
+let last = performance.now();
+function frame(t){
+  let dt = Math.min(0.05, (t - last) / 1000); last = t;
+  while (dt > 1e-6){ const hh = Math.min(0.002, dt); step(hh); dt -= hh; }
+  drawScene(); drawFBD(); drawGraph(); drawAna(); readouts();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

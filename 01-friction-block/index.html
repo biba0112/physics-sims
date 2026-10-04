@@ -32,10 +32,10 @@
   --ok:#2E7D32; --bad:#C62828;
 }
 *{box-sizing:border-box}
-html,body{margin:0}
+html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);
   font:16px/1.4 "Segoe UI",Calibri,"Helvetica Neue",Arial,sans-serif;
-  -webkit-tap-highlight-color:transparent}
+  -webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;min-height:100dvh}
 header{background:var(--navy);color:#fff;border-bottom:4px solid var(--accent);
   display:flex;align-items:center;gap:16px;padding:8px 16px}
 header h1{font-size:1.25rem;margin:0;font-weight:600}
@@ -50,17 +50,20 @@ header .grow{flex:1}
 .btn.small{min-height:36px;padding:4px 10px;font-size:.9rem}
 header .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
 
-main{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:12px;padding:12px 16px}
+/* layout: scene + state | FBD (always visible) | tabs; fills the screen height */
+main{flex:1;min-height:500px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.3fr);
+  grid-template-rows:minmax(0,1fr) auto;gap:12px;padding:12px 16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .card h2{font-size:.95rem;margin:0;padding:6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line);
   color:var(--navy);font-weight:600}
-.left{display:flex;flex-direction:column;gap:12px;min-width:0}
-#sceneWrap{position:relative;height:225px}
+.left{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.scenecard{flex:1 1 0;display:flex;flex-direction:column;min-height:0}
+.fbdcol{display:flex;flex-direction:column;min-width:0;min-height:0}
+#sceneWrap{position:relative;flex:1;min-height:150px}
 #scene{width:100%;height:100%;display:block}
-.below{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:12px}
-#fbdWrap{height:215px}
+#fbdWrap{flex:1;min-height:220px}
 #fbd{width:100%;height:100%;display:block}
-.readouts{padding:6px 12px}
+.readouts{padding:6px 12px;flex:0 1 auto;min-height:0;overflow:auto}  /* natural height; the scene takes the rest */
 .readouts table{width:100%;border-collapse:collapse;font-size:.9rem}
 .readouts td.v{white-space:nowrap;padding-left:6px}
 .readouts td{padding:4px 2px;border-bottom:1px solid #EEF2F6}
@@ -70,10 +73,10 @@ main{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:12px;
 .pill.slide{background:#FFEBEE;color:#B71C1C}
 .pill.ready{background:#ECEFF1;color:var(--muted)}
 
-.right{display:flex;flex-direction:column;min-width:0;contain:size}  /* height follows the left column; panels scroll */
-.cardhead{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.right{display:flex;flex-direction:column;min-width:0;min-height:0}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 8px 6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line)}
 .cardhead h2{padding:0;border:none;background:none;flex:1}
-.cardhead .btn{min-height:40px;padding:4px 12px}
+.cardhead .btn{min-height:40px;padding:4px 10px}
 .tabs{display:flex;gap:4px;padding:6px 6px 0;background:#F7F9FC;border-bottom:1px solid var(--line)}
 .tab{font:inherit;border:1px solid transparent;border-bottom:none;background:transparent;padding:8px 14px;
   min-height:44px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--muted);font-weight:600}
@@ -142,17 +145,30 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 #help li{margin:.25em 0}
 .eq{font-family:"Cambria Math",Cambria,"Times New Roman",serif;font-size:1.05rem}
 
-@media (max-width:1200px){
-  .cardhead h2{display:none}
-  .cardhead .btn{padding:4px 10px}
-  .readouts table{font-size:.82rem}
-  .pill{font-size:.75rem;padding:2px 8px}
+@media (max-width:1300px){
+  .readouts table{font-size:.85rem}
+  .pill{font-size:.78rem;padding:2px 8px}
 }
-@media (max-width:900px){
-  main{grid-template-columns:1fr}
-  .right{contain:none;height:620px}
-  .below{grid-template-columns:1fr}
+/* tablet landscape: scene + state on the left; FBD above the tabs on the right */
+@media (max-width:1099px){
+  main{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr) auto;min-height:640px}
+  .left{grid-row:1/3}
+  .fbdcol{grid-column:2;grid-row:1}
+  .right{grid-column:2;grid-row:2}
+  #fbdWrap{min-height:200px}
+  #pGraph .hint{display:none}
+  #controls{gap:8px 12px;padding:8px 12px}
+  input[type=range]{width:118px}
   header .sub{display:none}
+}
+/* phone / narrow portrait: one scrolling column */
+@media (max-width:759px){
+  body{height:auto}
+  main{display:flex;flex-direction:column}
+  #sceneWrap{flex:none;height:260px}
+  .readouts{flex:none}
+  #fbdWrap{flex:none;height:320px}
+  .right{height:640px;flex:none}
 }
 </style>
 </head>
@@ -169,7 +185,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 
 <main>
   <section class="left">
-    <div class="card">
+    <div class="card scenecard">
       <div class="cardhead">
         <h2>Experiment</h2>
         <div class="actions">
@@ -181,12 +197,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       </div>
       <div id="sceneWrap"><canvas id="scene" aria-label="Side view of block being pulled"></canvas></div>
     </div>
-    <div class="below">
-      <div class="card">
-        <h2>Free-body diagram of the block</h2>
-        <div id="fbdWrap"><canvas id="fbd" aria-label="Free-body diagram"></canvas></div>
-      </div>
-      <div class="card readouts">
+    <div class="card readouts">
         <table>
           <tr><td>State</td><td class="v"><span id="state" class="pill ready">Ready</span></td></tr>
           <tr><td>Time <i>t</i></td><td class="v" id="r_t">0.00 s</td></tr>
@@ -197,7 +208,11 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
           <tr><td>Friction <i>F</i><sub>f</sub></td><td class="v" id="r_f" style="color:var(--cF)"></td></tr>
         </table>
       </div>
-    </div>
+  </section>
+
+  <section class="card fbdcol" aria-label="Free-body diagram">
+    <h2>Free-body diagram of the block</h2>
+    <div id="fbdWrap"><canvas id="fbd" aria-label="Free-body diagram"></canvas></div>
   </section>
 
   <section class="card right">
@@ -490,7 +505,9 @@ function drawScene(){
 function drawFBD(){
   const {ctx, w, h} = fitCanvas(document.getElementById("fbd"));
   ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
-  const f = forcesNow(), cx = w * 0.42, cy = h * 0.53, scale = (h * 0.36) / f.W, L = F => F * scale;
+  // to scale; the horizontal arrows can never be longer than the peak pull, so size them to fit half the width
+  const f = forcesNow(), cx = w * 0.5, cy = h * 0.52;
+  const scale = Math.min(h * 0.36 / f.W, (w * 0.5 - 18) / Math.max(run.Fpk, 0.01)), L = F => F * scale;
   const bs = 26;
   ctx.fillStyle = COL.wood; ctx.strokeStyle = COL.woodEdge; ctx.lineWidth = 2;
   ctx.fillRect(cx - bs / 2, cy - bs / 2, bs, bs); ctx.strokeRect(cx - bs / 2, cy - bs / 2, bs, bs);
@@ -509,9 +526,11 @@ function drawFBD(){
       }
     }
     arrow(ctx, cx, cy, px, py, COL.P, 4);
-    subLabel(ctx, "F", "", ` = ${f2(f.F)} N`, Math.max(px, cx + bs / 2) + 6, py - 13, COL.P, "left");
+    if (set.angle < 5) subLabel(ctx, "F", "", ` = ${f2(f.F)} N`, cx + bs / 2 + 6, cy + 22, COL.P, "left");   // below the arrow
+    else { const lx = Math.max(px, cx + bs / 2) + 6, fits = lx + 105 < w;
+      subLabel(ctx, "F", "", ` = ${f2(f.F)} N`, fits ? lx : w - 6, py - 14, COL.P, fits ? "left" : "right"); }
     arrow(ctx, cx, cy, cx - L(f.Ff), cy, COL.F, 4);
-    subLabel(ctx, "F", "f", ` = ${f2(f.Ff)} N`, Math.min(cx - L(f.Ff), cx - bs / 2) - 6, cy - 1, COL.F, "right");
+    subLabel(ctx, "F", "f", ` = ${f2(f.Ff)} N`, cx - bs / 2 - 6, cy + 22, COL.F, "right");                  // below the arrow
   } else {
     label(ctx, "No pull → no friction", 10, h - 14, COL.muted, "left", 13);
   }

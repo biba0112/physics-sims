@@ -11,8 +11,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",Cal
 header{background:var(--navy);color:#fff;border-bottom:4px solid var(--accent);padding:18px 16px}
 header h1{margin:0;font-size:1.5rem}
 header p{margin:4px 0 0;opacity:.85}
-main{max-width:860px;margin:0 auto;padding:20px 16px}
-.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+main{max-width:1100px;margin:0 auto;padding:20px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.note{grid-column:1/-1}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column}
+.card .row{margin-top:auto;padding-top:10px}
 .card h2{margin:0 0 4px;color:var(--navy);font-size:1.2rem}
 .tag{display:inline-block;font-size:.8rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
 .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
@@ -30,12 +32,83 @@ a.ghost{border:1px solid var(--line);color:var(--navy);background:#fff}
 <main>
   <div class="card">
     <span class="tag">01 · A.2 Types of forces</span>
-    <h2>Friction block — static and dynamic friction</h2>
-    <p>Pull a block with a newton meter, add masses, change the surfaces and the pull angle. Watch the force–time graph
-      and the free-body diagram, and find μ<sub>s</sub> and μ<sub>d</sub> from a graph.</p>
+    <h2>Friction block</h2>
+    <p>Static and dynamic friction: pull a block with a newton meter, find μs and μd from a graph.</p>
     <div class="row">
       <a class="btn primary" href="01-friction-block/">▶ Open the simulation</a>
       <a class="btn ghost" href="01-friction-block/worksheet.pdf">Worksheet (PDF)</a>
+    </div>
+  </div>
+  <div class="card">
+    <span class="tag">02 · A.2 Types of forces</span>
+    <h2>Normal force</h2>
+    <p>What does a scale really measure? Push and pull, a tilted board, a lift and a stack of blocks.</p>
+    <div class="row">
+      <a class="btn primary" href="02-normal-force/">▶ Open the simulation</a>
+      <a class="btn ghost" href="02-normal-force/worksheet.pdf">Worksheet (PDF)</a>
+    </div>
+  </div>
+  <div class="card">
+    <span class="tag">03 · A.2 Types of forces</span>
+    <h2>Friction on an incline</h2>
+    <p>Tilt a ramp until the block slips (μs = tan θ), then let it slide and find μd.</p>
+    <div class="row">
+      <a class="btn primary" href="03-friction-incline/">▶ Open the simulation</a>
+      <a class="btn ghost" href="03-friction-incline/worksheet.pdf">Worksheet (PDF)</a>
+    </div>
+  </div>
+  <div class="card">
+    <span class="tag">04 · A.2 Forces · Newton's 2nd law</span>
+    <h2>Incline with a pulley</h2>
+    <p>A block on a ramp tied over a pulley to a hanging mass: tension, friction and acceleration.</p>
+    <div class="row">
+      <a class="btn primary" href="04-incline-pulley/">▶ Open the simulation</a>
+      <a class="btn ghost" href="04-incline-pulley/worksheet.pdf">Worksheet (PDF)</a>
+    </div>
+  </div>
+  <div class="card">
+    <span class="tag">05 · A.2 Types of forces</span>
+    <h2>Spring force</h2>
+    <p>Hooke's law: hang masses, read the extension, find k ± Δk, and see the elastic limit.</p>
+    <div class="row">
+      <a class="btn primary" href="05-spring-force/">▶ Open the simulation</a>
+      <a class="btn ghost" href="05-spring-force/worksheet.pdf">Worksheet (PDF)</a>
+    </div>
+  </div>
+  <div class="card">
+    <span class="tag">06 · A.2 Types of forces (extension)</span>
+    <h2>Springs in series and parallel</h2>
+    <p>Combine two springs: how does the effective spring constant change?</p>
+    <div class="row">
+      <a class="btn primary" href="06-springs-series-parallel/">▶ Open the simulation</a>
+      <a class="btn ghost" href="06-springs-series-parallel/worksheet.pdf">Worksheet (PDF)</a>
+    </div>
+  </div>
+  <div class="card">
+    <span class="tag">07 · A.2 Types of forces</span>
+    <h2>Drag and Stokes' law</h2>
+    <p>Ball bearings falling through glycerol: terminal velocity and Stokes' law — plus a skydiver.</p>
+    <div class="row">
+      <a class="btn primary" href="07-drag-stokes/">▶ Open the simulation</a>
+      <a class="btn ghost" href="07-drag-stokes/worksheet.pdf">Worksheet (PDF)</a>
+    </div>
+  </div>
+  <div class="card">
+    <span class="tag">08 · A.2 Types of forces</span>
+    <h2>Buoyancy</h2>
+    <p>Archimedes' principle with a newton meter and a eureka can: sink, float or hover?</p>
+    <div class="row">
+      <a class="btn primary" href="08-buoyancy/">▶ Open the simulation</a>
+      <a class="btn ghost" href="08-buoyancy/worksheet.pdf">Worksheet (PDF)</a>
+    </div>
+  </div>
+  <div class="card">
+    <span class="tag">09 · A.2 Forces · circular motion · energy</span>
+    <h2>Pendulum tension</h2>
+    <p>Hold a pendulum aside or let it swing: how does the tension in the string change?</p>
+    <div class="row">
+      <a class="btn primary" href="09-pendulum-tension/">▶ Open the simulation</a>
+      <a class="btn ghost" href="09-pendulum-tension/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
   <p class="note">Works in any modern browser on laptops, Chromebooks and tablets. Once opened, the simulation keeps
