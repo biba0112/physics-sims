@@ -1,6 +1,6 @@
 # Physics Simulations — IBDP Physics SL, Grade 11
 
-Interactive simulations for Topic A.2 (forces). They open in any modern browser on laptops, Chromebooks and tablets,
+Interactive simulations for Topic A.2 (forces) and Topic A.1 (projectile motion). They open in any modern browser on laptops, Chromebooks and tablets,
 and keep working without internet once loaded.
 
 **All simulations:** https://biba0112.github.io/physics-sims/
@@ -16,6 +16,12 @@ and keep working without internet once loaded.
 | 07 | [Drag and Stokes' law](https://biba0112.github.io/physics-sims/07-drag-stokes/) | A.2 Types of forces | Ball bearings falling through glycerol: terminal velocity and Stokes' law — plus a skydiver. | [PDF](https://biba0112.github.io/physics-sims/07-drag-stokes/worksheet.pdf) |
 | 08 | [Buoyancy](https://biba0112.github.io/physics-sims/08-buoyancy/) | A.2 Types of forces | Archimedes' principle with a newton meter and a eureka can: sink, float or hover? | [PDF](https://biba0112.github.io/physics-sims/08-buoyancy/worksheet.pdf) |
 | 09 | [Pendulum tension](https://biba0112.github.io/physics-sims/09-pendulum-tension/) | A.2 Forces · circular motion · energy | Hold a pendulum aside or let it swing: how does the tension in the string change? | [PDF](https://biba0112.github.io/physics-sims/09-pendulum-tension/worksheet.pdf) |
+| 10 | [Free fall](https://biba0112.github.io/physics-sims/10-free-fall/) | A.1 Kinematics | Drop or throw a ball straight up or down: strobe images, y–t, v–t and a–t graphs, and g from h against t². | [PDF](https://biba0112.github.io/physics-sims/10-free-fall/worksheet.pdf) |
+| 11 | [Horizontal launch](https://biba0112.github.io/physics-sims/11-horizontal-launch/) | A.1 Kinematics | A ball rolls off a bench or cliff: horizontal and vertical motion separately, range and landing velocity. | [PDF](https://biba0112.github.io/physics-sims/11-horizontal-launch/worksheet.pdf) |
+| 12 | [Angled launch](https://biba0112.github.io/physics-sims/12-angled-launch/) | A.1 Kinematics | Launch at any angle: maximum height, time of flight and range — why 45° goes furthest. | [PDF](https://biba0112.github.io/physics-sims/12-angled-launch/worksheet.pdf) |
+| 13 | [Velocity components](https://biba0112.github.io/physics-sims/13-velocity-components/) | A.1 Kinematics | Follow the velocity along the path: components, speed, direction and Δv = gΔt. | [PDF](https://biba0112.github.io/physics-sims/13-velocity-components/worksheet.pdf) |
+| 14 | [Hit the target](https://biba0112.github.io/physics-sims/14-hit-the-target/) | A.1 Kinematics | Plan a shot into a cup, a hoop or a window with the equations of motion. | [PDF](https://biba0112.github.io/physics-sims/14-hit-the-target/worksheet.pdf) |
+| 15 | [Air resistance](https://biba0112.github.io/physics-sims/15-air-resistance/) | A.1 Kinematics | The real path with drag beside the ideal parabola: shorter, lower and steeper on the way down. | [PDF](https://biba0112.github.io/physics-sims/15-air-resistance/worksheet.pdf) |
 
 Each simulation has a **Tasks** tab with three parts — *Pre-lab* (predict), *During the lab* (compare with the hands-on
 activity) and *Homework* (data, graphs and calculations) — matching its worksheet.

@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hit the Target Simulation</title>
+<!--
+  IBDP Physics SL · Grade 11 · Topic A.1 Kinematics (projectile motion)
+  Simulation 14 — Hit the target (pairs with the "place the cup where the ball will land" challenge)
+  Self-contained: no internet, no external libraries. Open in any modern browser.
+
+  File sections (same order as Simulation 01):
+    1 STYLE     layout, colours (force colours match the slide decks)
+    2 MARKUP    header · scene + readouts · FBD + shot planner · tabs (graphs / data / tasks) · controls
+    3 CONFIG    constants, fields, targets
+    4 PHYSICS   pure functions (no drawing): trajectory, hit test, needed speed, needed angles
+    5 RUN       run state, play-back, attempts
+    6 SCENE     side-view drawing (launcher, target, attempts)
+    7 FBD       free-body diagram + shot planner (the working for the current settings)
+    8 GRAPHS    path y–x, y–t, x–t; u–θ analysis graph with the "needed speed" curve
+    9 DATA      attempts table
+   10 TASKS     data-driven task list (predict / numeric / do)
+   11 UI        controls, events, storage, main loop
+-->
+<style>
+/* ============================ 1 STYLE ============================ */
+/* Simulation 01 style (approved template), unchanged */
+:root{
+  --navy:#1F3A5F; --accent:#E65100; --ink:#263238; --muted:#606A72;
+  --bg:#F2F5F9; --card:#FFFFFF; --line:#DDE6F0; --soft:#FFF3E0; --soft-blue:#E3F2FD;
+  --wood:#FFCC80; --wood-edge:#C68A3A;
+  --cW:#2A5D8A; --cN:#2E7D32; --cF:#C62828; --cP:#6A1B9A;   /* weight, normal, friction, pull */
+  --ok:#2E7D32; --bad:#C62828;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);
+  font:16px/1.4 "Segoe UI",Calibri,"Helvetica Neue",Arial,sans-serif;
+  -webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;min-height:100dvh}
+header{background:var(--navy);color:#fff;border-bottom:4px solid var(--accent);
+  display:flex;align-items:center;gap:16px;padding:8px 16px}
+header h1{font-size:1.25rem;margin:0;font-weight:600}
+header .sub{font-size:.85rem;opacity:.85}
+header .grow{flex:1}
+.btn{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;
+  min-height:44px;padding:6px 14px;cursor:pointer;touch-action:manipulation}
+.btn:hover{border-color:var(--navy)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.small{min-height:36px;padding:4px 10px;font-size:.9rem}
+header .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+
+/* layout: scene + state | FBD (always visible) | tabs; fills the screen height */
+main{flex:1;min-height:500px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.3fr);
+  grid-template-rows:minmax(0,1fr) auto;gap:12px;padding:12px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card h2{font-size:.95rem;margin:0;padding:6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line);
+  color:var(--navy);font-weight:600}
+.left{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.scenecard{flex:1 1 0;display:flex;flex-direction:column;min-height:0}
+.fbdcol{display:flex;flex-direction:column;min-width:0;min-height:0}
+#sceneWrap{position:relative;flex:1;min-height:150px}
+#scene{width:100%;height:100%;display:block}
+#fbdWrap{flex:1;min-height:220px}
+#fbd{width:100%;height:100%;display:block}
+.readouts{padding:6px 12px;flex:0 1 auto;min-height:0;overflow:auto}  /* natural height; the scene takes the rest */
+.readouts table{width:100%;border-collapse:collapse;font-size:.9rem}
+.readouts td.v{white-space:nowrap;padding-left:6px}
+.readouts td{padding:4px 2px;border-bottom:1px solid #EEF2F6}
+.readouts td.v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.pill{display:inline-block;white-space:nowrap;padding:3px 10px;border-radius:99px;font-size:.85rem;font-weight:600}
+.pill.rest{background:var(--soft-blue);color:#0D47A1}
+.pill.slide{background:#FFEBEE;color:#B71C1C}
+.pill.ready{background:#ECEFF1;color:var(--muted)}
+
+.right{display:flex;flex-direction:column;min-width:0;min-height:0}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 8px 6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.cardhead h2{padding:0;border:none;background:none;flex:1}
+.cardhead .btn{min-height:40px;padding:4px 10px}
+.tabs{display:flex;gap:4px;padding:6px 6px 0;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.tab{font:inherit;border:1px solid transparent;border-bottom:none;background:transparent;padding:8px 14px;
+  min-height:44px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--muted);font-weight:600}
+.tab[aria-selected="true"]{background:#fff;border-color:var(--line);color:var(--navy);margin-bottom:-1px}
+.panel{display:none;padding:10px 12px;flex:1;min-height:0;overflow:hidden}
+.panel.on{display:flex;flex-direction:column;gap:8px}
+#graphWrap{position:relative;flex:1;min-height:200px}
+#graph{width:100%;height:100%;display:block;touch-action:none}
+.hint{font-size:.85rem;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#trials{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
+#trials th,#trials td{border-bottom:1px solid var(--line);padding:4px 4px;text-align:right}
+#trials th{color:var(--navy);font-weight:600;background:#F7F9FC;position:sticky;top:0}
+#trials td:first-child,#trials th:first-child,#trials td:nth-child(2),#trials th:nth-child(2){text-align:left}
+.tableBox{max-height:150px;flex:none;overflow:auto;border:1px solid var(--line);border-radius:8px}
+#ffnWrap{flex:1;min-height:180px}
+#ffn{width:100%;height:100%;display:block}
+.x{border:none;background:none;color:var(--bad);font-size:1.1rem;cursor:pointer;min-width:32px;min-height:32px}
+
+/* tasks */
+#taskSets{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:.9rem;border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 14px;
+  min-height:40px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chip[aria-pressed="true"] .hint{color:#DDE6F0}
+#taskList{overflow:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.step{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.step .q{margin:0 0 6px}
+.step .n{display:inline-block;min-width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;
+  text-align:center;line-height:26px;font-size:.85rem;font-weight:700;margin-right:6px}
+.step.done .n{background:var(--ok)}
+.opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;
+  margin:4px 0;cursor:pointer;min-height:40px}
+.opt input{width:20px;height:20px}
+.opt.good{border-color:var(--ok);background:#E8F5E9}
+.opt.bad{border-color:var(--bad);background:#FFEBEE}
+.fb{margin-top:6px;padding:6px 10px;border-radius:8px;font-size:.92rem}
+.fb.ok{background:#E8F5E9;border-left:4px solid var(--ok)}
+.fb.no{background:#FFEBEE;border-left:4px solid var(--bad)}
+.fb.info{background:var(--soft-blue);border-left:4px solid #1565C0}
+.num{font:inherit;width:110px;min-height:40px;padding:4px 8px;border:1px solid #B0BEC5;border-radius:8px}
+.tag{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+
+/* controls */
+#controls{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;padding:10px 14px}
+.ctl{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ctl label,.ctl .lab{font-size:.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.ctl select{font:inherit;min-height:44px;border:1px solid #B0BEC5;border-radius:8px;padding:4px 8px;background:#fff}
+.mu{font-size:.85rem;color:var(--navy);font-weight:600}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper .btn{width:44px;padding:0;font-size:1.3rem}
+.stepper output{min-width:24px;text-align:center;font-weight:700;font-size:1.1rem}
+input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
+.seg{display:flex;border:1px solid #B0BEC5;border-radius:8px;overflow:hidden}
+.seg button{font:inherit;border:none;background:#fff;min-height:42px;padding:4px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+.switch{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.switch input{width:22px;height:22px;accent-color:var(--accent)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* help overlay */
+#help{position:fixed;inset:0;background:rgba(31,58,95,.55);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
+#help.on{display:flex}
+#help .box{background:#fff;border-radius:14px;max-width:720px;width:100%;max-height:90vh;overflow:auto;padding:18px 22px}
+#help h3{margin:.2em 0 .4em;color:var(--navy)}
+#help li{margin:.25em 0}
+.eq{font-family:"Cambria Math",Cambria,"Times New Roman",serif;font-size:1.05rem}
+
+@media (max-width:1300px){
+  .readouts table{font-size:.85rem}
+  .pill{font-size:.78rem;padding:2px 8px}
+}
+/* tablet landscape: scene + state on the left; FBD above the tabs on the right */
+@media (max-width:1099px){
+  main{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr) auto;min-height:640px}
+  .left{grid-row:1/3}
+  .fbdcol{grid-column:2;grid-row:1}
+  .right{grid-column:2;grid-row:2}
+  #fbdWrap{min-height:200px}
+  #pGraph .hint{display:none}
+  #controls{gap:8px 12px;padding:8px 12px}
+  input[type=range]{width:118px}
+  header .sub{display:none}
+}
+/* phone / narrow portrait: one scrolling column */
+@media (max-width:759px){
+  body{height:auto}
+  main{display:flex;flex-direction:column}
+  #sceneWrap{flex:none;height:260px}
+  .readouts{flex:none}
+  #fbdWrap{flex:none;height:320px}
+  .right{height:640px;flex:none}
+}
+
+/* Simulation 10–14 additions */
+:root{--cD:#AD1457;--cV:#1565C0;--cA:#E65100}
+#anaWrap{flex:1;min-height:170px}
+#ana{width:100%;height:100%;display:block}
+.seg.small button{min-height:38px;padding:2px 10px;font-size:.92rem}
+.readouts .ev{color:var(--muted);font-weight:600}
+#controls .pair{display:flex;gap:4px 12px;flex-wrap:wrap}
+#controls .pair label{text-transform:none;letter-spacing:0;font-size:.92rem;color:var(--ink);font-weight:400}
+.ctl label i,.ctl label .nt{text-transform:none}
+#controls{gap:10px 12px}
+#controls input[type=range]{width:118px}
+#controls select{max-width:130px}
+.readouts td.gap{width:14px;border-bottom:none}
+.pill.hit{background:#E8F5E9;color:#1B5E20}
+@media (max-width:1300px){ #controls input[type=range]{width:104px} #controls select{max-width:118px} }
+@media (max-width:1099px){ #controls input[type=range]{width:100px} #controls select{max-width:118px} }
+</style>
+</head>
+<body>
+<!-- ============================ 2 MARKUP ============================ -->
+<header>
+  <div>
+    <h1>Hit the target — plan the shot with the equations of motion</h1>
+    <div class="sub">IBDP Physics SL · A.1 Kinematics · Simulation 14 · g = 9.81 m s⁻² · up and right are positive</div>
+  </div>
+  <div class="grow"></div>
+  <button class="btn" id="helpBtn" aria-label="How to use">? How to use</button>
+</header>
+
+<main>
+  <section class="left">
+    <div class="card scenecard">
+      <div class="cardhead">
+        <div class="actions">
+          <button class="btn primary" id="startBtn">▶ Shoot</button>
+          <button class="btn" id="newBtn">🎯 New target</button>
+          <button class="btn" id="resetBtn">↺ Clear</button>
+        </div>
+      </div>
+      <div id="sceneWrap"><canvas id="scene" aria-label="Side view of a ball shot at a target"></canvas></div>
+    </div>
+    <div class="card readouts">
+      <table>
+        <tr><td>Result</td><td class="v"><span id="state" class="pill ready">Ready</span></td><td class="gap"></td>
+            <td>Attempts / hits</td><td class="v" id="r_score">0 / 0</td></tr>
+        <tr><td>Time <i>t</i></td><td class="v" id="r_t">0.000 s</td><td class="gap"></td>
+            <td>Position (<i>x</i>, <i>y</i>)</td><td class="v" id="r_xy"></td></tr>
+        <tr><td class="ev" colspan="5" id="r_ev">—</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="card fbdcol" aria-label="Free-body diagram and shot planner">
+    <h2>Forces and the shot planner</h2>
+    <div id="fbdWrap"><canvas id="fbd" aria-label="Free-body diagram and shot planner"></canvas></div>
+  </section>
+
+  <section class="card right">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="pGraph">Graphs</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pData">Attempts &amp; <i>u</i>–<i>θ</i></button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pTasks">Tasks</button>
+    </div>
+
+    <div class="panel on" id="pGraph">
+      <div class="row">
+        <div class="seg small" id="gsel">
+          <button data-g="path" aria-pressed="true">path <i>y</i>–<i>x</i></button>
+          <button data-g="y" aria-pressed="false"><i>y</i>–<i>t</i></button>
+          <button data-g="x" aria-pressed="false"><i>x</i>–<i>t</i></button>
+        </div>
+      </div>
+      <div id="graphWrap"><canvas id="graph" aria-label="Motion graph"></canvas></div>
+      <div class="hint">Every attempt at this target is drawn (green = hit, grey = miss). The red mark is the target.</div>
+    </div>
+
+    <div class="panel" id="pData">
+      <div class="row">
+        <button class="btn small" id="clearBtn">Clear attempts</button>
+        <span style="flex:1"></span>
+        <label class="switch"><input type="checkbox" id="fitChk"> Show the needed-speed curve</label>
+      </div>
+      <div class="tableBox">
+        <table id="trials">
+          <thead><tr><th>#</th><th>Target</th><th><i>h</i> / m</th><th><i>u</i> / m s⁻¹</th><th><i>θ</i> / °</th>
+            <th>Miss / m</th><th>Result</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="anaWrap"><canvas id="ana" aria-label="Speed against angle graph of the attempts"></canvas></div>
+    </div>
+
+    <div class="panel" id="pTasks">
+      <div id="taskSets"></div>
+      <div id="taskList"></div>
+    </div>
+  </section>
+
+  <section class="card" id="controls" aria-label="Controls">
+    <div class="ctl">
+      <label for="u">Speed <i>u</i> = <span id="uOut" class="nt">8.0</span> <span class="nt">m s⁻¹</span></label>
+      <input type="range" id="u" min="0.5" max="30" step="0.05" value="8">
+    </div>
+    <div class="ctl">
+      <label for="ang">Angle <i>θ</i> = <span id="angOut" class="nt">45.0</span>°</label>
+      <input type="range" id="ang" min="-30" max="85" step="0.5" value="45">
+    </div>
+    <div class="ctl">
+      <label for="h">Launch <i>h</i> = <span id="hOut" class="nt">0</span> <span class="nt">m</span></label>
+      <input type="range" id="h" min="0" max="10" step="1" value="0">
+    </div>
+    <div class="ctl">
+      <label for="ttype">Target</label>
+      <select id="ttype">
+        <option value="cup">Cup on the floor</option>
+        <option value="hoop">Basketball hoop</option>
+        <option value="window">Window in a wall</option>
+      </select>
+    </div>
+    <div class="ctl">
+      <label for="D">Distance <i>D</i> = <span id="DOut" class="nt">8.00</span> <span class="nt">m</span></label>
+      <input type="range" id="D" min="0.3" max="40" step="0.05" value="8">
+    </div>
+    <div class="ctl">
+      <label for="yT">Target height = <span id="yTOut" class="nt">0.00</span> <span class="nt">m</span></label>
+      <input type="range" id="yT" min="0" max="15" step="0.05" value="0">
+    </div>
+    <div class="ctl">
+      <span class="lab">Help</span>
+      <div class="pair"><label class="switch"><input type="checkbox" id="aim"> Show the needed values</label></div>
+    </div>
+  </section>
+</main>
+
+<div id="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="box">
+    <h3 id="helpTitle">How to use this simulation</h3>
+    <ol>
+      <li>Choose a <b>target</b>: a cup on the floor, a basketball hoop or a window in a wall. Set its <b>distance</b> <i>D</i> and
+        <b>height</b>, or press <b>🎯 New target</b> for a random one.</li>
+      <li>Set the launch <b>speed</b> <i>u</i>, <b>angle</b> <i>θ</i> (0° = horizontal, negative = downward) and launch <b>height</b> <i>h</i>.</li>
+      <li>Use the <b>shot planner</b> (middle column): it does the working for your settings — time to reach the target distance,
+        then the height of the ball there. Change <i>u</i> or <i>θ</i> until the ball arrives at the target height.</li>
+      <li>Press <b>▶ Shoot</b>. A cup or hoop counts only if the ball comes <b>down</b> into it; a window counts if the ball passes through it.</li>
+      <li>The <b>Attempts</b> tab plots your attempts on a <i>u</i>–<i>θ</i> graph with the needed-speed curve: every point on the curve hits.</li>
+    </ol>
+    <h3>The physics</h3>
+    <ul>
+      <li>Horizontal: <span class="eq">t = D / (u cos θ)</span> — the time to reach the target distance.</li>
+      <li>Vertical: <span class="eq">y = h + u sin θ · t − ½gt²</span> — the height of the ball at that time.</li>
+      <li>Together: <span class="eq">y = h + D tan θ − gD² / (2u² cos² θ)</span>. Set y equal to the target height and solve for
+        <i>u</i> (one answer) or for <i>θ</i> (usually two answers: a low and a high shot).</li>
+    </ul>
+    <p class="hint">Model: no air resistance; g = 9.81 m s⁻². Cup width 0.30 m, hoop width 0.46 m, window height 0.80 m.</p>
+    <p style="text-align:right"><button class="btn primary" id="helpClose">Close</button></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================ 3 CONFIG ============================ */
+const G = 9.81;
+const HEIGHTS = [0, 0.5, 0.9, 1, 1.2, 1.5, 2, 3, 5, 10, 20];
+const TARGETS = {
+  cup:{name:"cup", half:0.15, defY:0, label:"cup on the floor"},
+  hoop:{name:"hoop", half:0.23, defY:3.05, label:"basketball hoop"},
+  window:{name:"window", half:0.40, defY:5.0, label:"window"},
+};
+const COL = {W:"#2A5D8A", N:"#2E7D32", F:"#C62828", P:"#6A1B9A", v:"#1565C0", a:"#E65100",
+             navy:"#1F3A5F", accent:"#E65100", ink:"#263238", muted:"#606A72", grid:"#E3E9F0", grey:"#90A4AE", ok:"#2E7D32"};
+
+/* ============================ 4 PHYSICS ============================ */
+const f2 = x => (Math.round(x * 100) / 100).toFixed(2);
+const f3 = x => (Math.round(x * 1000) / 1000).toFixed(3);
+const sig = (x, n = 3) => String(+Number(x).toPrecision(n));          // 3 s.f., never in e-notation
+const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+// height of the ball when it is at horizontal distance D (null if it never gets there)
+function yAtD(u, th, h, D){ const ux = u * Math.cos(rad(th)); if (ux <= 1e-9) return null; const t = D / ux;
+  return {t, y:h + u * Math.sin(rad(th)) * t - G * t * t / 2, vy:u * Math.sin(rad(th)) - G * t}; }
+// speed needed to pass through (D, yT) at angle θ (null if impossible at that angle)
+function uNeeded(th, h, D, yT){ const c = Math.cos(rad(th)), den = 2 * c * c * (D * Math.tan(rad(th)) + h - yT);
+  return den > 0 && c > 1e-6 ? Math.sqrt(G * D * D / den) : null; }
+// angles that pass through (D, yT) at speed u (0, 1 or 2 answers, low first)
+function anglesNeeded(u, h, D, yT){ const a = G * D * D / (2 * u * u), b = -D, c = a + (yT - h), disc = b * b - 4 * a * c;
+  if (disc < 0) return []; const r = Math.sqrt(disc); return [(-b - r) / (2 * a), (-b + r) / (2 * a)].map(T => deg(Math.atan(T))); }
+// one shot: flight to the ground (or the wall) plus the hit test
+function shot(u, th, h, tgt){
+  const ux = u * Math.cos(rad(th)), uy = u * Math.sin(rad(th)), tGround = (uy + Math.sqrt(uy * uy + 2 * G * h)) / G;
+  const S = {u, th, h, ux, uy, tEnd:tGround, hit:false, miss:null, msg:""};
+  if (tgt.type === "window"){
+    const a = yAtD(u, th, h, tgt.D);
+    if (a && a.t < tGround){
+      S.miss = a.y - tgt.y; S.hit = Math.abs(S.miss) <= TARGETS.window.half;
+      if (!S.hit){ S.tEnd = a.t; S.msg = `hits the wall ${f2(Math.abs(S.miss))} m ${S.miss > 0 ? "above" : "below"} the window centre`; }
+      else S.msg = `through the window, ${f2(Math.abs(S.miss))} m ${S.miss >= 0 ? "above" : "below"} its centre`;
+    } else { S.miss = -tgt.y; S.msg = `lands ${f2(tgt.D - ux * tGround)} m short of the wall`; }
+    return S;
+  }
+  // cup / hoop: where is the ball when it comes DOWN through the target height?
+  const disc = uy * uy - 2 * G * (tgt.y - h);
+  if (disc < 0){ S.miss = -Infinity; S.msg = `never reaches the ${tgt.y > 0 ? "height of the target" : "target"}`; return S; }
+  const tDown = (uy + Math.sqrt(disc)) / G, xDown = ux * tDown;
+  S.miss = xDown - tgt.D; S.hit = Math.abs(S.miss) <= TARGETS[tgt.type].half;
+  if (S.hit) S.tEnd = tDown;
+  S.msg = S.hit ? `in! ${f2(Math.abs(S.miss))} m from the centre` : `comes down ${f2(Math.abs(S.miss))} m ${S.miss > 0 ? "too far" : "short"}`;
+  return S;
+}
+function stateAt(S, t){ const tt = Math.max(0, Math.min(t, S.tEnd));
+  return {x:S.ux * tt, y:S.h + S.uy * tt - G * tt * tt / 2, vy:S.uy - G * tt}; }
+function linFit(pts){ const n = pts.length; if (n < 2) return null;
+  const mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+  const sxx = pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0); if (!sxx) return null;
+  const k = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / sxx; return {k, b:my - k * mx}; }
+function originFit(pts){ const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0);
+  return sxx && pts.length >= 2 ? {k:pts.reduce((a, p) => a + p[0] * p[1], 0) / sxx, b:0} : null; }
+
+/* ============================ 5 RUN ============================ */
+const set = {u:8, th:45, h:0, ttype:"cup", D:8, yT:0, aim:false};
+const R = {phase:"ready", t:0, S:null};
+let attempts = [], score = {n:0, hits:0};
+const tgt = () => ({type:set.ttype, D:set.D, y:set.yT});
+function reset(){ R.phase = "ready"; R.t = 0; R.S = shot(set.u, set.th, set.h, tgt()); updateButtons(); }
+function start(){ reset(); R.phase = "run"; updateButtons(); }
+function step(dt){
+  if (R.phase !== "run") return;
+  R.t += dt; if (R.t >= R.S.tEnd){ R.t = R.S.tEnd; R.phase = "done"; finish(); }
+}
+function finish(){
+  const S = R.S; score.n++; if (S.hit) score.hits++;
+  attempts.push({type:set.ttype, D:set.D, yT:set.yT, h:set.h, u:set.u, th:set.th, miss:isFinite(S.miss) ? +S.miss.toFixed(3) : null, hit:S.hit});
+  save(); renderTrials(); updateButtons();
+}
+function newTarget(){
+  const r = (a, b, st) => Math.round((a + Math.random() * (b - a)) / st) * st;
+  set.ttype = ["cup", "hoop", "window"][Math.floor(Math.random() * 3)];
+  set.h = [0, 1, 2, 5][Math.floor(Math.random() * 4)];
+  set.D = r(4, 25, 0.05); set.yT = set.ttype === "cup" ? 0 : set.ttype === "hoop" ? 3.05 : r(1.5, 8, 0.05);
+  syncControls(); reset();
+}
+
+/* ============================ 6 SCENE ============================ */
+function fitCanvas(cv){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {ctx, w:r.width, h:r.height};
+}
+function arrow(ctx, x1, y1, x2, y2, color, width = 4, dashed = false){
+  const L = Math.hypot(x2 - x1, y2 - y1); if (L < 2) return;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, hs = Math.min(13, 6 + width * 1.6);
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = "round";
+  if (dashed) ctx.setLineDash([6, 5]);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * hs * 0.8, y2 - uy * hs * 0.8); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - ux * hs - uy * hs * 0.5, y2 - uy * hs + ux * hs * 0.5);
+  ctx.lineTo(x2 - ux * hs + uy * hs * 0.5, y2 - uy * hs - ux * hs * 0.5); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function label(ctx, txt, x, y, color, align = "center", size = 15, base = "middle"){
+  ctx.save(); ctx.font = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = color;
+  ctx.textAlign = align; ctx.textBaseline = base;
+  // white halo so labels stay readable over lines
+  ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.strokeText(txt, x, y); ctx.fillText(txt, x, y);
+  ctx.restore();
+}
+function subLabel(ctx, main, sub, rest, x, y, color, align = "center", size = 15){
+  ctx.save(); const f1 = `italic 600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`,
+    f2 = `600 ${Math.round(size * .72)}px "Segoe UI",Calibri,Arial,sans-serif`, f3 = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+  ctx.font = f1; const w1 = ctx.measureText(main).width; ctx.font = f2; const w2 = sub ? ctx.measureText(sub).width : 0;
+  ctx.font = f3; const w3 = ctx.measureText(rest).width; const W = w1 + w2 + w3;
+  let x0 = align === "center" ? x - W / 2 : align === "right" ? x - W : x;
+  ctx.textBaseline = "middle"; ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.fillStyle = color;
+  ctx.font = f1; ctx.strokeText(main, x0, y); ctx.fillText(main, x0, y);
+  if (sub){ ctx.font = f2; ctx.strokeText(sub, x0 + w1, y + size * .3); ctx.fillText(sub, x0 + w1, y + size * .3); }
+  ctx.font = f3; ctx.strokeText(rest, x0 + w1 + w2, y); ctx.fillText(rest, x0 + w1 + w2, y);
+  ctx.restore();
+}
+function rich(ctx, parts, x, y, color, size = 14){
+  const font = st => st === "i" ? `italic 600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`
+    : st === "s" ? `600 ${Math.round(size * .72)}px "Segoe UI",Calibri,Arial,sans-serif` : `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+  ctx.save(); ctx.fillStyle = color; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  const ws = parts.map(([t, st]) => { ctx.font = font(st); return ctx.measureText(t).width; });
+  let cx = x - ws.reduce((a, b) => a + b, 0) / 2;
+  parts.forEach(([t, st], i) => { ctx.font = font(st); ctx.fillText(t, cx, st === "s" ? y + size * .3 : y); cx += ws[i]; });
+  ctx.restore();
+}
+function bg(ctx, w, h){ const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#FAFCFF"); g.addColorStop(1, "#EEF3F8");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); }
+function hand(ctx, x, y, k){ ctx.fillStyle = "#F1C27D"; ctx.strokeStyle = "#C99A5B"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(x, y, 20 * k, 13 * k, 0, 0, 7); ctx.fill(); ctx.stroke(); }
+function view(w, h){
+  const S = R.S, same = attempts.filter(sameTarget), tops = [S, ...same.map(a => shot(a.u, a.th, a.h, tgt()))].map(s => s.uy > 0 ? s.h + s.uy * s.uy / (2 * G) : s.h);
+  const x1 = Math.max(set.D * 1.18, 2), x0 = -Math.max(0.08 * x1, set.h > 0 ? 0.12 * x1 : 0);
+  const top = Math.max(set.yT + 1, set.h + 0.5, Math.min(Math.max(...tops), 3 * (set.yT + set.h + set.D * 0.6))) * 1.1;
+  const left = 22, right = 12, topY = 30, floorY = h - 28;
+  const ppm = Math.min((w - left - right) / (x1 - x0), (floorY - topY) / top);
+  const X0 = left + (w - left - right - ppm * (x1 - x0)) / 2 - x0 * ppm;
+  return {x0, x1, top, floorY, ppm, X:x => X0 + x * ppm, Y:y => floorY - y * ppm};
+}
+const sameTarget = a => a.type === set.ttype && Math.abs(a.D - set.D) < 1e-6 && Math.abs(a.yT - set.yT) < 1e-6;
+function drawTarget(ctx, V){
+  const X = V.X(set.D), Y = V.Y(set.yT), half = TARGETS[set.ttype].half * V.ppm;
+  if (set.ttype === "cup"){
+    const cw = Math.max(half, 6), chh = Math.max(0.12 * V.ppm, 8);
+    ctx.fillStyle = "#EF5350"; ctx.beginPath(); ctx.moveTo(X - cw, Y - chh); ctx.lineTo(X + cw, Y - chh); ctx.lineTo(X + cw * .75, Y); ctx.lineTo(X - cw * .75, Y); ctx.closePath(); ctx.fill();
+  } else if (set.ttype === "hoop"){
+    ctx.strokeStyle = "#78909C"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(X + Math.max(half, 6) + 4, Y - 0.6 * V.ppm); ctx.lineTo(X + Math.max(half, 6) + 4, V.floorY); ctx.stroke();
+    ctx.fillStyle = "#ECEFF1"; ctx.fillRect(X + Math.max(half, 6) + 2, Y - 0.9 * V.ppm, 5, 1.05 * V.ppm);
+    ctx.strokeStyle = "#E65100"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(X - Math.max(half, 6), Y); ctx.lineTo(X + Math.max(half, 6), Y); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 1; for (let i = -2; i <= 2; i++){ ctx.beginPath(); ctx.moveTo(X + i * half / 2.5, Y); ctx.lineTo(X + i * half / 4, Y + 0.35 * V.ppm); ctx.stroke(); }
+  } else {
+    ctx.fillStyle = "#BCAAA4"; ctx.fillRect(X, V.Y(Math.max(set.yT + 3, V.top)), 12, V.floorY - V.Y(Math.max(set.yT + 3, V.top)));
+    ctx.fillStyle = "#B3E5FC"; ctx.fillRect(X, Y - half, 12, 2 * half); ctx.strokeStyle = "#0277BD"; ctx.lineWidth = 1.5; ctx.strokeRect(X, Y - half, 12, 2 * half);
+  }
+  ctx.fillStyle = COL.F; ctx.beginPath(); ctx.arc(X, Y, 3.5, 0, 7); ctx.fill();
+  label(ctx, `${TARGETS[set.ttype].label}: D = ${f2(set.D)} m, ${f2(set.yT)} m high`, Math.min(X, V.X(V.x1) - 6), Math.max(16, Y - Math.max(half, 8) - 16 - (set.ttype === "hoop" ? 0.9 * V.ppm : 0)), COL.F, "right", 12.5);
+}
+function pathOf(ctx, V, S, t1, col, width, alpha = 1){
+  ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = col; ctx.lineWidth = width; ctx.beginPath();
+  for (let i = 0; i <= 80; i++){ const s = stateAt(S, t1 * i / 80); i ? ctx.lineTo(V.X(s.x), V.Y(s.y)) : ctx.moveTo(V.X(s.x), V.Y(s.y)); } ctx.stroke(); ctx.restore();
+}
+function drawScene(){
+  const {ctx, w, h} = fitCanvas(document.getElementById("scene"));
+  ctx.clearRect(0, 0, w, h); bg(ctx, w, h);
+  const V = view(w, h), S = R.S, lx = V.X(0), ly = V.Y(set.h);
+  ctx.fillStyle = "#9CCC65"; ctx.fillRect(0, V.floorY, w, 5); ctx.fillStyle = "#D7CCC8"; ctx.fillRect(0, V.floorY + 5, w, h);
+  if (set.h > 0){ ctx.fillStyle = "#A1887F"; ctx.fillRect(0, ly, lx + 4, V.floorY - ly); }
+  const sx = niceStep(V.x1, 7); ctx.strokeStyle = "#5D4037";
+  for (let s = 0; s <= V.x1 + 1e-9; s += sx){ const X = V.X(s); ctx.beginPath(); ctx.moveTo(X, V.floorY + 5); ctx.lineTo(X, V.floorY + 12); ctx.stroke();
+    if (X < w - 30) label(ctx, `${+s.toFixed(2)}`, X, V.floorY + 20, COL.ink, "center", 10.5); }
+  drawTarget(ctx, V);
+  // earlier attempts at this target
+  attempts.filter(sameTarget).slice(-12).forEach(a => { const A = shot(a.u, a.th, a.h, tgt()); pathOf(ctx, V, A, A.tEnd, a.hit ? COL.ok : COL.grey, 1.4, .55); });
+  // aim help: the needed path at the current angle
+  if (set.aim){ const un = uNeeded(set.th, set.h, set.D, set.yT);
+    if (un){ const A = shot(un, set.th, set.h, tgt()); ctx.save(); ctx.setLineDash([6, 5]); pathOf(ctx, V, A, A.tEnd, COL.ok, 1.6, .9); ctx.restore(); } }
+  if (R.phase !== "ready") pathOf(ctx, V, S, R.t, COL.ink, 2.4);
+  // launcher
+  ctx.save(); ctx.translate(lx, ly); ctx.rotate(-rad(set.th)); ctx.fillStyle = "#455A64"; ctx.fillRect(-4, -6, 32, 12); ctx.restore();
+  ctx.fillStyle = "#263238"; ctx.beginPath(); ctx.arc(lx, ly, 7, Math.PI, 0); ctx.fill();
+  const s = stateAt(S, R.t);
+  ctx.fillStyle = "#FFB74D"; ctx.strokeStyle = "#E65100"; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(V.X(s.x), V.Y(s.y), 7, 0, 7); ctx.fill(); ctx.stroke();
+  if (R.phase === "done") label(ctx, S.hit ? "✔ HIT!" : "✘ miss", V.X(s.x), V.Y(s.y) - 20, S.hit ? COL.ok : COL.F, "center", 18);
+  label(ctx, `u = ${set.u.toFixed(2)} m s⁻¹ at ${set.th.toFixed(1)}°${set.h ? ` from ${set.h} m` : ""}`, 12, 14, COL.navy, "left", 13.5);
+  label(ctx, `t = ${f3(R.t)} s`, w - 12, 14, COL.P, "right", 14);
+}
+
+/* ============================ 7 FBD ============================ */
+// Left: FBD (only W in flight). Right: the shot planner — the working for the current u, θ, h and target.
+function drawFBD(){
+  const {ctx, w, h} = fitCanvas(document.getElementById("fbd"));
+  ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const cx = Math.min(70, w * 0.14), cy = h * 0.3, Lw = Math.min(90, h * 0.2);
+  label(ctx, "Forces", cx, 18, COL.muted, "center", 12);
+  ctx.fillStyle = "#FFB74D"; ctx.strokeStyle = "#E65100"; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 7); ctx.fill(); ctx.stroke();
+  arrow(ctx, cx, cy, cx, cy + Lw, COL.W, 4); subLabel(ctx, "W", "", "", cx + 10, cy + Lw - 6, COL.W, "left", 14);
+  label(ctx, "only W:", cx, cy + Lw + 22, COL.muted, "center", 11.5); label(ctx, "aₓ = 0", cx, cy + Lw + 38, COL.P, "center", 12); label(ctx, "a_y = −g", cx, cy + Lw + 54, COL.v, "center", 12);
+  const x0 = cx * 2 + 4; ctx.save(); ctx.strokeStyle = COL.grid; ctx.beginPath(); ctx.moveTo(x0 - 8, 20); ctx.lineTo(x0 - 8, h - 16); ctx.stroke(); ctx.restore();
+  // planner lines
+  const ux = set.u * Math.cos(rad(set.th)), uy = set.u * Math.sin(rad(set.th)), A = yAtD(set.u, set.th, set.h, set.D);
+  const lines = [["Shot planner", COL.navy, 14],
+    [`Target at (${f2(set.D)} m, ${f2(set.yT)} m); launch from (0, ${set.h} m)`, COL.muted, 12],
+    ["1 Resolve u", COL.navy, 13],
+    [`   uₓ = u cos θ = ${f2(set.u)} × cos ${set.th.toFixed(1)}° = ${f2(ux)} m s⁻¹`, COL.P, 12.5],
+    [`   u_y = u sin θ = ${f2(set.u)} × sin ${set.th.toFixed(1)}° = ${f2(uy)} m s⁻¹`, COL.v, 12.5],
+    ["2 Horizontal: time to reach D", COL.navy, 13],
+    [A ? `   t = D / uₓ = ${f2(set.D)} ÷ ${f2(ux)} = ${f3(A.t)} s` : "   uₓ = 0: the ball never gets there", COL.P, 12.5],
+    ["3 Vertical: height at that time", COL.navy, 13],
+    [A ? `   y = h + u_y t − ½gt² = ${f2(A.y)} m` : "", COL.v, 12.5],
+    [A ? `   → ${A.y > set.yT ? "above" : "below"} the target by ${f2(Math.abs(A.y - set.yT))} m, ${A.vy < 0 ? "falling" : "still rising"}` : "", A && Math.abs(A.y - set.yT) <= TARGETS[set.ttype].half ? COL.ok : COL.F, 12.5]];
+  if (set.aim){
+    const un = uNeeded(set.th, set.h, set.D, set.yT), an = anglesNeeded(set.u, set.h, set.D, set.yT);
+    lines.push(["Needed values (help on)", COL.ok, 13]);
+    lines.push([un ? `   at θ = ${set.th.toFixed(1)}°: u = ${f2(un)} m s⁻¹` : `   no speed works at θ = ${set.th.toFixed(1)}°`, COL.ok, 12.5]);
+    lines.push([an.length ? `   at u = ${f2(set.u)} m s⁻¹: θ = ${an.map(a => a.toFixed(1) + "°").join(" or ")}` : `   u = ${f2(set.u)} m s⁻¹ is too slow for any angle`, COL.ok, 12.5]);
+  }
+  if ((set.ttype === "cup" || set.ttype === "hoop") && A && A.vy >= 0) lines.push(["   (a cup or hoop needs the ball to come DOWN into it)", COL.muted, 11.5]);
+  const lh = Math.min(22, (h - 24) / lines.length); let yy = 18;
+  for (const [t, c, sz] of lines){                       // shrink a line only if it does not fit the column
+    let size = sz; ctx.font = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+    while (size > 9 && ctx.measureText(t).width > w - x0 - 8){ size -= 0.5; ctx.font = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`; }
+    label(ctx, t, x0, yy, c, "left", size); yy += lh; }
+}
+
+/* ============================ 8 GRAPHS ============================ */
+function niceUp(x){ const p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+function niceStep(range, n){ return niceUp(range / n); }
+function niceCeil(x, n = 5){ const st = niceUp(x / n); return Math.ceil(x / st - 1e-9) * st; }
+function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
+  const {x, y, w, h} = box, X = v => x + w * (v - x0) / (x1 - x0), Y = v => y + h - h * (v - y0) / (y1 - y0);
+  ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted; ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+  const xs = niceStep(x1 - x0, 8), ys = niceStep(y1 - y0, 6);
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + 1e-9; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(+v.toFixed(2), X(v), y + h + 4); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + 1e-9; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(+v.toFixed(2), x - 5, Y(v)); }
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath();
+  const zx = x0 <= 0 && x1 >= 0 ? X(0) : x, zy = y0 <= 0 && y1 >= 0 ? Y(0) : y + h;
+  ctx.moveTo(zx, y); ctx.lineTo(zx, y + h); ctx.moveTo(x, zy); ctx.lineTo(x + w, zy); ctx.stroke();
+  ctx.restore();
+  rich(ctx, xLab, x + w / 2, y + h + 30, COL.ink);
+  ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
+  return {X, Y};
+}
+let gq = "path";
+function drawGraph(){
+  const cv = document.getElementById("graph"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv);
+  ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const box = {x:58, y:16, w:w - 74, h:h - 66}, S = R.S, same = attempts.filter(sameTarget).slice(-12).map(a => ({a, S:shot(a.u, a.th, a.h, tgt())}));
+  if (gq === "path"){
+    const all = [S, ...same.map(o => o.S)], ym = niceCeil(Math.max(set.yT + 0.5, ...all.map(s => s.uy > 0 ? s.h + s.uy * s.uy / (2 * G) : s.h)) * 1.08);
+    const xm = niceCeil(Math.max(set.D * 1.15, ...all.map(s => s.ux * s.tEnd)));
+    const {X, Y} = axesR(ctx, box, 0, xm, 0, ym, [["horizontal position ","n"],["x","i"],[" / m","n"]], [["height ","n"],["y","i"],[" / m","n"]]);
+    const line = (s, t1, col, wd) => { ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.beginPath();
+      for (let i = 0; i <= 80; i++){ const p = stateAt(s, t1 * i / 80); i ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y)); } ctx.stroke(); ctx.restore(); };
+    same.forEach(o => line(o.S, o.S.tEnd, o.a.hit ? COL.ok : COL.grey, 1.5));
+    if (R.phase !== "ready") line(S, R.t, COL.ink, 2.4);
+    ctx.fillStyle = COL.F; ctx.beginPath(); ctx.arc(X(set.D), Y(set.yT), 6, 0, 7); ctx.fill();
+    const half = TARGETS[set.ttype].half; ctx.strokeStyle = COL.F; ctx.lineWidth = 3; ctx.beginPath();
+    if (set.ttype === "window"){ ctx.moveTo(X(set.D), Y(set.yT - half)); ctx.lineTo(X(set.D), Y(set.yT + half)); } else { ctx.moveTo(X(set.D - half), Y(set.yT)); ctx.lineTo(X(set.D + half), Y(set.yT)); }
+    ctx.stroke(); return;
+  }
+  const tMax = niceCeil(Math.max(S.tEnd, ...same.map(o => o.S.tEnd)) * 1.05);
+  const f = gq === "y" ? p => p.y : p => p.x, all = [S, ...same.map(o => o.S)];
+  const vals = all.flatMap(s => [0, 0.25, 0.5, 0.75, 1].map(k => f(stateAt(s, s.tEnd * k)))).concat(gq === "y" ? [set.yT, ...all.map(s => s.uy > 0 ? s.h + s.uy * s.uy / (2 * G) : s.h)] : [set.D]);
+  const hi = niceCeil(Math.max(1, ...vals) * 1.08);
+  const {X, Y} = axesR(ctx, box, 0, tMax, 0, hi, [["time ","n"],["t","i"],[" / s","n"]], gq === "y" ? [["height ","n"],["y","i"],[" / m","n"]] : [["position ","n"],["x","i"],[" / m","n"]]);
+  ctx.save(); ctx.strokeStyle = COL.F; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(X(0), Y(gq === "y" ? set.yT : set.D)); ctx.lineTo(X(tMax), Y(gq === "y" ? set.yT : set.D)); ctx.stroke(); ctx.restore();
+  label(ctx, gq === "y" ? "target height" : "target distance D", box.x + box.w - 6, Y(gq === "y" ? set.yT : set.D) - 10, COL.F, "right", 12);
+  const line = (s, t1, col, wd) => { ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.beginPath();
+    for (let i = 0; i <= 80; i++){ const t = t1 * i / 80; i ? ctx.lineTo(X(t), Y(f(stateAt(s, t)))) : ctx.moveTo(X(t), Y(f(stateAt(s, t)))); } ctx.stroke(); ctx.restore(); };
+  same.forEach(o => line(o.S, o.S.tEnd, o.a.hit ? COL.ok : COL.grey, 1.5));
+  if (R.phase !== "ready") line(S, R.t, COL.ink, 2.4);
+  if (gq === "x" && S.ux > 0){ const tD = set.D / S.ux; if (tD <= tMax){ ctx.save(); ctx.strokeStyle = COL.P; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(X(tD), Y(0)); ctx.lineTo(X(tD), Y(set.D)); ctx.stroke(); ctx.restore();
+    label(ctx, `t = D/uₓ = ${f3(tD)} s`, X(tD) + 6, Y(set.D / 2), COL.P, "left", 12.5); } }
+}
+// u against θ for the attempts at this target, with the needed-speed curve
+function drawAna(){
+  const cv = document.getElementById("ana"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv);
+  ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const tr = attempts.filter(sameTarget), curve = [];
+  for (let a = -30; a <= 85; a += 0.5){ const un = uNeeded(a, set.h, set.D, set.yT); if (un && un < 60) curve.push([a, un]); }
+  const umin = curve.length ? curve.reduce((b, p) => p[1] < b[1] ? p : b) : null;
+  const yMax = niceCeil(Math.max(5, ...tr.map(t => t.u), umin ? umin[1] * 2.2 : 10));
+  const box = {x:58, y:44, w:w - 74, h:h - 94};
+  const {X, Y} = axesR(ctx, box, -30, 85, 0, yMax, [["launch angle ","n"],["θ","i"],[" / °","n"]], [["launch speed ","n"],["u","i"],[" / m s⁻¹","n"]]);
+  label(ctx, "Attempts at this target: ● hit  ○ miss", box.x, 14, COL.muted, "left", 12.5);
+  if (document.getElementById("fitChk").checked && curve.length){
+    ctx.save(); ctx.strokeStyle = COL.ok; ctx.lineWidth = 2; ctx.beginPath(); let first = true;
+    for (const [a, un] of curve){ if (un > yMax) { first = true; continue; } first ? ctx.moveTo(X(a), Y(un)) : ctx.lineTo(X(a), Y(un)); first = false; } ctx.stroke(); ctx.restore();
+    ctx.fillStyle = COL.ok; ctx.beginPath(); ctx.arc(X(umin[0]), Y(umin[1]), 4, 0, 7); ctx.fill();
+    label(ctx, `needed speed: minimum ${f2(umin[1])} m s⁻¹ at θ = ${umin[0].toFixed(1)}°`, box.x, 30, COL.ok, "left", 13);
+  }
+  for (const t of tr){ ctx.beginPath(); ctx.arc(X(t.th), Y(t.u), 5, 0, 7); if (t.hit){ ctx.fillStyle = COL.ok; ctx.fill(); } else { ctx.strokeStyle = COL.F; ctx.lineWidth = 1.8; ctx.stroke(); } }
+  if (!tr.length) label(ctx, "Shoot at this target to plot your attempts", box.x + box.w / 2, box.y + box.h / 2, COL.muted, "center", 15);
+}
+
+/* ============================ 9 DATA ============================ */
+function renderTrials(){
+  const tb = document.querySelector("#trials tbody"); tb.innerHTML = "";
+  attempts.forEach((t, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${i + 1}</td><td>${TARGETS[t.type].name} (${f2(t.D)}, ${f2(t.yT)})</td><td>${t.h}</td><td>${f2(t.u)}</td><td>${t.th.toFixed(1)}</td>
+      <td>${t.miss === null ? "—" : f2(t.miss)}</td><td>${t.hit ? "✔ hit" : "miss"}</td>
+      <td><button class="x" aria-label="Delete attempt ${i + 1}" data-del="${i}">×</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ============================ 10 TASKS ============================ */
+// Step types: "do" (instruction + done tick), "predict" (lock in a choice, then check),
+// "num" (numeric answer checked within tol, default 5 %). "setup" applies sim settings for the student.
+const tH = h => Math.sqrt(2 * h / G);
+const TASKS = [
+ {id:"pre", title:"1 · Pre-lab: predict", time:"≈ 15 min", steps:[
+  {type:"do", setup:{ttype:"cup", D:8, yT:0, h:0, u:8, th:45, aim:false},
+   text:"Cup on the floor 8.00 m away, launch from the ground. Try a few shots: change u and θ, read the shot planner, and get the ball into the cup."},
+  {type:"num", setup:{ttype:"cup", D:8, yT:0, h:0, u:8, th:45, aim:false},
+   text:"Calculate the speed needed at θ = 45° to land in the cup 8.00 m away (launch and landing at ground level). Then test it.",
+   answer:() => Math.sqrt(G * 8), unit:"m s⁻¹", hint:"From the ground: R = u² sin 2θ / g. At 45°: u = √(Rg)."},
+  {type:"predict", setup:{ttype:"cup", D:8, yT:0, h:0, u:10, th:45, aim:true},
+   text:"Keep the speed at 10 m s⁻¹ (faster than needed at 45°). How many launch angles land in the cup?",
+   opts:["None — it is too fast", "Exactly one", "Two: a low and a high shot", "Every angle above 45°"], correct:2,
+   why:"Below the maximum range there are always two angles that give the same range (complementary angles from the ground: here 25.9° and 64.1°). Switch on 'Show the needed values' to see both."},
+  {type:"num", setup:{ttype:"cup", D:1.2, yT:0, h:0.9, u:2, th:0, aim:false},
+   text:"Now launch horizontally (θ = 0°) from a 0.90 m bench at a cup on the floor 1.20 m away. Calculate the speed needed.",
+   answer:() => 1.2 / tH(0.9), unit:"m s⁻¹", hint:"Vertical: t = √(2h/g). Horizontal: u = D/t."},
+  {type:"predict", text:"The cup is moved twice as far away (2.40 m), same bench. The horizontal launch speed needed is…",
+   opts:["the same", "twice as large", "four times as large", "√2 times as large"], correct:1,
+   why:"The fall time depends only on the bench height, so it is unchanged. To cover twice the distance in the same time you need twice the horizontal speed: u ∝ D."},
+ ]},
+ {id:"lab", title:"2 · During the lab: the cup challenge", time:"≈ 15 min", steps:[
+  {type:"num", setup:{ttype:"cup", D:0.65, yT:0, h:0.9, u:1.5, th:0, aim:false},
+   text:"Your ball leaves the ramp at 1.50 m s⁻¹ (measured with a light gate, or from u = R/t in Simulation 11). The bench is 0.90 m high. Where should you put the cup?",
+   answer:() => 1.5 * tH(0.9), unit:"m", hint:"t = √(2h/g), then D = ut. Measure from the point directly below the edge."},
+  {type:"num", setup:{ttype:"cup", D:0.75, yT:0, h:1.2, u:1.5, th:0, aim:false},
+   text:"The same ramp is moved to a 1.20 m high table. Where should the cup go now?", answer:() => 1.5 * tH(1.2), unit:"m",
+   hint:"Same u, new fall time t = √(2 × 1.20 / 9.81)."},
+  {type:"do", text:"Do the real challenge: measure u, calculate D, place the cup, then release the ball once. Record the result and the miss distance on your worksheet."},
+  {type:"predict", text:"The ball lands 3 cm short of the cup centre. Which is the most likely reason?",
+   opts:["g is smaller in the lab", "The real ball left the ramp a little slower (friction, rolling)", "The ball is too heavy", "The cup is too wide"], correct:1,
+   why:"D = ut, so a small error in u gives the same percentage error in D: 3 cm short of 64 cm is 5 % — a ball rolling more slowly than measured, or a slightly uneven ramp. That is why we measure u carefully and repeat."},
+ ]},
+ {id:"hw", title:"3 · Homework: analyse", time:"≈ 30 min", steps:[
+  {type:"num", setup:{ttype:"hoop", D:4, yT:3.05, h:2, u:7, th:50, aim:false},
+   text:"A player releases a basketball 2.00 m above the floor, at 50° above the horizontal, 4.00 m from the hoop (3.05 m high). What speed is needed?",
+   answer:() => uNeeded(50, 2, 4, 3.05), unit:"m s⁻¹", hint:"y = h + D tan θ − gD²/(2u² cos²θ). Put y = 3.05 m and solve for u."},
+  {type:"num", text:"How long does the ball take to reach the hoop?", answer:() => 4 / (uNeeded(50, 2, 4, 3.05) * Math.cos(rad(50))), unit:"s",
+   hint:"Horizontal: t = D / (u cos θ)."},
+  {type:"predict", text:"Is the ball rising or falling when it reaches the hoop?",
+   opts:["Rising", "Falling", "At the top of its path", "Not enough information"], correct:1,
+   why:"v<sub>y</sub> = u sin θ − gt = 5.48 − 8.54 = −3.06 m s⁻¹ < 0, so it is coming down — it has to, to drop into the hoop."},
+  {type:"num", setup:{ttype:"window", D:12, yT:5, h:0, u:15, th:40, aim:false},
+   text:"A ball is thrown from the ground at 15 m s⁻¹ towards a window 5.00 m up in a wall 12.0 m away. Find the <b>lower</b> launch angle that hits the window centre.",
+   answer:() => anglesNeeded(15, 0, 12, 5)[0], unit:"°", hint:"Use tan θ: 5 = 12 tan θ − (9.81 × 12²)/(2 × 15²)(1 + tan²θ). Solve the quadratic in tan θ."},
+  {type:"num", text:"And the higher launch angle?", answer:() => anglesNeeded(15, 0, 12, 5)[1], unit:"°", hint:"The other root of the same quadratic."},
+  {type:"num", setup:{ttype:"window", D:25, yT:1.22, h:0, u:18, th:30, aim:false},
+   text:"A football is kicked from the ground at 18 m s⁻¹, 30° above the horizontal, towards a goal 25 m away. How high is the ball when it reaches the goal line?",
+   answer:() => yAtD(18, 30, 0, 25).y, unit:"m", hint:"t = 25 / (18 cos 30°); then y = u sin θ · t − ½gt². (The crossbar is 2.44 m high — is it a goal?)"},
+ ]},
+];
+let taskState = {}, curSet = "pre";
+function renderTaskSets(){
+  document.getElementById("taskSets").innerHTML = TASKS.map(s =>
+    `<button class="chip" data-set="${s.id}" aria-pressed="${s.id === curSet}">${s.title} <span class="hint">${s.time}</span></button>`).join("");
+}
+function renderTasks(){
+  const ts = TASKS.find(s => s.id === curSet), box = document.getElementById("taskList"); box.innerHTML = "";
+  ts.steps.forEach((st, i) => {
+    const key = `${ts.id}.${i}`, S = taskState[key] || (taskState[key] = {});
+    const d = document.createElement("div"); d.className = "step" + (S.done ? " done" : "");
+    let html = `<p class="q"><span class="n">${i + 1}</span>${st.type === "predict" ? '<span class="tag">Predict · </span>' : ""}${st.text}</p>`;
+    if (st.setup) html += `<button class="btn small" data-setup="${key}">⚙ Set up the sim for me</button> `;
+    if (st.type === "do"){
+      html += `<label class="switch"><input type="checkbox" data-done="${key}" ${S.done ? "checked" : ""}> Done</label>`;
+    } else if (st.type === "predict"){
+      st.opts.forEach((o, j) => {
+        const cls = S.checked ? (j === st.correct ? " good" : j === S.choice ? " bad" : "") : "";
+        html += `<label class="opt${cls}"><input type="radio" name="r${key}" value="${j}" data-choice="${key}" ${S.choice === j ? "checked" : ""} ${S.locked ? "disabled" : ""}> ${o}</label>`;
+      });
+      if (!S.locked) html += `<button class="btn small primary" data-lock="${key}" ${S.choice === undefined ? "disabled" : ""}>🔒 Lock in my prediction</button>`;
+      else if (!S.checked) html += `<div class="fb info">Prediction locked. Now test it in the sim, then press Check.</div><button class="btn small navy" data-check="${key}">Check</button>`;
+      else html += `<div class="fb ${S.choice === st.correct ? "ok" : "no"}">${S.choice === st.correct ? "✔ Your prediction was right. " : "✘ Not what happens. "}${st.why}</div>`;
+    } else if (st.type === "num"){
+      const a = st.answer(), shown = st.unit ? `${sig(a)} ${st.unit}` : sig(a);
+      html += `<div class="row"><input class="num" inputmode="decimal" data-num="${key}" value="${S.value ?? ""}" aria-label="answer"> ${st.unit}
+               <button class="btn small navy" data-chknum="${key}">Check</button>
+               ${st.hint ? `<button class="btn small" data-hint="${key}">💡 Hint</button>` : ""}</div>`;
+      if (S.showHint && st.hint) html += `<div class="fb info">${st.hint}</div>`;
+      if (S.status === "ok") html += `<div class="fb ok">✔ Correct (within ${Math.round((st.tol ?? 0.05) * 100)} %). Model answer: ${shown}.</div>`;
+      else if (S.status) html += `<div class="fb no">✘ ${S.status === "high" ? "Too high" : S.status === "low" ? "Too low" : "Enter a number"}. ${S.tries >= 2 ? `Model answer: ${shown}.` : "Try again or use the hint."}</div>`;
+    }
+    d.innerHTML = html; box.appendChild(d);
+  });
+}
+function taskClick(e){
+  const t = e.target.closest("[data-setup],[data-lock],[data-check],[data-chknum],[data-hint],[data-set]"); if (!t) return;
+  if (t.dataset.set){ curSet = t.dataset.set; renderTaskSets(); renderTasks(); save(); return; }
+  const key = t.dataset.setup || t.dataset.lock || t.dataset.check || t.dataset.chknum || t.dataset.hint;
+  const [sid, idx] = key.split("."), st = TASKS.find(s => s.id === sid).steps[+idx], S = taskState[key];
+  if (t.dataset.setup){ Object.assign(set, st.setup); syncControls(); resetRun(); }
+  if (t.dataset.lock){ S.locked = true; }
+  if (t.dataset.check){ S.checked = true; S.done = true; }
+  if (t.dataset.hint){ S.showHint = true; }
+  if (t.dataset.chknum){
+    const raw = document.querySelector(`[data-num="${key}"]`).value.replace(",", "."), v = parseFloat(raw), a = st.answer();
+    S.value = raw; S.tries = (S.tries || 0) + 1;
+    if (!isFinite(v)) S.status = "nan";
+    else if (Math.abs(v - a) <= (st.tol ?? 0.05) * Math.abs(a)) { S.status = "ok"; S.done = true; }
+    else S.status = v > a ? "high" : "low";
+  }
+  save(); renderTasks();
+}
+function taskChange(e){
+  const t = e.target;
+  if (t.dataset.choice){ taskState[t.dataset.choice].choice = +t.value; renderTasks(); save(); }
+  if (t.dataset.done){ taskState[t.dataset.done].done = t.checked; renderTasks(); save(); }
+}
+
+/* ============================ 11 UI ============================ */
+const $ = id => document.getElementById(id);
+function save(){ try { localStorage.setItem("sim14-target", JSON.stringify({attempts, score, taskState, curSet})); } catch (e) {} }
+function load(){ try { const d = JSON.parse(localStorage.getItem("sim14-target") || "{}");
+  attempts = d.attempts || []; score = d.score || {n:0, hits:0}; taskState = d.taskState || {}; curSet = d.curSet || "pre"; } catch (e) {} }
+const nearest = (list, v) => list.reduce((b, x, i) => Math.abs(x - v) < Math.abs(list[b] - v) ? i : b, 0);
+function syncControls(){
+  const hi = nearest(HEIGHTS, set.h); set.h = HEIGHTS[hi];
+  $("u").value = set.u; $("uOut").textContent = set.u.toFixed(2);
+  $("ang").value = set.th; $("angOut").textContent = set.th.toFixed(1);
+  $("h").max = HEIGHTS.length - 1; $("h").value = hi; $("hOut").textContent = set.h;
+  $("ttype").value = set.ttype; $("D").value = set.D; $("DOut").textContent = f2(set.D);
+  $("yT").value = set.yT; $("yTOut").textContent = f2(set.yT); $("yT").disabled = set.ttype === "cup";
+  $("aim").checked = set.aim;
+}
+const resetRun = reset;                                // name used by the shared task engine
+function updateButtons(){ $("startBtn").disabled = R.phase === "run"; $("startBtn").textContent = R.phase === "done" ? "▶ Shoot again" : "▶ Shoot"; }
+function updateReadouts(){
+  const S = R.S, s = stateAt(S, R.t), el = $("state");
+  $("r_score").textContent = `${score.n} / ${score.hits}`; $("r_t").textContent = `${f3(R.t)} s`; $("r_xy").textContent = `(${f2(s.x)}, ${f2(s.y)}) m`;
+  if (R.phase === "done"){ el.className = S.hit ? "pill hit" : "pill slide"; el.textContent = S.hit ? "✔ Hit" : "✘ Miss"; $("r_ev").textContent = "The ball " + S.msg; }
+  else { el.className = R.phase === "run" ? "pill rest" : "pill ready"; el.textContent = R.phase === "run" ? "In flight" : "Ready"; $("r_ev").textContent = "Plan the shot, then ▶ Shoot"; }
+}
+const change = () => { syncControls(); reset(); };
+$("u").addEventListener("input", e => { set.u = +e.target.value; change(); });
+$("ang").addEventListener("input", e => { set.th = +e.target.value; change(); });
+$("h").addEventListener("input", e => { set.h = HEIGHTS[+e.target.value]; change(); });
+$("ttype").addEventListener("change", e => { set.ttype = e.target.value; set.yT = TARGETS[set.ttype].defY; change(); });
+$("D").addEventListener("input", e => { set.D = +e.target.value; change(); });
+$("yT").addEventListener("input", e => { set.yT = +e.target.value; change(); });
+$("aim").addEventListener("change", e => { set.aim = e.target.checked; });
+$("startBtn").addEventListener("click", start);
+$("newBtn").addEventListener("click", newTarget);
+$("resetBtn").addEventListener("click", () => { attempts = attempts.filter(a => !sameTarget(a)); save(); renderTrials(); reset(); });
+$("gsel").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; gq = b.dataset.g;
+  document.querySelectorAll("#gsel button").forEach(x => x.setAttribute("aria-pressed", x === b)); });
+$("clearBtn").addEventListener("click", () => { if (confirm("Delete all attempts and reset the score?")){ attempts = []; score = {n:0, hits:0}; save(); renderTrials(); } });
+$("trials").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b){ attempts.splice(+b.dataset.del, 1); save(); renderTrials(); } });
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === t.dataset.tab));
+}));
+$("pTasks").addEventListener("click", taskClick);
+$("pTasks").addEventListener("change", taskChange);
+$("helpBtn").addEventListener("click", () => $("help").classList.add("on"));
+$("helpClose").addEventListener("click", () => $("help").classList.remove("on"));
+$("help").addEventListener("click", e => { if (e.target.id === "help") $("help").classList.remove("on"); });
+
+load(); syncControls(); reset(); renderTrials(); renderTaskSets(); renderTasks();
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  step(dt);
+  drawScene(); drawFBD(); drawGraph(); drawAna(); updateReadouts();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

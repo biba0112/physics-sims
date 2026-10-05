@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Angled Launch Simulation</title>
+<!--
+  IBDP Physics SL · Grade 11 · Topic A.1 Kinematics (projectile motion)
+  Simulation 12 — Angled launch (pairs with the launcher / water-jet range demo)
+  Self-contained: no internet, no external libraries. Open in any modern browser.
+
+  File sections (same order as Simulation 01):
+    1 STYLE     layout, colours (force colours match the slide decks)
+    2 MARKUP    header · scene + readouts · FBD + velocity triangle · tabs (graphs / data / tasks) · controls
+    3 CONFIG    constants, fields, speeds, heights
+    4 PHYSICS   pure functions (no drawing): components of u, then horizontal and vertical motion separately
+    5 RUN       run state, play-back, kept paths
+    6 SCENE     side-view drawing (launcher, strobe, maximum height, range, kept paths)
+    7 FBD       free-body diagram + velocity components
+    8 GRAPHS    path y–x, x–t, y–t, vx–t, vy–t; R–θ analysis graph
+    9 DATA      recorded trials table
+   10 TASKS     data-driven task list (predict / numeric / do)
+   11 UI        controls, events, storage, main loop
+-->
+<style>
+/* ============================ 1 STYLE ============================ */
+/* Simulation 01 style (approved template), unchanged */
+:root{
+  --navy:#1F3A5F; --accent:#E65100; --ink:#263238; --muted:#606A72;
+  --bg:#F2F5F9; --card:#FFFFFF; --line:#DDE6F0; --soft:#FFF3E0; --soft-blue:#E3F2FD;
+  --wood:#FFCC80; --wood-edge:#C68A3A;
+  --cW:#2A5D8A; --cN:#2E7D32; --cF:#C62828; --cP:#6A1B9A;   /* weight, normal, friction, pull */
+  --ok:#2E7D32; --bad:#C62828;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);
+  font:16px/1.4 "Segoe UI",Calibri,"Helvetica Neue",Arial,sans-serif;
+  -webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;min-height:100dvh}
+header{background:var(--navy);color:#fff;border-bottom:4px solid var(--accent);
+  display:flex;align-items:center;gap:16px;padding:8px 16px}
+header h1{font-size:1.25rem;margin:0;font-weight:600}
+header .sub{font-size:.85rem;opacity:.85}
+header .grow{flex:1}
+.btn{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;
+  min-height:44px;padding:6px 14px;cursor:pointer;touch-action:manipulation}
+.btn:hover{border-color:var(--navy)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.small{min-height:36px;padding:4px 10px;font-size:.9rem}
+header .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+
+/* layout: scene + state | FBD (always visible) | tabs; fills the screen height */
+main{flex:1;min-height:500px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.3fr);
+  grid-template-rows:minmax(0,1fr) auto;gap:12px;padding:12px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card h2{font-size:.95rem;margin:0;padding:6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line);
+  color:var(--navy);font-weight:600}
+.left{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.scenecard{flex:1 1 0;display:flex;flex-direction:column;min-height:0}
+.fbdcol{display:flex;flex-direction:column;min-width:0;min-height:0}
+#sceneWrap{position:relative;flex:1;min-height:150px}
+#scene{width:100%;height:100%;display:block}
+#fbdWrap{flex:1;min-height:220px}
+#fbd{width:100%;height:100%;display:block}
+.readouts{padding:6px 12px;flex:0 1 auto;min-height:0;overflow:auto}  /* natural height; the scene takes the rest */
+.readouts table{width:100%;border-collapse:collapse;font-size:.9rem}
+.readouts td.v{white-space:nowrap;padding-left:6px}
+.readouts td{padding:4px 2px;border-bottom:1px solid #EEF2F6}
+.readouts td.v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.pill{display:inline-block;white-space:nowrap;padding:3px 10px;border-radius:99px;font-size:.85rem;font-weight:600}
+.pill.rest{background:var(--soft-blue);color:#0D47A1}
+.pill.slide{background:#FFEBEE;color:#B71C1C}
+.pill.ready{background:#ECEFF1;color:var(--muted)}
+
+.right{display:flex;flex-direction:column;min-width:0;min-height:0}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 8px 6px 12px;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.cardhead h2{padding:0;border:none;background:none;flex:1}
+.cardhead .btn{min-height:40px;padding:4px 10px}
+.tabs{display:flex;gap:4px;padding:6px 6px 0;background:#F7F9FC;border-bottom:1px solid var(--line)}
+.tab{font:inherit;border:1px solid transparent;border-bottom:none;background:transparent;padding:8px 14px;
+  min-height:44px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--muted);font-weight:600}
+.tab[aria-selected="true"]{background:#fff;border-color:var(--line);color:var(--navy);margin-bottom:-1px}
+.panel{display:none;padding:10px 12px;flex:1;min-height:0;overflow:hidden}
+.panel.on{display:flex;flex-direction:column;gap:8px}
+#graphWrap{position:relative;flex:1;min-height:200px}
+#graph{width:100%;height:100%;display:block;touch-action:none}
+.hint{font-size:.85rem;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#trials{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
+#trials th,#trials td{border-bottom:1px solid var(--line);padding:4px 4px;text-align:right}
+#trials th{color:var(--navy);font-weight:600;background:#F7F9FC;position:sticky;top:0}
+#trials td:first-child,#trials th:first-child,#trials td:nth-child(2),#trials th:nth-child(2){text-align:left}
+.tableBox{max-height:150px;flex:none;overflow:auto;border:1px solid var(--line);border-radius:8px}
+#ffnWrap{flex:1;min-height:180px}
+#ffn{width:100%;height:100%;display:block}
+.x{border:none;background:none;color:var(--bad);font-size:1.1rem;cursor:pointer;min-width:32px;min-height:32px}
+
+/* tasks */
+#taskSets{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:inherit;font-size:.9rem;border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 14px;
+  min-height:40px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chip[aria-pressed="true"] .hint{color:#DDE6F0}
+#taskList{overflow:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding-right:2px}
+.step{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.step .q{margin:0 0 6px}
+.step .n{display:inline-block;min-width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;
+  text-align:center;line-height:26px;font-size:.85rem;font-weight:700;margin-right:6px}
+.step.done .n{background:var(--ok)}
+.opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;
+  margin:4px 0;cursor:pointer;min-height:40px}
+.opt input{width:20px;height:20px}
+.opt.good{border-color:var(--ok);background:#E8F5E9}
+.opt.bad{border-color:var(--bad);background:#FFEBEE}
+.fb{margin-top:6px;padding:6px 10px;border-radius:8px;font-size:.92rem}
+.fb.ok{background:#E8F5E9;border-left:4px solid var(--ok)}
+.fb.no{background:#FFEBEE;border-left:4px solid var(--bad)}
+.fb.info{background:var(--soft-blue);border-left:4px solid #1565C0}
+.num{font:inherit;width:110px;min-height:40px;padding:4px 8px;border:1px solid #B0BEC5;border-radius:8px}
+.tag{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+
+/* controls */
+#controls{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;padding:10px 14px}
+.ctl{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ctl label,.ctl .lab{font-size:.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.ctl select{font:inherit;min-height:44px;border:1px solid #B0BEC5;border-radius:8px;padding:4px 8px;background:#fff}
+.mu{font-size:.85rem;color:var(--navy);font-weight:600}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper .btn{width:44px;padding:0;font-size:1.3rem}
+.stepper output{min-width:24px;text-align:center;font-weight:700;font-size:1.1rem}
+input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
+.seg{display:flex;border:1px solid #B0BEC5;border-radius:8px;overflow:hidden}
+.seg button{font:inherit;border:none;background:#fff;min-height:42px;padding:4px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+.switch{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.switch input{width:22px;height:22px;accent-color:var(--accent)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* help overlay */
+#help{position:fixed;inset:0;background:rgba(31,58,95,.55);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
+#help.on{display:flex}
+#help .box{background:#fff;border-radius:14px;max-width:720px;width:100%;max-height:90vh;overflow:auto;padding:18px 22px}
+#help h3{margin:.2em 0 .4em;color:var(--navy)}
+#help li{margin:.25em 0}
+.eq{font-family:"Cambria Math",Cambria,"Times New Roman",serif;font-size:1.05rem}
+
+@media (max-width:1300px){
+  .readouts table{font-size:.85rem}
+  .pill{font-size:.78rem;padding:2px 8px}
+}
+/* tablet landscape: scene + state on the left; FBD above the tabs on the right */
+@media (max-width:1099px){
+  main{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) minmax(0,1fr) auto;min-height:640px}
+  .left{grid-row:1/3}
+  .fbdcol{grid-column:2;grid-row:1}
+  .right{grid-column:2;grid-row:2}
+  #fbdWrap{min-height:200px}
+  #pGraph .hint{display:none}
+  #controls{gap:8px 12px;padding:8px 12px}
+  input[type=range]{width:118px}
+  header .sub{display:none}
+}
+/* phone / narrow portrait: one scrolling column */
+@media (max-width:759px){
+  body{height:auto}
+  main{display:flex;flex-direction:column}
+  #sceneWrap{flex:none;height:260px}
+  .readouts{flex:none}
+  #fbdWrap{flex:none;height:320px}
+  .right{height:640px;flex:none}
+}
+
+/* Simulation 10–12 additions */
+:root{--cD:#AD1457;--cV:#1565C0;--cA:#E65100}
+#anaWrap{flex:1;min-height:170px}
+#ana{width:100%;height:100%;display:block}
+.seg.small button{min-height:38px;padding:2px 10px;font-size:.92rem}
+.readouts .ev{color:var(--muted);font-weight:600}
+#controls .pair{display:flex;gap:4px 12px;flex-wrap:wrap}
+#controls .pair label{text-transform:none;letter-spacing:0;font-size:.92rem;color:var(--ink);font-weight:400}
+.ctl label i,.ctl label .nt{text-transform:none}
+#controls{gap:10px 14px}
+#controls input[type=range]{width:140px}
+#controls select{max-width:145px}
+.readouts td.gap{width:14px;border-bottom:none}
+@media (max-width:1300px){ #controls input[type=range]{width:125px} #controls select{max-width:135px} }
+@media (max-width:1099px){ #controls input[type=range]{width:112px} #controls select{max-width:130px} }
+</style>
+</head>
+<body>
+<!-- ============================ 2 MARKUP ============================ -->
+<header>
+  <div>
+    <h1>Angled launch — range, height and time of flight</h1>
+    <div class="sub">IBDP Physics SL · A.1 Kinematics · Simulation 12 · g = 9.81 m s⁻² · up and right are positive</div>
+  </div>
+  <div class="grow"></div>
+  <button class="btn" id="helpBtn" aria-label="How to use">? How to use</button>
+</header>
+
+<main>
+  <section class="left">
+    <div class="card scenecard">
+      <div class="cardhead">
+        <div class="actions">
+          <button class="btn primary" id="startBtn">▶ Launch</button>
+          <button class="btn" id="pauseBtn" disabled>⏸ Pause</button>
+          <button class="btn" id="resetBtn">↺ Clear</button>
+          <button class="btn navy" id="recBtn" disabled>● Record</button>
+        </div>
+      </div>
+      <div id="sceneWrap"><canvas id="scene" aria-label="Side view of a ball launched at an angle"></canvas></div>
+    </div>
+    <div class="card readouts">
+      <table>
+        <tr><td>State</td><td class="v"><span id="state" class="pill ready">Ready</span></td><td class="gap"></td>
+            <td>Time <i>t</i></td><td class="v" id="r_t">0.000 s</td></tr>
+        <tr><td>Position <i>x</i></td><td class="v" id="r_x"></td><td class="gap"></td>
+            <td>Height <i>y</i></td><td class="v" id="r_y"></td></tr>
+        <tr><td><i>v</i><sub>x</sub></td><td class="v" id="r_vx" style="color:var(--cP)"></td><td class="gap"></td>
+            <td><i>v</i><sub>y</sub></td><td class="v" id="r_vy" style="color:var(--cV)"></td></tr>
+        <tr><td class="ev" colspan="5" id="r_ev">Events: —</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="card fbdcol" aria-label="Free-body diagram and velocity components">
+    <h2>Free-body diagram and velocity of the ball</h2>
+    <div id="fbdWrap"><canvas id="fbd" aria-label="Free-body diagram and velocity components"></canvas></div>
+  </section>
+
+  <section class="card right">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="pGraph">Graphs</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pData">Data &amp; <i>R</i>–<i>θ</i></button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pTasks">Tasks</button>
+    </div>
+
+    <div class="panel on" id="pGraph">
+      <div class="row">
+        <div class="seg small" id="gsel">
+          <button data-g="path" aria-pressed="true">path <i>y</i>–<i>x</i></button>
+          <button data-g="x" aria-pressed="false"><i>x</i>–<i>t</i></button>
+          <button data-g="y" aria-pressed="false"><i>y</i>–<i>t</i></button>
+          <button data-g="vx" aria-pressed="false"><i>v</i><sub>x</sub>–<i>t</i></button>
+          <button data-g="vy" aria-pressed="false"><i>v</i><sub>y</sub>–<i>t</i></button>
+        </div>
+      </div>
+      <div id="graphWrap"><canvas id="graph" aria-label="Motion graph"></canvas></div>
+      <div class="hint">The current launch is solid; kept launches are faint. <i>v</i><sub>x</sub> stays constant, <i>v</i><sub>y</sub> falls by
+        9.81 m s⁻¹ every second and is zero at the top. Move over the graph to read values.</div>
+    </div>
+
+    <div class="panel" id="pData">
+      <div class="row">
+        <button class="btn small" id="clearBtn">Clear all trials</button>
+        <span style="flex:1"></span>
+        <label class="switch"><input type="checkbox" id="fitChk"> Show theory curve</label>
+      </div>
+      <div class="tableBox">
+        <table id="trials">
+          <thead><tr><th>#</th><th>Field</th><th><i>u</i> / m s⁻¹</th><th><i>θ</i> / °</th><th><i>h</i> / m</th>
+            <th><i>H</i> / m</th><th><i>T</i> / s</th><th><i>R</i> / m</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="anaWrap"><canvas id="ana" aria-label="Range against launch angle graph"></canvas></div>
+    </div>
+
+    <div class="panel" id="pTasks">
+      <div id="taskSets"></div>
+      <div id="taskList"></div>
+    </div>
+  </section>
+
+  <section class="card" id="controls" aria-label="Controls">
+    <div class="ctl">
+      <label for="u">Speed <i>u</i> = <span id="uOut" class="nt">10.0</span> <span class="nt">m s⁻¹</span></label>
+      <input type="range" id="u" min="0.5" max="30" step="0.5" value="10">
+    </div>
+    <div class="ctl">
+      <label for="ang">Angle <i>θ</i> = <span id="angOut" class="nt">45</span>°</label>
+      <input type="range" id="ang" min="0" max="90" step="1" value="45">
+    </div>
+    <div class="ctl">
+      <label for="h">Launch height <i>h</i> = <span id="hOut" class="nt">0</span> <span class="nt">m</span></label>
+      <input type="range" id="h" min="0" max="10" step="1" value="0">
+    </div>
+    <div class="ctl">
+      <label for="field">Field</label>
+      <select id="field"></select>
+    </div>
+    <div class="ctl">
+      <span class="lab">Options</span>
+      <div class="pair">
+        <label class="switch"><input type="checkbox" id="keep" checked> Keep paths</label>
+        <label class="switch"><input type="checkbox" id="strobe" checked> Strobe</label>
+        <label class="switch"><input type="checkbox" id="slow"> Slow ¼×</label>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="box">
+    <h3 id="helpTitle">How to use this simulation</h3>
+    <ol>
+      <li>Set the launch <b>speed</b> <i>u</i>, the <b>angle</b> <i>θ</i> above the horizontal and the launch <b>height</b> <i>h</i>
+        (0 = from the ground).</li>
+      <li>Press <b>▶ Launch</b>. The <b>strobe</b> shows the ball every 0.1 s; the dashed lines mark the maximum height <i>H</i> and the range <i>R</i>.</li>
+      <li>With <b>Keep paths</b> on, earlier launches stay on the screen (faint) so you can compare angles. <b>↺ Clear</b> removes them.</li>
+      <li>Press <b>● Record</b>. The <b>Data</b> tab plots <i>R</i> against <i>θ</i> for the current speed and height, with the theory curve if you want it.</li>
+      <li>Work through the <b>Tasks</b> tab. Write explanations on your worksheet.</li>
+    </ol>
+    <h3>The physics</h3>
+    <ul>
+      <li>Resolve the launch velocity: <span class="eq">u<sub>x</sub> = u cos θ</span>, <span class="eq">u<sub>y</sub> = u sin θ</span>.</li>
+      <li>Horizontal: <span class="eq">a<sub>x</sub> = 0</span>, so <span class="eq">x = u<sub>x</sub>t</span>. Vertical:
+        <span class="eq">a<sub>y</sub> = −g</span>, so <span class="eq">y = h + u<sub>y</sub>t − ½gt²</span>, <span class="eq">v<sub>y</sub> = u<sub>y</sub> − gt</span>.</li>
+      <li>At the top <span class="eq">v<sub>y</sub> = 0</span>: <span class="eq">t<sub>top</sub> = u<sub>y</sub>/g</span>,
+        <span class="eq">H = h + u<sub>y</sub>²/(2g)</span>. The ball still moves sideways at <i>u</i><sub>x</sub>.</li>
+      <li>From the ground (h = 0): <span class="eq">T = 2u<sub>y</sub>/g</span> and <span class="eq">R = u<sub>x</sub>T = u² sin 2θ / g</span>
+        — largest at 45°, and equal for complementary angles (e.g. 30° and 60°).</li>
+    </ul>
+    <p class="hint">Model: no air resistance (see Simulation 15); g = 9.81 (Earth), 1.62 (Moon), 3.71 (Mars) m s⁻². The ball is drawn
+      bigger than to scale; x and y use the same scale, so the shape of the path is true.</p>
+    <p style="text-align:right"><button class="btn primary" id="helpClose">Close</button></p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================ 3 CONFIG ============================ */
+const FIELDS = [
+  {id:"earth", name:"Earth", g:9.81},
+  {id:"moon",  name:"Moon",  g:1.62},
+  {id:"mars",  name:"Mars",  g:3.71},
+];
+const HEIGHTS = [0, 0.5, 1, 1.5, 2, 3, 5, 8, 10, 15, 20, 30];
+const STROBE_DT = 0.1;                  // s between strobe images
+const MAX_KEPT = 8;                     // kept paths on screen
+const COL = {W:"#2A5D8A", N:"#2E7D32", F:"#C62828", P:"#6A1B9A", v:"#1565C0", a:"#E65100",
+             navy:"#1F3A5F", accent:"#E65100", ink:"#263238", muted:"#606A72", grid:"#E3E9F0", grey:"#90A4AE"};
+const KEPT = ["#1565C0", "#2E7D32", "#AD1457", "#6A1B9A", "#00838F", "#EF6C00", "#5D4037", "#455A64"];
+const fieldById = id => FIELDS.find(f => f.id === id);
+
+/* ============================ 4 PHYSICS ============================ */
+const f2 = x => (Math.round(x * 100) / 100).toFixed(2);
+const f3 = x => (Math.round(x * 1000) / 1000).toFixed(3);
+const sig = (x, n = 3) => String(+Number(x).toPrecision(n));          // 3 s.f., never in e-notation
+const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+// One launch: resolve u, then treat x (a = 0) and y (a = −g) separately.
+function launch(u, th, h, g){
+  const ux = u * Math.cos(rad(th)), uy = u * Math.sin(rad(th));
+  const T = (uy + Math.sqrt(uy * uy + 2 * g * h)) / g;              // time to reach y = 0
+  const tTop = uy > 0 ? uy / g : 0, H = h + (uy > 0 ? uy * uy / (2 * g) : 0);
+  return {u, th, h, g, ux, uy, T, tTop, H, R:ux * T, vyLand:uy - g * T};
+}
+function stateAt(L, t){
+  const tt = Math.max(0, Math.min(t, L.T));
+  return {x:L.ux * tt, y:Math.max(0, L.h + L.uy * tt - L.g * tt * tt / 2), vx:t >= L.T ? 0 : L.ux, vy:t >= L.T ? 0 : L.uy - L.g * tt, landed:t >= L.T};
+}
+const rangeGround = (u, th, g) => u * u * Math.sin(rad(2 * th)) / g;
+const timeGround = (u, th, g) => 2 * u * Math.sin(rad(th)) / g;
+const maxHeight = (u, th, g) => (u * Math.sin(rad(th))) ** 2 / (2 * g);
+function linFit(pts){ const n = pts.length; if (n < 2) return null;
+  const mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+  const sxx = pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0); if (!sxx) return null;
+  const k = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / sxx; return {k, b:my - k * mx}; }
+function originFit(pts){ const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0);
+  return sxx && pts.length >= 2 ? {k:pts.reduce((a, p) => a + p[0] * p[1], 0) / sxx, b:0} : null; }
+
+/* ============================ 5 RUN ============================ */
+const set = {u:10, th:45, h:0, field:"earth", keep:true, strobe:true, slow:false};
+const R = {phase:"ready", t:0, paused:false, recorded:false, L:null};
+let kept = [];                                          // finished launches kept on screen
+const gNow = () => fieldById(set.field).g;
+function current(){ return launch(set.u, set.th, set.h, gNow()); }
+function reset(){ Object.assign(R, {phase:"ready", t:0, paused:false, recorded:false, L:current()}); cursorT = null; updateButtons(); }
+function clearAll(){ kept = []; reset(); }
+function start(){
+  if (R.phase === "done" && set.keep) kept.push(R.L);
+  if (kept.length > MAX_KEPT) kept.shift();
+  if (!set.keep) kept = [];
+  reset(); R.phase = "run"; updateButtons();
+}
+function step(dt){
+  if (R.phase !== "run" || R.paused) return;
+  R.t += dt * (set.slow ? 0.25 : 1);
+  if (R.t >= R.L.T){ R.t = R.L.T; R.phase = "done"; updateButtons(); }
+}
+
+/* ============================ 6 SCENE ============================ */
+function fitCanvas(cv){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {ctx, w:r.width, h:r.height};
+}
+function arrow(ctx, x1, y1, x2, y2, color, width = 4, dashed = false){
+  const L = Math.hypot(x2 - x1, y2 - y1); if (L < 2) return;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, hs = Math.min(13, 6 + width * 1.6);
+  ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = "round";
+  if (dashed) ctx.setLineDash([6, 5]);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * hs * 0.8, y2 - uy * hs * 0.8); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - ux * hs - uy * hs * 0.5, y2 - uy * hs + ux * hs * 0.5);
+  ctx.lineTo(x2 - ux * hs + uy * hs * 0.5, y2 - uy * hs - ux * hs * 0.5); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function label(ctx, txt, x, y, color, align = "center", size = 15, base = "middle"){
+  ctx.save(); ctx.font = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = color;
+  ctx.textAlign = align; ctx.textBaseline = base;
+  // white halo so labels stay readable over lines
+  ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.strokeText(txt, x, y); ctx.fillText(txt, x, y);
+  ctx.restore();
+}
+function subLabel(ctx, main, sub, rest, x, y, color, align = "center", size = 15){
+  ctx.save(); const f1 = `italic 600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`,
+    f2 = `600 ${Math.round(size * .72)}px "Segoe UI",Calibri,Arial,sans-serif`, f3 = `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+  ctx.font = f1; const w1 = ctx.measureText(main).width; ctx.font = f2; const w2 = sub ? ctx.measureText(sub).width : 0;
+  ctx.font = f3; const w3 = ctx.measureText(rest).width; const W = w1 + w2 + w3;
+  let x0 = align === "center" ? x - W / 2 : align === "right" ? x - W : x;
+  ctx.textBaseline = "middle"; ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.fillStyle = color;
+  ctx.font = f1; ctx.strokeText(main, x0, y); ctx.fillText(main, x0, y);
+  if (sub){ ctx.font = f2; ctx.strokeText(sub, x0 + w1, y + size * .3); ctx.fillText(sub, x0 + w1, y + size * .3); }
+  ctx.font = f3; ctx.strokeText(rest, x0 + w1 + w2, y); ctx.fillText(rest, x0 + w1 + w2, y);
+  ctx.restore();
+}
+function rich(ctx, parts, x, y, color, size = 14){
+  const font = st => st === "i" ? `italic 600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`
+    : st === "s" ? `600 ${Math.round(size * .72)}px "Segoe UI",Calibri,Arial,sans-serif` : `600 ${size}px "Segoe UI",Calibri,Arial,sans-serif`;
+  ctx.save(); ctx.fillStyle = color; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  const ws = parts.map(([t, st]) => { ctx.font = font(st); return ctx.measureText(t).width; });
+  let cx = x - ws.reduce((a, b) => a + b, 0) / 2;
+  parts.forEach(([t, st], i) => { ctx.font = font(st); ctx.fillText(t, cx, st === "s" ? y + size * .3 : y); cx += ws[i]; });
+  ctx.restore();
+}
+function bg(ctx, w, h){ const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#FAFCFF"); g.addColorStop(1, "#EEF3F8");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); }
+function hand(ctx, x, y, k){ ctx.fillStyle = "#F1C27D"; ctx.strokeStyle = "#C99A5B"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(x, y, 20 * k, 13 * k, 0, 0, 7); ctx.fill(); ctx.stroke(); }
+function view(w, h){                                    // same scale on both axes, fits the current and the kept paths
+  const all = [R.L, ...kept];
+  const x1 = Math.max(...all.map(L => L.R), 1) * 1.1, x0 = -Math.max(0.12 * x1, set.h > 0 ? 0.25 * x1 : 0);
+  const top = Math.max(...all.map(L => L.H), 0.5) * 1.15, left = 30, right = 14, topY = 34, floorY = h - 50;
+  const ppm = Math.min((w - left - right) / (x1 - x0), (floorY - topY) / top);
+  const X0 = left + (w - left - right - ppm * (x1 - x0)) / 2 - x0 * ppm;
+  return {x0, x1, top, floorY, ppm, X:x => X0 + x * ppm, Y:y => floorY - y * ppm};
+}
+function drawBall(ctx, x, y, r, alpha = 1){
+  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = "#B0BEC5"; ctx.strokeStyle = "#546E7A"; ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore();
+}
+function pathLine(ctx, V, L, t1, col, width, dash){
+  ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = width; if (dash) ctx.setLineDash(dash); ctx.beginPath();
+  for (let i = 0; i <= 80; i++){ const s = stateAt(L, t1 * i / 80); i ? ctx.lineTo(V.X(s.x), V.Y(s.y)) : ctx.moveTo(V.X(s.x), V.Y(s.y)); }
+  ctx.stroke(); ctx.restore();
+}
+function drawScene(){
+  const {ctx, w, h} = fitCanvas(document.getElementById("scene"));
+  ctx.clearRect(0, 0, w, h); bg(ctx, w, h);
+  const V = view(w, h), L = R.L, r = 7, lx = V.X(0), ly = V.Y(set.h);
+  // ground and platform
+  ctx.fillStyle = "#9CCC65"; ctx.fillRect(0, V.floorY, w, 5); ctx.fillStyle = "#D7CCC8"; ctx.fillRect(0, V.floorY + 5, w, h);
+  if (set.h > 0){ ctx.fillStyle = "#A1887F"; ctx.fillRect(0, ly, lx + 6, V.floorY - ly); ctx.fillStyle = "#7CB342"; ctx.fillRect(0, ly - 4, lx + 6, 4); }
+  // ground scale
+  const sx = niceStep(V.x1, 7); ctx.strokeStyle = "#5D4037"; ctx.lineWidth = 1;
+  for (let s = 0; s <= V.x1 + 1e-9; s += sx){ const X = V.X(s); ctx.beginPath(); ctx.moveTo(X, V.floorY + 5); ctx.lineTo(X, V.floorY + 14); ctx.stroke();
+    if (X < w - 46) label(ctx, `${+s.toFixed(2)}`, X, V.floorY + 21, COL.ink, "center", 11); }
+  label(ctx, "x / m", w - 8, V.floorY + 21, COL.muted, "right", 11);
+  // kept paths
+  kept.forEach((K, i) => { pathLine(ctx, V, K, K.T, KEPT[i % KEPT.length], 1.8, [5, 4]);
+    label(ctx, `${K.th}°`, V.X(K.R), V.floorY - 10 - (i % 3) * 13, KEPT[i % KEPT.length], "center", 11.5); });
+  // current path, strobe, markers
+  if (R.phase !== "ready"){
+    pathLine(ctx, V, L, Math.min(R.t, L.T), COL.ink, 2.2);
+    if (set.strobe) for (let t = 0; t <= Math.min(R.t, L.T) + 1e-9; t += STROBE_DT){ const s = stateAt(L, t); drawBall(ctx, V.X(s.x), V.Y(s.y) - r * 0, r, 0.28); }
+    if (L.uy > 0 && R.t >= L.tTop){
+      const xt = V.X(L.ux * L.tTop), yt = V.Y(L.H);
+      ctx.save(); ctx.strokeStyle = COL.v; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(xt, yt); ctx.lineTo(xt, V.floorY); ctx.stroke(); ctx.restore();
+      label(ctx, `H = ${f2(L.H)} m`, xt + 6, (yt + V.floorY) / 2, COL.v, "left", 12.5);
+    }
+    if (R.phase === "done"){
+      ctx.save(); ctx.strokeStyle = COL.F; ctx.lineWidth = 1.5; ctx.setLineDash([6, 3]); ctx.beginPath(); ctx.moveTo(lx, V.floorY + 38); ctx.lineTo(V.X(L.R), V.floorY + 38); ctx.stroke(); ctx.restore();
+      label(ctx, `R = ${f2(L.R)} m`, (lx + V.X(L.R)) / 2, V.floorY + 38, COL.F, "center", 13);
+    }
+  }
+  // launcher (tube at angle θ)
+  ctx.save(); ctx.translate(lx, ly); ctx.rotate(-rad(set.th));
+  ctx.fillStyle = "#455A64"; ctx.fillRect(-4, -7, 36, 14); ctx.restore();
+  ctx.fillStyle = "#263238"; ctx.beginPath(); ctx.arc(lx, ly, 8, Math.PI, 0); ctx.fill();
+  // angle arc
+  ctx.strokeStyle = COL.accent; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(lx, ly, 46, -rad(set.th), 0); ctx.stroke();
+  label(ctx, `θ = ${set.th}°`, lx + 52, ly - 12, COL.accent, "left", 12.5);
+  // ball + velocity components
+  const s = stateAt(L, R.t), bx = V.X(s.x), by = V.Y(s.y);
+  if (R.phase !== "ready" || true) drawBall(ctx, bx, by, r);
+  if (R.phase === "run" && !s.landed){
+    const k = 50 / Math.max(set.u, 1);
+    arrow(ctx, bx, by, bx + s.vx * k, by, COL.P, 2); arrow(ctx, bx, by, bx, by - s.vy * k, COL.v, 2);
+    arrow(ctx, bx, by, bx + s.vx * k, by - s.vy * k, COL.ink, 2.5);
+  }
+  const st = R.phase === "ready" ? `Ready: u = ${set.u.toFixed(1)} m s⁻¹ at ${set.th}°${set.h ? ` from h = ${set.h} m` : ""}` : R.phase === "done" ? "Landed" : R.paused ? "Paused" : (set.slow ? "In flight (¼×)" : "In flight");
+  label(ctx, `${st} · ${fieldById(set.field).name}`, 12, 16, COL.navy, "left", 14);
+  label(ctx, `t = ${f3(Math.min(R.t, L.T))} s`, w - 12, 16, COL.P, "right", 16);
+}
+
+/* ============================ 7 FBD ============================ */
+function drawFBD(){
+  const {ctx, w, h} = fitCanvas(document.getElementById("fbd"));
+  ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const L = R.L, g = gNow(), m = 0.0580, W = m * g, s = stateAt(L, R.t), flying = R.phase !== "ready" && !s.landed;
+  const cx = w * 0.2, cy = h * 0.42, Lw = h * 0.26;
+  label(ctx, "Forces on the ball", cx, 40, COL.muted, "center", 12);
+  drawBall(ctx, cx, cy, 12);
+  arrow(ctx, cx, cy, cx, cy + Lw, COL.W, 4);
+  subLabel(ctx, "W", "", ` = ${sig(W)} N`, cx + 10, cy + Lw - 4, COL.W, "left", 13);
+  if (!flying && R.phase !== "ready"){ arrow(ctx, cx, cy, cx, cy - Lw, COL.N, 4); subLabel(ctx, "F", "N", ` = ${sig(W)} N`, cx + 10, cy - Lw + 6, COL.N, "left", 13); }
+  label(ctx, flying ? "In flight: only the weight acts (up, top and down)" : R.phase === "ready" ? "Tennis ball, m = 58 g" : "Landed: forces balance", w / 2, 14, COL.navy, "center", 12.5);
+  label(ctx, flying ? `→ aₓ = 0 and a_y = −${f2(g)} m s⁻² the whole time` : "", w / 2, h - 14, COL.muted, "center", 12);
+  // velocity triangle (to scale)
+  ctx.save(); ctx.strokeStyle = COL.grid; ctx.beginPath(); ctx.moveTo(w * 0.42, 34); ctx.lineTo(w * 0.42, h - 34); ctx.stroke(); ctx.restore();
+  label(ctx, "Velocity (to scale)", w * 0.71, 40, COL.muted, "center", 12);
+  const vmax = Math.max(set.u, Math.hypot(L.ux, L.vyLand), 0.5), k = Math.min(w * 0.40, (h - 130) / 2) / vmax;
+  const ox = w * 0.5, oy = 64 + Math.max(L.uy, 0) * k;
+  const vx = flying ? s.vx : R.phase === "ready" ? L.ux : 0, vy = flying ? s.vy : R.phase === "ready" ? L.uy : 0;
+  ctx.save(); ctx.strokeStyle = "#ECEFF1"; ctx.beginPath(); ctx.moveTo(ox - 6, oy); ctx.lineTo(w - 10, oy); ctx.stroke(); ctx.restore();
+  ctx.fillStyle = COL.ink; ctx.beginPath(); ctx.arc(ox, oy, 3.5, 0, 7); ctx.fill();
+  if (vx > 0.01) arrow(ctx, ox, oy, ox + vx * k, oy, COL.P, 3);
+  if (Math.abs(vy) > 0.01) arrow(ctx, ox + vx * k, oy, ox + vx * k, oy - vy * k, COL.v, 3);
+  if (Math.hypot(vx, vy) > 0.01) arrow(ctx, ox, oy, ox + vx * k, oy - vy * k, COL.ink, 3.5);
+  if (vx > 0.01) subLabel(ctx, "v", "x", ` = ${f2(vx)}`, ox + vx * k / 2, oy + (vy > 0 ? 14 : -14), COL.P, "center", 13);
+  if (Math.abs(vy) > 0.05) subLabel(ctx, "v", "y", ` = ${f2(vy)}`, ox + vx * k + 8, oy - vy * k / 2, COL.v, "left", 13);
+  const sp = Math.hypot(vx, vy);
+  if (R.phase !== "done" && sp > 0.05){
+    label(ctx, `v = ${f2(sp)} m s⁻¹ at ${deg(Math.atan2(vy, vx)).toFixed(1)}° ${vy >= 0 ? "above" : "below"} horizontal`, w * 0.71, h - 40, COL.ink, "center", 12.5);
+    if (flying && Math.abs(vy) < 0.25) label(ctx, "top: v_y = 0, v = vₓ (not zero!)", w * 0.71, h - 58, COL.v, "center", 12);
+  }
+}
+
+/* ============================ 8 GRAPHS ============================ */
+function niceUp(x){ const p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+function niceStep(range, n){ return niceUp(range / n); }
+function niceCeil(x, n = 5){ const st = niceUp(x / n); return Math.ceil(x / st - 1e-9) * st; }
+function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
+  const {x, y, w, h} = box, X = v => x + w * (v - x0) / (x1 - x0), Y = v => y + h - h * (v - y0) / (y1 - y0);
+  ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted; ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+  const xs = niceStep(x1 - x0, 8), ys = niceStep(y1 - y0, 6);
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + 1e-9; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(+v.toFixed(2), X(v), y + h + 4); }
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + 1e-9; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(+v.toFixed(2), x - 5, Y(v)); }
+  ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath();
+  const zx = x0 <= 0 && x1 >= 0 ? X(0) : x, zy = y0 <= 0 && y1 >= 0 ? Y(0) : y + h;
+  ctx.moveTo(zx, y); ctx.lineTo(zx, y + h); ctx.moveTo(x, zy); ctx.lineTo(x + w, zy); ctx.stroke();
+  ctx.restore();
+  rich(ctx, xLab, x + w / 2, y + h + 30, COL.ink);
+  ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
+  return {X, Y};
+}
+let cursorT = null, gq = "path";
+const GQ = {x:{lab:[["position ","n"],["x","i"],[" / m","n"]], col:COL.P, f:s => s.x},
+            y:{lab:[["height ","n"],["y","i"],[" / m","n"]], col:COL.ink, f:s => s.y},
+            vx:{lab:[["v","i"],["x","s"],[" / m s⁻¹","n"]], col:COL.P, f:s => s.vx},
+            vy:{lab:[["v","i"],["y","s"],[" / m s⁻¹","n"]], col:COL.v, f:s => s.vy}};
+function drawGraph(){
+  const cv = document.getElementById("graph"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv);
+  ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const box = {x:58, y:16, w:w - 74, h:h - 66}, L = R.L, all = [L, ...kept], N = 100, tNow = Math.min(R.t, L.T);
+  if (gq === "path"){
+    const xm = niceCeil(Math.max(...all.map(K => K.R), 0.5) * 1.05), ym = niceCeil(Math.max(...all.map(K => K.H), 0.5) * 1.1);
+    const {X, Y} = axesR(ctx, box, 0, xm, 0, ym, [["horizontal position ","n"],["x","i"],[" / m","n"]], [["height ","n"],["y","i"],[" / m","n"]]);
+    kept.forEach((K, i) => { ctx.save(); ctx.strokeStyle = KEPT[i % KEPT.length]; ctx.globalAlpha = .6; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.8; ctx.beginPath();
+      for (let j = 0; j <= N; j++){ const s = stateAt(K, K.T * j / N); j ? ctx.lineTo(X(s.x), Y(s.y)) : ctx.moveTo(X(s.x), Y(s.y)); } ctx.stroke(); ctx.restore(); });
+    if (R.phase === "ready"){ if (!kept.length) label(ctx, "Press ▶ Launch", box.x + box.w / 2, box.y + box.h / 2, COL.muted, "center", 16); return; }
+    ctx.save(); ctx.strokeStyle = COL.ink; ctx.lineWidth = 2.4; ctx.beginPath();
+    for (let j = 0; j <= N; j++){ const s = stateAt(L, tNow * j / N); j ? ctx.lineTo(X(s.x), Y(s.y)) : ctx.moveTo(X(s.x), Y(s.y)); } ctx.stroke(); ctx.restore();
+    if (L.uy > 0 && R.t >= L.tTop){ ctx.fillStyle = COL.v; ctx.beginPath(); ctx.arc(X(L.ux * L.tTop), Y(L.H), 5, 0, 7); ctx.fill();
+      label(ctx, `top: H = ${f2(L.H)} m`, X(L.ux * L.tTop), Y(L.H) - 13, COL.v, "center", 12.5); }
+    if (R.phase === "done"){ ctx.fillStyle = COL.accent; ctx.beginPath(); ctx.arc(X(L.R), Y(0), 5, 0, 7); ctx.fill();
+      label(ctx, `R = ${f2(L.R)} m`, X(L.R) - 6, Y(0) - 13, COL.accent, "right", 12.5); }
+    return;
+  }
+  const q = GQ[gq], tMax = niceCeil(Math.max(...all.map(K => K.T)) * 1.04), vals = [];
+  for (const K of all) for (let j = 0; j <= N; j++) vals.push(q.f(stateAt(K, K.T * j / N * 0.9999)));
+  let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals); const span = hi - lo || 1;
+  hi = hi > 0 ? niceCeil(hi + span * 0.06) : niceUp(span * 0.1); lo = lo < 0 ? -niceCeil(-lo + span * 0.06) : 0;
+  const {X, Y} = axesR(ctx, box, 0, tMax, lo, hi, [["time ","n"],["t","i"],[" / s","n"]], q.lab);
+  const curve = (K, t1, col, width, dash) => { ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = width; if (dash){ ctx.setLineDash(dash); ctx.globalAlpha = .6; } ctx.beginPath();
+    for (let j = 0; j <= N; j++){ const t = Math.min(t1, K.T * 0.9999) * j / N, v = q.f(stateAt(K, t)); j ? ctx.lineTo(X(t), Y(v)) : ctx.moveTo(X(t), Y(v)); } ctx.stroke(); ctx.restore(); };
+  kept.forEach((K, i) => curve(K, K.T, KEPT[i % KEPT.length], 1.8, [5, 4]));
+  if (R.phase === "ready"){ if (!kept.length) label(ctx, "Press ▶ Launch", box.x + box.w / 2, box.y + box.h / 2, COL.muted, "center", 16); return; }
+  curve(L, tNow, q.col, 2.4);
+  if (gq === "vy" && L.uy > 0 && R.t >= L.tTop){ ctx.fillStyle = COL.v; ctx.beginPath(); ctx.arc(X(L.tTop), Y(0), 5, 0, 7); ctx.fill();
+    label(ctx, `v_y = 0 at the top, t = ${f3(L.tTop)} s`, X(L.tTop) + 8, Y(0) - 13, COL.v, "left", 12.5); }
+  if (gq === "vy") label(ctx, `gradient = −g = −${f2(L.g)} m s⁻²`, box.x + box.w - 6, box.y + 12, COL.v, "right", 12.5);
+  if (gq === "vx") label(ctx, `vₓ = u cos θ = ${f2(L.ux)} m s⁻¹, constant`, box.x + 10, box.y + 12, COL.P, "left", 12.5);
+  if (cursorT !== null && cursorT <= tNow){
+    const s = stateAt(L, Math.min(cursorT, L.T * 0.9999)), v = q.f(s);
+    ctx.save(); ctx.strokeStyle = "rgba(38,50,56,.5)"; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(X(cursorT), box.y); ctx.lineTo(X(cursorT), box.y + box.h); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = COL.ink; ctx.beginPath(); ctx.arc(X(cursorT), Y(v), 4, 0, 7); ctx.fill();
+    const right = X(cursorT) > box.x + box.w * 0.6;
+    label(ctx, `t = ${f3(cursorT)} s   ${f2(v)} ${gq.startsWith("v") ? "m s⁻¹" : "m"}`, X(cursorT) + (right ? -8 : 8), box.y + box.h - 12, COL.ink, right ? "right" : "left", 14);
+  }
+}
+// R against θ for the current speed, height and field; optional theory curve
+function drawAna(){
+  const cv = document.getElementById("ana"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv);
+  ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const g = gNow(), same = t => t.field === set.field && Math.abs(t.u - set.u) < 1e-6 && Math.abs(t.h - set.h) < 1e-6, tr = trials.filter(same);
+  let best = {th:0, R:0}; for (let a = 0; a <= 90; a += 0.5){ const Rr = launch(set.u, a, set.h, g).R; if (Rr > best.R) best = {th:a, R:Rr}; }
+  const box = {x:58, y:44, w:w - 74, h:h - 94}, yMax = niceCeil(Math.max(best.R, ...tr.map(t => t.R), 0.5) * 1.1);
+  const {X, Y} = axesR(ctx, box, 0, 90, 0, yMax, [["launch angle ","n"],["θ","i"],[" / °","n"]], [["range ","n"],["R","i"],[" / m","n"]]);
+  label(ctx, `Trials with u = ${set.u.toFixed(1)} m s⁻¹, h = ${set.h} m on ${fieldById(set.field).name}`, box.x, 14, COL.muted, "left", 12.5);
+  if (document.getElementById("fitChk").checked){
+    ctx.save(); ctx.strokeStyle = COL.accent; ctx.lineWidth = 2; ctx.beginPath();
+    for (let a = 0; a <= 90; a += 1){ const Rr = launch(set.u, a, set.h, g).R; a ? ctx.lineTo(X(a), Y(Rr)) : ctx.moveTo(X(a), Y(Rr)); } ctx.stroke(); ctx.restore();
+    ctx.fillStyle = COL.accent; ctx.beginPath(); ctx.arc(X(best.th), Y(best.R), 4, 0, 7); ctx.fill();
+    label(ctx, `theory: maximum R = ${f2(best.R)} m at θ = ${best.th.toFixed(0)}°${set.h ? " (below 45° because h > 0)" : " = u²/g"}`, box.x, 30, COL.accent, "left", 13);
+  }
+  if (!tr.length){ label(ctx, "Record launches at this speed to plot them here", box.x + box.w / 2, box.y + box.h / 2, COL.muted, "center", 15); return; }
+  for (const t of tr){ ctx.fillStyle = COL.navy; ctx.beginPath(); ctx.arc(X(t.th), Y(t.R), 5, 0, 7); ctx.fill(); }
+}
+
+/* ============================ 9 DATA ============================ */
+let trials = [];
+function recordTrial(){
+  if (R.phase !== "done" || R.recorded) return;
+  const L = R.L;
+  trials.push({field:set.field, u:set.u, th:set.th, h:set.h, H:+L.H.toFixed(3), T:+L.T.toFixed(3), R:+L.R.toFixed(3)});
+  R.recorded = true; save(); renderTrials(); updateButtons();
+}
+function renderTrials(){
+  const tb = document.querySelector("#trials tbody"); tb.innerHTML = "";
+  trials.forEach((t, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${i + 1}</td><td>${fieldById(t.field).name}</td><td>${t.u.toFixed(1)}</td><td>${t.th}</td><td>${t.h}</td>
+      <td>${f2(t.H)}</td><td>${f3(t.T)}</td><td>${f2(t.R)}</td>
+      <td><button class="x" aria-label="Delete trial ${i + 1}" data-del="${i}">×</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ============================ 10 TASKS ============================ */
+// Step types: "do" (instruction + done tick), "predict" (lock in a choice, then check),
+// "num" (numeric answer checked within tol, default 5 %). "setup" applies sim settings for the student.
+const E = 9.81;
+const BASE = {h:0, field:"earth", keep:true, strobe:true, slow:false};
+const TASKS = [
+ {id:"pre", title:"1 · Pre-lab: predict", time:"≈ 15 min", steps:[
+  {type:"do", setup:{...BASE, u:10, th:45},
+   text:"Set up: u = 10 m s⁻¹, θ = 45°, from the ground. Press ▶ Launch. Watch the velocity components on the ball and in the velocity triangle."},
+  {type:"predict", setup:{...BASE, u:10, th:30},
+   text:"Same speed (10 m s⁻¹) from the ground. Which angle gives the <b>longest range</b>? Predict, then try 30°, 45° and 60° with Keep paths on.",
+   opts:["30°", "45°", "60°", "75° — it goes highest"], correct:1,
+   why:"R = u² sin 2θ / g is largest when sin 2θ = 1, i.e. 2θ = 90°, θ = 45°. A steeper launch stays up longer but moves sideways more slowly; a flatter one is fast sideways but lands sooner. 45° is the best balance (in a vacuum, from the ground)."},
+  {type:"predict", setup:{...BASE, u:10, th:30},
+   text:"Compare launches at 30° and at 60° (same speed, from the ground). Their ranges are…",
+   opts:["equal", "larger at 60°", "larger at 30°", "60° has twice the range"], correct:0,
+   why:"sin 2θ is the same for complementary angles: sin 60° = sin 120°. Both land 8.83 m away; the 60° ball goes 3× higher and stays up √3 times longer, but moves sideways √3 times slower."},
+  {type:"predict", text:"At the highest point of the path, the velocity of the ball is…",
+   opts:["zero", "horizontal, equal to u cos θ", "vertical", "equal to u"], correct:1,
+   why:"Only v<sub>y</sub> becomes zero at the top. The horizontal component never changes (no horizontal force), so at the top v = v<sub>x</sub> = u cos θ — 7.07 m s⁻¹ for 10 m s⁻¹ at 45°."},
+  {type:"predict", text:"Which launch (same speed, from the ground) stays in the air longest?",
+   opts:["15°", "45°", "75°", "They all take the same time"], correct:2,
+   why:"The time of flight is set by the vertical component: T = 2u sin θ / g. The steeper the launch, the larger u sin θ and the longer the flight."},
+  {type:"num", setup:{...BASE, u:10, th:30},
+   text:"Calculate the time of flight for u = 10 m s⁻¹ at 30° from the ground. Then check with the sim.", answer:() => timeGround(10, 30, E), unit:"s",
+   hint:"u<sub>y</sub> = u sin θ. The ball is back at ground level when s<sub>y</sub> = 0: T = 2u<sub>y</sub>/g."},
+ ]},
+ {id:"lab", title:"2 · During the lab: compare", time:"≈ 15 min", steps:[
+  {type:"do", setup:{...BASE, u:6, th:15},
+   text:"Like the launcher (or water-jet) demo: u = 6.0 m s⁻¹ from the ground, Keep paths on. Launch at 15°, 30°, 45°, 60° and 75° and ● Record each one."},
+  {type:"num", text:"What is the range at 45°?", answer:() => rangeGround(6, 45, E), unit:"m", hint:"R = u² sin 2θ / g with sin 90° = 1."},
+  {type:"predict", text:"Which two launches land at the same place?",
+   opts:["15° and 75°", "15° and 45°", "30° and 45°", "None of them"], correct:0,
+   why:"15° and 75° are complementary (they add up to 90°), so sin 30° = sin 150° and the ranges are equal (1.83 m). So are 30° and 60° (3.18 m)."},
+  {type:"num", text:"In the demo the longest range was 3.0 m, at about 45°. Estimate the launch speed of the demo.", answer:() => Math.sqrt(3.0 * E), unit:"m s⁻¹",
+   hint:"At 45° from the ground, R = u²/g, so u = √(Rg)."},
+  {type:"do", text:"Compare the demo's ranges with the sim (same u). The demo ranges are usually a little shorter, especially for steep angles. Give a reason on your worksheet."},
+ ]},
+ {id:"hw", title:"3 · Homework: analyse", time:"≈ 30 min", steps:[
+  {type:"do", setup:{...BASE, u:10, th:10},
+   text:"u = 10 m s⁻¹ from the ground. Record launches at θ = 10°, 20°, … 80° (8 trials). Copy θ and R into your worksheet table and plot R against θ."},
+  {type:"num", text:"Read the maximum range from your graph.", answer:() => 100 / E, unit:"m", hint:"The peak of the curve is at 45°: R = u²/g."},
+  {type:"num", setup:{...BASE, u:15, th:35},
+   text:"A football is kicked from the ground at 15 m s⁻¹, 35° above the horizontal. Calculate the maximum height.", answer:() => maxHeight(15, 35, E), unit:"m",
+   hint:"u<sub>y</sub> = 15 sin 35°. At the top v<sub>y</sub> = 0: H = u<sub>y</sub>² / (2g)."},
+  {type:"num", text:"Calculate the time of flight.", answer:() => timeGround(15, 35, E), unit:"s", hint:"T = 2u<sub>y</sub>/g"},
+  {type:"num", text:"Calculate the range.", answer:() => rangeGround(15, 35, E), unit:"m", hint:"R = u<sub>x</sub> T with u<sub>x</sub> = 15 cos 35°"},
+  {type:"num", text:"What is the speed of the ball at the highest point?", answer:() => 15 * Math.cos(rad(35)), unit:"m s⁻¹", hint:"Only v<sub>x</sub> is left at the top."},
+  {type:"num", setup:{...BASE, u:12, th:30, h:20},
+   text:"A stone is thrown from the top of a 20 m cliff at 12 m s⁻¹, 30° above the horizontal. How far from the foot of the cliff does it land?", answer:() => launch(12, 30, 20, E).R, unit:"m",
+   hint:"u<sub>y</sub> = 6.0 m s⁻¹ up. Solve −20 = 6.0t − 4.905t² for t (take the positive root), then R = u<sub>x</sub>t."},
+  {type:"predict", setup:{...BASE, u:12, th:45, h:20},
+   text:"From the top of the cliff, which launch angle gives the longest range? (Use the theory curve on the Data tab.)",
+   opts:["Exactly 45°", "Less than 45°", "More than 45°", "90°"], correct:1,
+   why:"From a height the ball has extra time to fall, so it pays to send more of the speed sideways: the best angle is below 45° (about 27° here). The 45° rule is only for launch and landing at the same height."},
+ ]},
+];
+let taskState = {}, curSet = "pre";
+function renderTaskSets(){
+  document.getElementById("taskSets").innerHTML = TASKS.map(s =>
+    `<button class="chip" data-set="${s.id}" aria-pressed="${s.id === curSet}">${s.title} <span class="hint">${s.time}</span></button>`).join("");
+}
+function renderTasks(){
+  const ts = TASKS.find(s => s.id === curSet), box = document.getElementById("taskList"); box.innerHTML = "";
+  ts.steps.forEach((st, i) => {
+    const key = `${ts.id}.${i}`, S = taskState[key] || (taskState[key] = {});
+    const d = document.createElement("div"); d.className = "step" + (S.done ? " done" : "");
+    let html = `<p class="q"><span class="n">${i + 1}</span>${st.type === "predict" ? '<span class="tag">Predict · </span>' : ""}${st.text}</p>`;
+    if (st.setup) html += `<button class="btn small" data-setup="${key}">⚙ Set up the sim for me</button> `;
+    if (st.type === "do"){
+      html += `<label class="switch"><input type="checkbox" data-done="${key}" ${S.done ? "checked" : ""}> Done</label>`;
+    } else if (st.type === "predict"){
+      st.opts.forEach((o, j) => {
+        const cls = S.checked ? (j === st.correct ? " good" : j === S.choice ? " bad" : "") : "";
+        html += `<label class="opt${cls}"><input type="radio" name="r${key}" value="${j}" data-choice="${key}" ${S.choice === j ? "checked" : ""} ${S.locked ? "disabled" : ""}> ${o}</label>`;
+      });
+      if (!S.locked) html += `<button class="btn small primary" data-lock="${key}" ${S.choice === undefined ? "disabled" : ""}>🔒 Lock in my prediction</button>`;
+      else if (!S.checked) html += `<div class="fb info">Prediction locked. Now test it in the sim, then press Check.</div><button class="btn small navy" data-check="${key}">Check</button>`;
+      else html += `<div class="fb ${S.choice === st.correct ? "ok" : "no"}">${S.choice === st.correct ? "✔ Your prediction was right. " : "✘ Not what happens. "}${st.why}</div>`;
+    } else if (st.type === "num"){
+      const a = st.answer(), shown = st.unit ? `${sig(a)} ${st.unit}` : sig(a);
+      html += `<div class="row"><input class="num" inputmode="decimal" data-num="${key}" value="${S.value ?? ""}" aria-label="answer"> ${st.unit}
+               <button class="btn small navy" data-chknum="${key}">Check</button>
+               ${st.hint ? `<button class="btn small" data-hint="${key}">💡 Hint</button>` : ""}</div>`;
+      if (S.showHint && st.hint) html += `<div class="fb info">${st.hint}</div>`;
+      if (S.status === "ok") html += `<div class="fb ok">✔ Correct (within ${Math.round((st.tol ?? 0.05) * 100)} %). Model answer: ${shown}.</div>`;
+      else if (S.status) html += `<div class="fb no">✘ ${S.status === "high" ? "Too high" : S.status === "low" ? "Too low" : "Enter a number"}. ${S.tries >= 2 ? `Model answer: ${shown}.` : "Try again or use the hint."}</div>`;
+    }
+    d.innerHTML = html; box.appendChild(d);
+  });
+}
+function taskClick(e){
+  const t = e.target.closest("[data-setup],[data-lock],[data-check],[data-chknum],[data-hint],[data-set]"); if (!t) return;
+  if (t.dataset.set){ curSet = t.dataset.set; renderTaskSets(); renderTasks(); save(); return; }
+  const key = t.dataset.setup || t.dataset.lock || t.dataset.check || t.dataset.chknum || t.dataset.hint;
+  const [sid, idx] = key.split("."), st = TASKS.find(s => s.id === sid).steps[+idx], S = taskState[key];
+  if (t.dataset.setup){ Object.assign(set, st.setup); syncControls(); resetRun(); }
+  if (t.dataset.lock){ S.locked = true; }
+  if (t.dataset.check){ S.checked = true; S.done = true; }
+  if (t.dataset.hint){ S.showHint = true; }
+  if (t.dataset.chknum){
+    const raw = document.querySelector(`[data-num="${key}"]`).value.replace(",", "."), v = parseFloat(raw), a = st.answer();
+    S.value = raw; S.tries = (S.tries || 0) + 1;
+    if (!isFinite(v)) S.status = "nan";
+    else if (Math.abs(v - a) <= (st.tol ?? 0.05) * Math.abs(a)) { S.status = "ok"; S.done = true; }
+    else S.status = v > a ? "high" : "low";
+  }
+  save(); renderTasks();
+}
+function taskChange(e){
+  const t = e.target;
+  if (t.dataset.choice){ taskState[t.dataset.choice].choice = +t.value; renderTasks(); save(); }
+  if (t.dataset.done){ taskState[t.dataset.done].done = t.checked; renderTasks(); save(); }
+}
+
+/* ============================ 11 UI ============================ */
+const $ = id => document.getElementById(id);
+function save(){ try { localStorage.setItem("sim12-angled", JSON.stringify({trials, taskState, curSet})); } catch (e) {} }
+function load(){ try { const d = JSON.parse(localStorage.getItem("sim12-angled") || "{}");
+  trials = d.trials || []; taskState = d.taskState || {}; curSet = d.curSet || "pre"; } catch (e) {} }
+const nearest = (list, v) => list.reduce((b, x, i) => Math.abs(x - v) < Math.abs(list[b] - v) ? i : b, 0);
+function syncControls(){
+  const hi = nearest(HEIGHTS, set.h); set.h = HEIGHTS[hi];
+  $("u").value = set.u; $("uOut").textContent = set.u.toFixed(1);
+  $("ang").value = set.th; $("angOut").textContent = set.th;
+  $("h").max = HEIGHTS.length - 1; $("h").value = hi; $("hOut").textContent = set.h;
+  $("field").value = set.field; $("keep").checked = set.keep; $("strobe").checked = set.strobe; $("slow").checked = set.slow;
+}
+const resetRun = () => { if (!set.keep) kept = []; reset(); };       // name used by the shared task engine
+function updateButtons(){
+  const p = R.phase;
+  $("startBtn").disabled = p === "run"; $("startBtn").textContent = p === "done" ? "▶ Launch again" : "▶ Launch";
+  $("pauseBtn").disabled = p !== "run"; $("pauseBtn").textContent = R.paused ? "▶ Resume" : "⏸ Pause";
+  $("recBtn").disabled = p !== "done" || R.recorded; $("recBtn").textContent = R.recorded ? "✔ Recorded" : "● Record";
+}
+function updateReadouts(){
+  const L = R.L, s = stateAt(L, R.t), flying = R.phase !== "ready" && !s.landed;
+  $("r_t").textContent = `${f3(Math.min(R.t, L.T))} s`;
+  $("r_x").textContent = `${f2(s.x)} m`; $("r_y").textContent = `${f2(s.y)} m`;
+  $("r_vx").textContent = `${f2(flying ? s.vx : R.phase === "ready" ? L.ux : 0)} m s⁻¹`;
+  $("r_vy").textContent = `${f2(flying ? s.vy : R.phase === "ready" ? L.uy : 0)} m s⁻¹`;
+  const ev = [`uₓ = ${f2(L.ux)}, u_y = ${f2(L.uy)} m s⁻¹`];
+  if (R.phase !== "ready" && L.uy > 0 && R.t >= L.tTop) ev.push(`top at ${f3(L.tTop)} s, H = ${f2(L.H)} m`);
+  if (R.phase === "done") ev.push(`lands at ${f3(L.T)} s, R = ${f2(L.R)} m`);
+  $("r_ev").textContent = "Events: " + ev.join(" · ");
+  const el = $("state");
+  if (R.phase === "run"){ el.className = "pill slide"; el.textContent = R.paused ? "Paused" : "In flight"; }
+  else if (R.phase === "done"){ el.className = "pill rest"; el.textContent = "Landed"; }
+  else { el.className = "pill ready"; el.textContent = "Ready"; }
+}
+
+$("field").innerHTML = FIELDS.map(f => `<option value="${f.id}">${f.name} ${f.g.toFixed(2)}</option>`).join("");
+const change = () => { syncControls(); if (R.phase === "done" && set.keep) kept.push(R.L); if (kept.length > MAX_KEPT) kept.shift(); reset(); };
+$("u").addEventListener("input", e => { set.u = +e.target.value; change(); });
+$("ang").addEventListener("input", e => { set.th = +e.target.value; change(); });
+$("h").addEventListener("input", e => { set.h = HEIGHTS[+e.target.value]; kept = []; change(); });
+$("field").addEventListener("change", e => { set.field = e.target.value; kept = []; change(); });
+$("keep").addEventListener("change", e => { set.keep = e.target.checked; if (!set.keep) kept = []; });
+$("strobe").addEventListener("change", e => { set.strobe = e.target.checked; });
+$("slow").addEventListener("change", e => { set.slow = e.target.checked; });
+$("startBtn").addEventListener("click", start);
+$("pauseBtn").addEventListener("click", () => { R.paused = !R.paused; updateButtons(); });
+$("resetBtn").addEventListener("click", clearAll);
+$("recBtn").addEventListener("click", recordTrial);
+$("gsel").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; gq = b.dataset.g;
+  document.querySelectorAll("#gsel button").forEach(x => x.setAttribute("aria-pressed", x === b)); });
+$("clearBtn").addEventListener("click", () => { if (confirm("Delete all recorded trials?")){ trials = []; save(); renderTrials(); } });
+$("trials").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b){ trials.splice(+b.dataset.del, 1); save(); renderTrials(); } });
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === t.dataset.tab));
+}));
+$("pTasks").addEventListener("click", taskClick);
+$("pTasks").addEventListener("change", taskChange);
+$("helpBtn").addEventListener("click", () => $("help").classList.add("on"));
+$("helpClose").addEventListener("click", () => $("help").classList.remove("on"));
+$("help").addEventListener("click", e => { if (e.target.id === "help") $("help").classList.remove("on"); });
+const gcv = $("graph");
+gcv.addEventListener("pointermove", e => {
+  if (gq === "path") { cursorT = null; return; }
+  const r = gcv.getBoundingClientRect(), x = e.clientX - r.left, bw = r.width - 74;
+  cursorT = Math.max(0, (x - 58) / bw * niceCeil(Math.max(R.L.T, ...kept.map(K => K.T)) * 1.04));
+});
+gcv.addEventListener("pointerleave", () => { cursorT = null; });
+gcv.addEventListener("pointerdown", e => { gcv.dispatchEvent(new PointerEvent("pointermove", e)); });
+
+load(); syncControls(); reset(); renderTrials(); renderTaskSets(); renderTasks();
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  step(dt);
+  drawScene(); drawFBD(); drawGraph(); drawAna(); updateReadouts();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
