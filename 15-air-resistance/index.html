@@ -329,7 +329,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       <li>Press <b>● Record</b>. The <b>Data</b> tab plots the range against the angle, with and without air.</li>
       <li><b>◂ 0.1 s / 0.1 s ▸</b> (or the <b>← →</b> keys) step the motion back and forward and pause it, so you can discuss
         each moment: the velocity and acceleration arrows stay on the screen. <b>Graph tools</b>: <i>Area</i> shades the area under
-        a velocity graph (= displacement) or an acceleration graph (= change in velocity) up to that moment; <i>Tangent</i> draws the
+        a velocity graph (= displacement) or an acceleration graph (= change in velocity) up to that moment and writes what the area is (its name and value) inside it; <i>Tangent</i> draws the
         tangent there (gradient of a position graph = velocity, of a velocity graph = acceleration).</li>
       <li>Work through the <b>Tasks</b> tab. Write explanations on your worksheet.</li>
     </ol>
@@ -588,6 +588,52 @@ function shadeArea(ctx, X, Y, f, t1, n = 240){
   }
   ctx.restore(); return A;
 }
+// Name of the shaded area, written inside it (teacher's request, 5 Oct 2026): under v–t it is the displacement,
+// under a–t the change in velocity. Two lines on a white backing; beside the region when it is too small.
+let areaLbl = null;
+function areaName(ctx, box, L){
+  const nm = AREA_NAMES[L.q]; if (!nm || !(L.t1 > 0)) return;
+  const {X, Y, f, t1, ar} = L, vert = nm[1].includes("y") || nm[1] === "Δv";
+  const l1 = nm[0], l2 = `${nm[1]} = ${f2(ar)} ${nm[2]}${vert && ar < -0.005 ? " (down)" : ""}`;
+  const col = ar >= 0 ? "#0D47A1" : "#B71C1C", fs = 13;
+  ctx.save(); ctx.font = `700 ${fs}px "Segoe UI",Calibri,Arial,sans-serif`;
+  const w = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) + 14, h = 2 * fs + 14;
+  // find the widest spot where the whole label box fits between the axis and the curve (same side of the axis)
+  const xa = X(0), xb = X(t1), wt = w / ((xb - xa) / t1 || 1);
+  let best = {d:-1, t:t1 / 2, s:1};
+  if (wt < t1) for (let i = 0; i <= 40; i++){
+    const t = wt / 2 + (t1 - wt) * i / 40, s = f(t) >= 0 ? 1 : -1; let d = Infinity;
+    for (let j = 0; j <= 6; j++){ const tj = t - wt / 2 + wt * j / 6, dp = (Y(0) - Y(f(tj))) * s; d = Math.min(d, dp); }
+    if (d > best.d) best = {d, t, s};
+  }
+  let cx, cy, beside = best.d < h + 8;
+  const tm = beside ? (best.d > 0 ? best.t : t1 / 2) : best.t, yc = Y(f(tm) / 2);
+  if (!beside){ cx = X(best.t); cy = Y(0) - best.s * best.d / 2; }
+  else {                                     // too small: put it in the nearest empty space of the plot, with a leader line
+    const iX = x => (x - xa) / ((xb - xa) / t1 || 1), clash = (x0, y0) => {
+      for (let j = 0; j <= 12; j++){ const t = iX(x0 - w / 2 - 4 + (w + 8) * j / 12); if (t < 0) continue;
+        if (t > t1){ if (Math.abs(Y(f(t)) - y0) < h / 2 + 4) return true; continue; }
+        const ya = Y(0), yf = Y(f(t)); if (Math.max(ya, yf) + 4 > y0 - h / 2 && Math.min(ya, yf) - 4 < y0 + h / 2) return true; }
+      return false; };
+    let bd = Infinity;
+    for (let x0 = box.x + w / 2 + 4; x0 <= box.x + box.w - w / 2 - 4; x0 += 8)
+      for (let y0 = box.y + 46 + h / 2; y0 <= box.y + box.h - 30 - h / 2; y0 += 6){
+        const dd = Math.hypot(x0 - X(tm), y0 - yc); if (dd < bd && !clash(x0, y0)){ bd = dd; cx = x0; cy = y0; } }
+    if (cx === undefined){ cx = X(tm); cy = yc; }
+  }
+  cx = Math.min(Math.max(cx, box.x + w / 2 + 2), box.x + box.w - w / 2 - 2);
+  cy = Math.min(Math.max(cy, box.y + h / 2 + 2), box.y + box.h - h / 2 - 4);
+  if (beside){ ctx.strokeStyle = col; ctx.lineWidth = 1.2; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(X(tm), yc); ctx.lineTo(cx, cy); ctx.stroke(); ctx.setLineDash([]); }
+  const x0 = cx - w / 2, y0 = cy - h / 2, r = 6;
+  ctx.fillStyle = "rgba(255,255,255,.88)"; ctx.strokeStyle = col; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(x0 + r, y0); ctx.arcTo(x0 + w, y0, x0 + w, y0 + h, r); ctx.arcTo(x0 + w, y0 + h, x0, y0 + h, r);
+  ctx.arcTo(x0, y0 + h, x0, y0, r); ctx.arcTo(x0, y0, x0 + w, y0, r); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = col; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(l1, cx, cy - fs / 2 - 1); ctx.font = `600 ${fs}px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillText(l2, cx, cy + fs / 2 + 2);
+  ctx.restore();
+}
+const AREA_NAMES = {v:["Distance travelled (along the path)", "s", "m"], vx:["Horizontal displacement", "Δx", "m"], vy:["Vertical displacement", "Δy", "m"], a:["Change in vertical velocity", "Δv_y", "m s⁻¹"]};
 function drawTangent(ctx, X, Y, f, t, lo, hi, box, span){
   const d = 0.004, t0 = Math.max(lo, t - d), t1 = Math.min(hi, t + d);
   if (t1 - t0 < 1e-6) return null;
@@ -599,7 +645,7 @@ function drawTangent(ctx, X, Y, f, t, lo, hi, box, span){
   ctx.restore(); return k;
 }
 const toolOn = id => !!document.getElementById(id)?.checked;
-function toolLabels(ctx, box, lines){ lines.filter(Boolean).forEach((s, i) => label(ctx, s, box.x + box.w - 6, box.y + 12 + 19 * i, COL.accent, "right", 13.5)); }
+function toolLabels(ctx, box, lines){ if (areaLbl){ areaName(ctx, box, areaLbl); areaLbl = null; } lines.filter(Boolean).forEach((s, i) => label(ctx, s, box.x + box.w - 6, box.y + 12 + 19 * i, COL.accent, "right", 13.5)); }
 let cursorT = null, gq = "path";
 function drawGraph(){
   const cv = document.getElementById("graph"); if (!cv.offsetParent) return;
@@ -632,7 +678,7 @@ function drawGraph(){
   for (let i = 0; i <= N; i++){ const t = tv * i / N; i ? ctx.lineTo(X(t), Y(f(V.at(t)))) : ctx.moveTo(X(t), Y(f(V.at(t)))); } ctx.stroke(); ctx.restore();
   const tp = Math.min(R.t, A.T - 1e-6), fq = t => f(airA(Math.max(t, 0))), tl = [];
   if (toolOn("areaChk")){                               // with air: vₓ → Δx, v_y → Δy, speed → distance, a_y → Δv_y
-    const ar = shadeArea(ctx, X, Y, fq, tp);
+    const ar = shadeArea(ctx, X, Y, fq, tp); areaLbl = {X, Y, f:fq, t1:tp, q:gq, ar};
     tl.push({vx:`area = Δx = ${f2(ar)} m`, vy:`area = Δy = ${f2(ar)} m`, v:`area = distance along the path = ${f2(ar)} m`, a:`area under a_y = Δv_y = ${f2(ar)} m s⁻¹`}[gq]);
   }
   ctx.save(); ctx.strokeStyle = gq === "vx" ? COL.P : gq === "vy" || gq === "a" ? COL.v : COL.ink; ctx.lineWidth = 2.4; ctx.beginPath();
