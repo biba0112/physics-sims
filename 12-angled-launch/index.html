@@ -187,6 +187,16 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 .readouts td.gap{width:14px;border-bottom:none}
 @media (max-width:1300px){ #controls input[type=range]{width:125px} #controls select{max-width:135px} }
 @media (max-width:1099px){ #controls input[type=range]{width:112px} #controls select{max-width:130px} }
+
+.btn.step{padding:4px 9px;font-variant-numeric:tabular-nums}
+.tools{display:flex;gap:2px 10px;align-items:center;flex-wrap:wrap}
+.tools .switch{min-height:36px;font-size:.9rem}
+.tools .switch input{width:18px;height:18px}
+
+.cardhead .actions{gap:5px}
+.btn.icon{min-width:44px;padding:4px 8px}
+.cardhead .actions .btn{padding-left:10px;padding-right:10px}
+.cardhead .actions .btn.step{padding-left:7px;padding-right:7px}
 </style>
 </head>
 <body>
@@ -206,8 +216,10 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       <div class="cardhead">
         <div class="actions">
           <button class="btn primary" id="startBtn">▶ Launch</button>
-          <button class="btn" id="pauseBtn" disabled>⏸ Pause</button>
-          <button class="btn" id="resetBtn">↺ Clear</button>
+          <button class="btn icon" id="pauseBtn" disabled title="Pause / resume" aria-label="Pause">⏸</button>
+          <button class="btn step" id="backBtn" title="Step back 0.1 s (← key)" aria-label="Step back 0.1 s">◂ 0.1 s</button>
+          <button class="btn step" id="fwdBtn" title="Step forward 0.1 s (→ key)" aria-label="Step forward 0.1 s">0.1 s ▸</button>
+          <button class="btn icon" id="resetBtn" title="Clear the kept paths" aria-label="Clear">↺</button>
           <button class="btn navy" id="recBtn" disabled>● Record</button>
         </div>
       </div>
@@ -246,7 +258,11 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
           <button data-g="y" aria-pressed="false"><i>y</i>–<i>t</i></button>
           <button data-g="vx" aria-pressed="false"><i>v</i><sub>x</sub>–<i>t</i></button>
           <button data-g="vy" aria-pressed="false"><i>v</i><sub>y</sub>–<i>t</i></button>
+          <button data-g="a" aria-pressed="false"><i>a</i>–<i>t</i></button>
         </div>
+        <span class="tools"><span class="hint">Graph tools:</span>
+          <label class="switch"><input type="checkbox" id="areaChk"> Area</label>
+          <label class="switch"><input type="checkbox" id="tanChk"> Tangent</label></span>
       </div>
       <div id="graphWrap"><canvas id="graph" aria-label="Motion graph"></canvas></div>
       <div class="hint">The current launch is solid; kept launches are faint. <i>v</i><sub>x</sub> stays constant, <i>v</i><sub>y</sub> falls by
@@ -312,6 +328,10 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       <li>Press <b>▶ Launch</b>. The <b>strobe</b> shows the ball every 0.1 s; the dashed lines mark the maximum height <i>H</i> and the range <i>R</i>.</li>
       <li>With <b>Keep paths</b> on, earlier launches stay on the screen (faint) so you can compare angles. <b>↺ Clear</b> removes them.</li>
       <li>Press <b>● Record</b>. The <b>Data</b> tab plots <i>R</i> against <i>θ</i> for the current speed and height, with the theory curve if you want it.</li>
+      <li><b>◂ 0.1 s / 0.1 s ▸</b> (or the <b>← →</b> keys) step the motion back and forward and pause it, so you can discuss
+        each moment: the velocity and acceleration arrows stay on the screen. <b>Graph tools</b>: <i>Area</i> shades the area under
+        a velocity graph (= displacement) or an acceleration graph (= change in velocity) up to that moment; <i>Tangent</i> draws the
+        tangent there (gradient of a position graph = velocity, of a velocity graph = acceleration).</li>
       <li>Work through the <b>Tasks</b> tab. Write explanations on your worksheet.</li>
     </ol>
     <h3>The physics</h3>
@@ -376,7 +396,7 @@ function originFit(pts){ const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0);
 const set = {u:10, th:45, h:0, field:"earth", keep:true, strobe:true, slow:false};
 const R = {phase:"ready", t:0, paused:false, recorded:false, L:null};
 let kept = [];                                          // finished launches kept on screen
-const gNow = () => fieldById(set.field).g;
+const gNow = () => fieldById(set.field).g, g_ = () => R.L.g;
 function current(){ return launch(set.u, set.th, set.h, gNow()); }
 function reset(){ Object.assign(R, {phase:"ready", t:0, paused:false, recorded:false, L:current()}); cursorT = null; updateButtons(); }
 function clearAll(){ kept = []; reset(); }
@@ -385,6 +405,14 @@ function start(){
   if (kept.length > MAX_KEPT) kept.shift();
   if (!set.keep) kept = [];
   reset(); R.phase = "run"; updateButtons();
+}
+// step the play-back by d seconds and pause (from 'ready' it starts the run first)
+function stepBy(d){
+  if (R.phase === "ready") start();
+  const end = R.L.T; R.phase = "run"; R.paused = true;
+  R.t = Math.min(end, Math.max(0, Math.min(R.t, end) + d));
+  if (R.t >= end - 1e-9){ R.t = end; R.phase = "done"; }
+  updateButtons();
 }
 function step(dt){
   if (R.phase !== "run" || R.paused) return;
@@ -500,7 +528,15 @@ function drawScene(){
   // ball + velocity components
   const s = stateAt(L, R.t), bx = V.X(s.x), by = V.Y(s.y);
   if (R.phase !== "ready" || true) drawBall(ctx, bx, by, r);
-  if (R.phase === "run" && !s.landed){
+  const frozen = R.phase === "done" || (R.phase === "run" && R.paused);
+  if (frozen){                                       // paused / stepped / finished: v, its components and a stay
+    const f = stateAt(L, Math.min(R.t, L.T - 1e-4)), fx = V.X(f.x), fy = V.Y(f.y), k = 50 / Math.max(set.u, 1);
+    arrow(ctx, fx, fy, fx + f.vx * k, fy, COL.P, 2); if (Math.abs(f.vy) > 0.02) arrow(ctx, fx + f.vx * k, fy, fx + f.vx * k, fy - f.vy * k, COL.v, 2);
+    arrow(ctx, fx, fy, fx + f.vx * k, fy - f.vy * k, COL.ink, 3); label(ctx, "v", fx + f.vx * k + 10, fy - f.vy * k, COL.ink, "left", 12);
+    arrow(ctx, fx - r - 6, fy, fx - r - 6, fy + 38, COL.a, 3); label(ctx, "a", fx - r - 16, fy + 34, COL.a, "right", 12);
+    const ang = deg(Math.atan2(f.vy, f.vx));
+    label(ctx, `${R.phase === "done" ? "just before landing" : `t = ${f2(R.t)} s`} · v = ${f2(Math.hypot(f.vx, f.vy))} m s⁻¹ at ${Math.abs(ang).toFixed(1)}° ${ang >= 0 ? "above" : "below"} · a = ${f2(g_())} m s⁻² ↓`, w - 12, 36, COL.ink, "right", 12.5);
+  } else if (R.phase === "run" && !s.landed){
     const k = 50 / Math.max(set.u, 1);
     arrow(ctx, bx, by, bx + s.vx * k, by, COL.P, 2); arrow(ctx, bx, by, bx, by - s.vy * k, COL.v, 2);
     arrow(ctx, bx, by, bx + s.vx * k, by - s.vy * k, COL.ink, 2.5);
@@ -514,14 +550,15 @@ function drawScene(){
 function drawFBD(){
   const {ctx, w, h} = fitCanvas(document.getElementById("fbd"));
   ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
-  const L = R.L, g = gNow(), m = 0.0580, W = m * g, s = stateAt(L, R.t), flying = R.phase !== "ready" && !s.landed;
+  const L = R.L, g = gNow(), m = 0.0580, W = m * g, s = stateAt(L, R.phase === "done" ? L.T - 1e-4 : R.t), flying = R.phase !== "ready" && !s.landed;
   const cx = w * 0.2, cy = h * 0.42, Lw = h * 0.26;
   label(ctx, "Forces on the ball", cx, 40, COL.muted, "center", 12);
   drawBall(ctx, cx, cy, 12);
   arrow(ctx, cx, cy, cx, cy + Lw, COL.W, 4);
   subLabel(ctx, "W", "", ` = ${sig(W)} N`, cx + 10, cy + Lw - 4, COL.W, "left", 13);
   if (!flying && R.phase !== "ready"){ arrow(ctx, cx, cy, cx, cy - Lw, COL.N, 4); subLabel(ctx, "F", "N", ` = ${sig(W)} N`, cx + 10, cy - Lw + 6, COL.N, "left", 13); }
-  label(ctx, flying ? "In flight: only the weight acts (up, top and down)" : R.phase === "ready" ? "Tennis ball, m = 58 g" : "Landed: forces balance", w / 2, 14, COL.navy, "center", 12.5);
+  if (flying){ arrow(ctx, cx + 42, cy - 10, cx + 42, cy + Lw * 0.6, COL.a, 3); label(ctx, "a = g", cx + 48, cy + Lw * 0.3, COL.a, "left", 12.5); }
+  label(ctx, R.phase === "done" ? "Just before landing: only the weight acts" : flying ? "In flight: only the weight acts (up, top and down)" : R.phase === "ready" ? "Tennis ball, m = 58 g" : "Landed: forces balance", w / 2, 14, COL.navy, "center", 12.5);
   label(ctx, flying ? `→ aₓ = 0 and a_y = −${f2(g)} m s⁻² the whole time` : "", w / 2, h - 14, COL.muted, "center", 12);
   // velocity triangle (to scale)
   ctx.save(); ctx.strokeStyle = COL.grid; ctx.beginPath(); ctx.moveTo(w * 0.42, 34); ctx.lineTo(w * 0.42, h - 34); ctx.stroke(); ctx.restore();
@@ -537,7 +574,7 @@ function drawFBD(){
   if (vx > 0.01) subLabel(ctx, "v", "x", ` = ${f2(vx)}`, ox + vx * k / 2, oy + (vy > 0 ? 14 : -14), COL.P, "center", 13);
   if (Math.abs(vy) > 0.05) subLabel(ctx, "v", "y", ` = ${f2(vy)}`, ox + vx * k + 8, oy - vy * k / 2, COL.v, "left", 13);
   const sp = Math.hypot(vx, vy);
-  if (R.phase !== "done" && sp > 0.05){
+  if (sp > 0.05){
     label(ctx, `v = ${f2(sp)} m s⁻¹ at ${deg(Math.atan2(vy, vx)).toFixed(1)}° ${vy >= 0 ? "above" : "below"} horizontal`, w * 0.71, h - 40, COL.ink, "center", 12.5);
     if (flying && Math.abs(vy) < 0.25) label(ctx, "top: v_y = 0, v = vₓ (not zero!)", w * 0.71, h - 58, COL.v, "center", 12);
   }
@@ -564,11 +601,37 @@ function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
   ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
   return {X, Y};
 }
+// Graph tools (sims 10–15): signed area under f(t) from 0 to t1 (trapezium rule, blue above / red below the axis),
+// and the tangent to f at time t (central difference) drawn across ±span seconds, clipped to the plot box
+function shadeArea(ctx, X, Y, f, t1, n = 240){
+  if (!(t1 > 0)) return 0;
+  let A = 0, ta = 0, fa = f(0); ctx.save();
+  for (let i = 1; i <= n; i++){
+    const tb = t1 * i / n, fb = f(tb); A += (fa + fb) / 2 * (tb - ta);
+    ctx.fillStyle = fa + fb >= 0 ? "rgba(21,101,192,.22)" : "rgba(198,40,40,.22)";
+    ctx.beginPath(); ctx.moveTo(X(ta), Y(0)); ctx.lineTo(X(ta), Y(fa)); ctx.lineTo(X(tb), Y(fb)); ctx.lineTo(X(tb), Y(0)); ctx.closePath(); ctx.fill();
+    ta = tb; fa = fb;
+  }
+  ctx.restore(); return A;
+}
+function drawTangent(ctx, X, Y, f, t, lo, hi, box, span){
+  const d = 0.004, t0 = Math.max(lo, t - d), t1 = Math.min(hi, t + d);
+  if (t1 - t0 < 1e-6) return null;
+  const k = (f(t1) - f(t0)) / (t1 - t0), y0 = f(t), a = t - span, b = t + span;
+  ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y, box.w, box.h); ctx.clip();
+  ctx.strokeStyle = COL.accent; ctx.lineWidth = 2; ctx.setLineDash([8, 4]);
+  ctx.beginPath(); ctx.moveTo(X(a), Y(y0 + k * (a - t))); ctx.lineTo(X(b), Y(y0 + k * (b - t))); ctx.stroke();
+  ctx.setLineDash([]); ctx.fillStyle = COL.accent; ctx.beginPath(); ctx.arc(X(t), Y(y0), 4.5, 0, 7); ctx.fill();
+  ctx.restore(); return k;
+}
+const toolOn = id => !!document.getElementById(id)?.checked;
+function toolLabels(ctx, box, lines){ lines.filter(Boolean).forEach((s, i) => label(ctx, s, box.x + box.w - 6, box.y + 12 + 19 * i, COL.accent, "right", 13.5)); }
 let cursorT = null, gq = "path";
 const GQ = {x:{lab:[["position ","n"],["x","i"],[" / m","n"]], col:COL.P, f:s => s.x},
             y:{lab:[["height ","n"],["y","i"],[" / m","n"]], col:COL.ink, f:s => s.y},
             vx:{lab:[["v","i"],["x","s"],[" / m s⁻¹","n"]], col:COL.P, f:s => s.vx},
-            vy:{lab:[["v","i"],["y","s"],[" / m s⁻¹","n"]], col:COL.v, f:s => s.vy}};
+            vy:{lab:[["v","i"],["y","s"],[" / m s⁻¹","n"]], col:COL.v, f:s => s.vy},
+            a:{lab:[["a","i"],[" / m s⁻²","n"]], col:COL.v, f:s => -R.L.g}};
 function drawGraph(){
   const cv = document.getElementById("graph"); if (!cv.offsetParent) return;
   const {ctx, w, h} = fitCanvas(cv);
@@ -586,6 +649,7 @@ function drawGraph(){
       label(ctx, `top: H = ${f2(L.H)} m`, X(L.ux * L.tTop), Y(L.H) - 13, COL.v, "center", 12.5); }
     if (R.phase === "done"){ ctx.fillStyle = COL.accent; ctx.beginPath(); ctx.arc(X(L.R), Y(0), 5, 0, 7); ctx.fill();
       label(ctx, `R = ${f2(L.R)} m`, X(L.R) - 6, Y(0) - 13, COL.accent, "right", 12.5); }
+    if (toolOn("areaChk") || toolOn("tanChk")) label(ctx, "Area and Tangent work on the time graphs", box.x + box.w - 6, box.y + 12, COL.accent, "right", 12.5);
     return;
   }
   const q = GQ[gq], tMax = niceCeil(Math.max(...all.map(K => K.T)) * 1.04), vals = [];
@@ -597,17 +661,31 @@ function drawGraph(){
     for (let j = 0; j <= N; j++){ const t = Math.min(t1, K.T * 0.9999) * j / N, v = q.f(stateAt(K, t)); j ? ctx.lineTo(X(t), Y(v)) : ctx.moveTo(X(t), Y(v)); } ctx.stroke(); ctx.restore(); };
   kept.forEach((K, i) => curve(K, K.T, KEPT[i % KEPT.length], 1.8, [5, 4]));
   if (R.phase === "ready"){ if (!kept.length) label(ctx, "Press ▶ Launch", box.x + box.w / 2, box.y + box.h / 2, COL.muted, "center", 16); return; }
+  const tp = Math.min(R.t, L.T * 0.9999), fq = t => q.f(stateAt(L, Math.min(Math.max(t, 0), L.T * 0.9999))), tl = [];
+  if (toolOn("areaChk")){                             // area under vₓ–t = Δx, under v_y–t = Δy, under a–t = Δv_y
+    if (gq === "x" || gq === "y") tl.push("Area: use a velocity or acceleration graph");
+    else { const ar = shadeArea(ctx, X, Y, fq, tp); tl.push(gq === "vx" ? `area = Δx = ${f2(ar)} m` : gq === "vy" ? `area = Δy = ${f2(ar)} m` : `area = Δv_y = ${f2(ar)} m s⁻¹`); }
+  }
   curve(L, tNow, q.col, 2.4);
+  if (gq === "a"){ ctx.save(); ctx.strokeStyle = COL.P; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(X(0), Y(0) - 1); ctx.lineTo(X(tp), Y(0) - 1); ctx.stroke(); ctx.restore();
+    label(ctx, `a_y = −g = −${f2(L.g)} m s⁻² (blue) · aₓ = 0 (purple)`, box.x + 10, box.y + box.h - 12, COL.v, "left", 12.5); }
+  if (toolOn("tanChk")){                              // gradient of x–t = vₓ, y–t = v_y, vₓ–t = aₓ, v_y–t = a_y
+    if (gq === "a") tl.push("Tangent: use a position or velocity graph");
+    else { const kk = drawTangent(ctx, X, Y, fq, tp, 0, L.T * 0.9999, box, tMax * 0.16);
+      if (kk !== null) tl.push({x:`tangent gradient = vₓ = ${f2(kk)} m s⁻¹`, y:`tangent gradient = v_y = ${f2(kk)} m s⁻¹`,
+                                vx:`tangent gradient = aₓ = ${f2(kk)} m s⁻²`, vy:`tangent gradient = a_y = ${f2(kk)} m s⁻²`}[gq]); }
+  }
+  toolLabels(ctx, box, tl);
   if (gq === "vy" && L.uy > 0 && R.t >= L.tTop){ ctx.fillStyle = COL.v; ctx.beginPath(); ctx.arc(X(L.tTop), Y(0), 5, 0, 7); ctx.fill();
     label(ctx, `v_y = 0 at the top, t = ${f3(L.tTop)} s`, X(L.tTop) + 8, Y(0) - 13, COL.v, "left", 12.5); }
-  if (gq === "vy") label(ctx, `gradient = −g = −${f2(L.g)} m s⁻²`, box.x + box.w - 6, box.y + 12, COL.v, "right", 12.5);
+  if (gq === "vy") label(ctx, `gradient = −g = −${f2(L.g)} m s⁻²`, box.x + 10, box.y + box.h - 12, COL.v, "left", 12.5);
   if (gq === "vx") label(ctx, `vₓ = u cos θ = ${f2(L.ux)} m s⁻¹, constant`, box.x + 10, box.y + 12, COL.P, "left", 12.5);
   if (cursorT !== null && cursorT <= tNow){
     const s = stateAt(L, Math.min(cursorT, L.T * 0.9999)), v = q.f(s);
     ctx.save(); ctx.strokeStyle = "rgba(38,50,56,.5)"; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(X(cursorT), box.y); ctx.lineTo(X(cursorT), box.y + box.h); ctx.stroke(); ctx.restore();
     ctx.fillStyle = COL.ink; ctx.beginPath(); ctx.arc(X(cursorT), Y(v), 4, 0, 7); ctx.fill();
     const right = X(cursorT) > box.x + box.w * 0.6;
-    label(ctx, `t = ${f3(cursorT)} s   ${f2(v)} ${gq.startsWith("v") ? "m s⁻¹" : "m"}`, X(cursorT) + (right ? -8 : 8), box.y + box.h - 12, COL.ink, right ? "right" : "left", 14);
+    label(ctx, `t = ${f3(cursorT)} s   ${f2(v)} ${gq === "a" ? "m s⁻²" : gq.startsWith("v") ? "m s⁻¹" : "m"}`, X(cursorT) + (right ? -8 : 8), box.y + box.h - 12, COL.ink, right ? "right" : "left", 14);
   }
 }
 // R against θ for the current speed, height and field; optional theory curve
@@ -780,8 +858,8 @@ function syncControls(){
 const resetRun = () => { if (!set.keep) kept = []; reset(); };       // name used by the shared task engine
 function updateButtons(){
   const p = R.phase;
-  $("startBtn").disabled = p === "run"; $("startBtn").textContent = p === "done" ? "▶ Launch again" : "▶ Launch";
-  $("pauseBtn").disabled = p !== "run"; $("pauseBtn").textContent = R.paused ? "▶ Resume" : "⏸ Pause";
+  $("startBtn").disabled = p === "run"; $("startBtn").textContent = "▶ Launch";
+  $("pauseBtn").disabled = p !== "run"; $("pauseBtn").textContent = R.paused ? "▶" : "⏸"; $("pauseBtn").setAttribute("aria-label", R.paused ? "Resume" : "Pause");
   $("recBtn").disabled = p !== "done" || R.recorded; $("recBtn").textContent = R.recorded ? "✔ Recorded" : "● Record";
 }
 function updateReadouts(){
@@ -834,6 +912,17 @@ gcv.addEventListener("pointermove", e => {
 });
 gcv.addEventListener("pointerleave", () => { cursorT = null; });
 gcv.addEventListener("pointerdown", e => { gcv.dispatchEvent(new PointerEvent("pointermove", e)); });
+
+// Step controls (sims 10–15): buttons and the ← → keys move the time by 0.1 s and pause the motion
+const STEP_DT = 0.1;
+$("backBtn").addEventListener("click", () => stepBy(-STEP_DT));
+$("fwdBtn").addEventListener("click", () => stepBy(STEP_DT));
+document.addEventListener("keydown", e => {
+  const t = e.target; if (t.tagName === "SELECT" || t.tagName === "TEXTAREA" || (t.tagName === "INPUT" && t.type !== "checkbox")) return;
+  if ($("help").classList.contains("on")) return;
+  if (e.key === "ArrowLeft"){ stepBy(-STEP_DT); e.preventDefault(); }
+  else if (e.key === "ArrowRight"){ stepBy(STEP_DT); e.preventDefault(); }
+});
 
 load(); syncControls(); reset(); renderTrials(); renderTaskSets(); renderTasks();
 let last = performance.now();

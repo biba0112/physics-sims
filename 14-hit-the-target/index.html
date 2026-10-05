@@ -188,6 +188,16 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 .pill.hit{background:#E8F5E9;color:#1B5E20}
 @media (max-width:1300px){ #controls input[type=range]{width:104px} #controls select{max-width:118px} }
 @media (max-width:1099px){ #controls input[type=range]{width:100px} #controls select{max-width:118px} }
+
+.btn.step{padding:4px 9px;font-variant-numeric:tabular-nums}
+.tools{display:flex;gap:2px 10px;align-items:center;flex-wrap:wrap}
+.tools .switch{min-height:36px;font-size:.9rem}
+.tools .switch input{width:18px;height:18px}
+
+.cardhead .actions{gap:5px}
+.btn.icon{min-width:44px;padding:4px 8px}
+.cardhead .actions .btn{padding-left:10px;padding-right:10px}
+.cardhead .actions .btn.step{padding-left:7px;padding-right:7px}
 </style>
 </head>
 <body>
@@ -207,8 +217,11 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       <div class="cardhead">
         <div class="actions">
           <button class="btn primary" id="startBtn">▶ Shoot</button>
-          <button class="btn" id="newBtn">🎯 New target</button>
-          <button class="btn" id="resetBtn">↺ Clear</button>
+          <button class="btn icon" id="pauseBtn" disabled title="Pause / resume" aria-label="Pause">⏸</button>
+          <button class="btn step" id="backBtn" title="Step back 0.1 s (← key)" aria-label="Step back 0.1 s">◂ 0.1 s</button>
+          <button class="btn step" id="fwdBtn" title="Step forward 0.1 s (→ key)" aria-label="Step forward 0.1 s">0.1 s ▸</button>
+          <button class="btn" id="newBtn" title="New random target">🎯 New</button>
+          <button class="btn icon" id="resetBtn" title="Clear the attempts at this target" aria-label="Clear">↺</button>
         </div>
       </div>
       <div id="sceneWrap"><canvas id="scene" aria-label="Side view of a ball shot at a target"></canvas></div>
@@ -242,7 +255,13 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
           <button data-g="path" aria-pressed="true">path <i>y</i>–<i>x</i></button>
           <button data-g="y" aria-pressed="false"><i>y</i>–<i>t</i></button>
           <button data-g="x" aria-pressed="false"><i>x</i>–<i>t</i></button>
+          <button data-g="vx" aria-pressed="false"><i>v</i><sub>x</sub>–<i>t</i></button>
+          <button data-g="vy" aria-pressed="false"><i>v</i><sub>y</sub>–<i>t</i></button>
+          <button data-g="a" aria-pressed="false"><i>a</i>–<i>t</i></button>
         </div>
+        <span class="tools"><span class="hint">Graph tools:</span>
+          <label class="switch"><input type="checkbox" id="areaChk"> Area</label>
+          <label class="switch"><input type="checkbox" id="tanChk"> Tangent</label></span>
       </div>
       <div id="graphWrap"><canvas id="graph" aria-label="Motion graph"></canvas></div>
       <div class="hint">Every attempt at this target is drawn (green = hit, grey = miss). The red mark is the target.</div>
@@ -316,6 +335,10 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       <li>Use the <b>shot planner</b> (middle column): it does the working for your settings — time to reach the target distance,
         then the height of the ball there. Change <i>u</i> or <i>θ</i> until the ball arrives at the target height.</li>
       <li>Press <b>▶ Shoot</b>. A cup or hoop counts only if the ball comes <b>down</b> into it; a window counts if the ball passes through it.</li>
+      <li><b>◂ 0.1 s / 0.1 s ▸</b> (or the <b>← →</b> keys) step the motion back and forward and pause it, so you can discuss
+        each moment: the velocity and acceleration arrows stay on the screen. <b>Graph tools</b>: <i>Area</i> shades the area under
+        a velocity graph (= displacement) or an acceleration graph (= change in velocity) up to that moment; <i>Tangent</i> draws the
+        tangent there (gradient of a position graph = velocity, of a velocity graph = acceleration).</li>
       <li>The <b>Attempts</b> tab plots your attempts on a <i>u</i>–<i>θ</i> graph with the needed-speed curve: every point on the curve hits.</li>
     </ol>
     <h3>The physics</h3>
@@ -380,7 +403,7 @@ function shot(u, th, h, tgt){
   return S;
 }
 function stateAt(S, t){ const tt = Math.max(0, Math.min(t, S.tEnd));
-  return {x:S.ux * tt, y:S.h + S.uy * tt - G * tt * tt / 2, vy:S.uy - G * tt}; }
+  return {x:S.ux * tt, y:S.h + S.uy * tt - G * tt * tt / 2, vx:S.ux, vy:S.uy - G * tt}; }
 function linFit(pts){ const n = pts.length; if (n < 2) return null;
   const mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
   const sxx = pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0); if (!sxx) return null;
@@ -390,16 +413,25 @@ function originFit(pts){ const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0);
 
 /* ============================ 5 RUN ============================ */
 const set = {u:8, th:45, h:0, ttype:"cup", D:8, yT:0, aim:false};
-const R = {phase:"ready", t:0, S:null};
+const R = {phase:"ready", t:0, S:null, paused:false, finished:false};
 let attempts = [], score = {n:0, hits:0};
 const tgt = () => ({type:set.ttype, D:set.D, y:set.yT});
-function reset(){ R.phase = "ready"; R.t = 0; R.S = shot(set.u, set.th, set.h, tgt()); updateButtons(); }
+function reset(){ R.phase = "ready"; R.t = 0; R.paused = false; R.finished = false; R.S = shot(set.u, set.th, set.h, tgt()); updateButtons(); }
 function start(){ reset(); R.phase = "run"; updateButtons(); }
+// step the play-back by d seconds and pause (from 'ready' it starts the shot first)
+function stepBy(d){
+  if (R.phase === "ready") start();
+  const end = R.S.tEnd; R.phase = "run"; R.paused = true;
+  R.t = Math.min(end, Math.max(0, Math.min(R.t, end) + d));
+  if (R.t >= end - 1e-9){ R.t = end; R.phase = "done"; finish(); }
+  updateButtons();
+}
 function step(dt){
-  if (R.phase !== "run") return;
+  if (R.phase !== "run" || R.paused) return;
   R.t += dt; if (R.t >= R.S.tEnd){ R.t = R.S.tEnd; R.phase = "done"; finish(); }
 }
 function finish(){
+  if (R.finished) return; R.finished = true;             // one attempt per shot, even when stepping back and forward
   const S = R.S; score.n++; if (S.hit) score.hits++;
   attempts.push({type:set.ttype, D:set.D, yT:set.yT, h:set.h, u:set.u, th:set.th, miss:isFinite(S.miss) ? +S.miss.toFixed(3) : null, hit:S.hit});
   save(); renderTrials(); updateButtons();
@@ -517,6 +549,14 @@ function drawScene(){
   const s = stateAt(S, R.t);
   ctx.fillStyle = "#FFB74D"; ctx.strokeStyle = "#E65100"; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(V.X(s.x), V.Y(s.y), 7, 0, 7); ctx.fill(); ctx.stroke();
   if (R.phase === "done") label(ctx, S.hit ? "✔ HIT!" : "✘ miss", V.X(s.x), V.Y(s.y) - 20, S.hit ? COL.ok : COL.F, "center", 18);
+  if (R.phase === "done" || (R.phase === "run" && R.paused)){   // paused / stepped / finished: v, its components and a stay
+    const q = stateAt(S, Math.min(R.t, S.tEnd - 1e-4)), fx = V.X(q.x), fy = V.Y(q.y), k = 50 / Math.max(set.u, 1);
+    arrow(ctx, fx, fy, fx + q.vx * k, fy, COL.P, 2); if (Math.abs(q.vy) > 0.02) arrow(ctx, fx + q.vx * k, fy, fx + q.vx * k, fy - q.vy * k, COL.v, 2);
+    arrow(ctx, fx, fy, fx + q.vx * k, fy - q.vy * k, COL.ink, 3); label(ctx, "v", fx + q.vx * k + 10, fy - q.vy * k, COL.ink, "left", 12);
+    arrow(ctx, fx - 13, fy, fx - 13, fy + 38, COL.a, 3); label(ctx, "a", fx - 23, fy + 34, COL.a, "right", 12);
+    const ang = deg(Math.atan2(q.vy, q.vx));
+    label(ctx, `${R.phase === "done" ? "just before it arrives" : `t = ${f2(R.t)} s`} · v = ${f2(Math.hypot(q.vx, q.vy))} m s⁻¹ at ${Math.abs(ang).toFixed(1)}° ${ang >= 0 ? "above" : "below"} · a = ${f2(G)} m s⁻² ↓`, w - 12, 34, COL.ink, "right", 12.5);
+  }
   label(ctx, `u = ${set.u.toFixed(2)} m s⁻¹ at ${set.th.toFixed(1)}°${set.h ? ` from ${set.h} m` : ""}`, 12, 14, COL.navy, "left", 13.5);
   label(ctx, `t = ${f3(R.t)} s`, w - 12, 14, COL.P, "right", 14);
 }
@@ -531,6 +571,12 @@ function drawFBD(){
   ctx.fillStyle = "#FFB74D"; ctx.strokeStyle = "#E65100"; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 7); ctx.fill(); ctx.stroke();
   arrow(ctx, cx, cy, cx, cy + Lw, COL.W, 4); subLabel(ctx, "W", "", "", cx + 10, cy + Lw - 6, COL.W, "left", 14);
   label(ctx, "only W:", cx, cy + Lw + 22, COL.muted, "center", 11.5); label(ctx, "aₓ = 0", cx, cy + Lw + 38, COL.P, "center", 12); label(ctx, "a_y = −g", cx, cy + Lw + 54, COL.v, "center", 12);
+  if (R.phase === "done" || (R.phase === "run" && R.paused)){
+    const q = stateAt(R.S, Math.min(R.t, R.S.tEnd - 1e-4)), sp = Math.hypot(q.vx, q.vy), kv = Math.min(cx - 8, 60) / Math.max(set.u, 1), yv = cy + Lw + 110;
+    label(ctx, "Motion now", cx, yv - 34, COL.muted, "center", 11.5);
+    arrow(ctx, cx - 10, yv, cx - 10 + q.vx * kv, yv - q.vy * kv, COL.ink, 2.5); arrow(ctx, cx + 22, yv - 10, cx + 22, yv + 26, COL.a, 2.5);
+    label(ctx, `v = ${f2(sp)}`, cx, yv + 44, COL.ink, "center", 11.5); label(ctx, `a = ${f2(G)} ↓`, cx, yv + 60, COL.a, "center", 11.5);
+  }
   const x0 = cx * 2 + 4; ctx.save(); ctx.strokeStyle = COL.grid; ctx.beginPath(); ctx.moveTo(x0 - 8, 20); ctx.lineTo(x0 - 8, h - 16); ctx.stroke(); ctx.restore();
   // planner lines
   const ux = set.u * Math.cos(rad(set.th)), uy = set.u * Math.sin(rad(set.th)), A = yAtD(set.u, set.th, set.h, set.D);
@@ -579,6 +625,31 @@ function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
   ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
   return {X, Y};
 }
+// Graph tools (sims 10–15): signed area under f(t) from 0 to t1 (trapezium rule, blue above / red below the axis),
+// and the tangent to f at time t (central difference) drawn across ±span seconds, clipped to the plot box
+function shadeArea(ctx, X, Y, f, t1, n = 240){
+  if (!(t1 > 0)) return 0;
+  let A = 0, ta = 0, fa = f(0); ctx.save();
+  for (let i = 1; i <= n; i++){
+    const tb = t1 * i / n, fb = f(tb); A += (fa + fb) / 2 * (tb - ta);
+    ctx.fillStyle = fa + fb >= 0 ? "rgba(21,101,192,.22)" : "rgba(198,40,40,.22)";
+    ctx.beginPath(); ctx.moveTo(X(ta), Y(0)); ctx.lineTo(X(ta), Y(fa)); ctx.lineTo(X(tb), Y(fb)); ctx.lineTo(X(tb), Y(0)); ctx.closePath(); ctx.fill();
+    ta = tb; fa = fb;
+  }
+  ctx.restore(); return A;
+}
+function drawTangent(ctx, X, Y, f, t, lo, hi, box, span){
+  const d = 0.004, t0 = Math.max(lo, t - d), t1 = Math.min(hi, t + d);
+  if (t1 - t0 < 1e-6) return null;
+  const k = (f(t1) - f(t0)) / (t1 - t0), y0 = f(t), a = t - span, b = t + span;
+  ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y, box.w, box.h); ctx.clip();
+  ctx.strokeStyle = COL.accent; ctx.lineWidth = 2; ctx.setLineDash([8, 4]);
+  ctx.beginPath(); ctx.moveTo(X(a), Y(y0 + k * (a - t))); ctx.lineTo(X(b), Y(y0 + k * (b - t))); ctx.stroke();
+  ctx.setLineDash([]); ctx.fillStyle = COL.accent; ctx.beginPath(); ctx.arc(X(t), Y(y0), 4.5, 0, 7); ctx.fill();
+  ctx.restore(); return k;
+}
+const toolOn = id => !!document.getElementById(id)?.checked;
+function toolLabels(ctx, box, lines){ lines.filter(Boolean).forEach((s, i) => label(ctx, s, box.x + box.w - 6, box.y + 12 + 19 * i, COL.accent, "right", 13.5)); }
 let gq = "path";
 function drawGraph(){
   const cv = document.getElementById("graph"); if (!cv.offsetParent) return;
@@ -596,21 +667,45 @@ function drawGraph(){
     ctx.fillStyle = COL.F; ctx.beginPath(); ctx.arc(X(set.D), Y(set.yT), 6, 0, 7); ctx.fill();
     const half = TARGETS[set.ttype].half; ctx.strokeStyle = COL.F; ctx.lineWidth = 3; ctx.beginPath();
     if (set.ttype === "window"){ ctx.moveTo(X(set.D), Y(set.yT - half)); ctx.lineTo(X(set.D), Y(set.yT + half)); } else { ctx.moveTo(X(set.D - half), Y(set.yT)); ctx.lineTo(X(set.D + half), Y(set.yT)); }
-    ctx.stroke(); return;
+    ctx.stroke();
+    if (toolOn("areaChk") || toolOn("tanChk")) label(ctx, "Area and Tangent work on the time graphs", box.x + box.w - 6, box.y + 12, COL.accent, "right", 12.5);
+    return;
   }
   const tMax = niceCeil(Math.max(S.tEnd, ...same.map(o => o.S.tEnd)) * 1.05);
-  const f = gq === "y" ? p => p.y : p => p.x, all = [S, ...same.map(o => o.S)];
-  const vals = all.flatMap(s => [0, 0.25, 0.5, 0.75, 1].map(k => f(stateAt(s, s.tEnd * k)))).concat(gq === "y" ? [set.yT, ...all.map(s => s.uy > 0 ? s.h + s.uy * s.uy / (2 * G) : s.h)] : [set.D]);
-  const hi = niceCeil(Math.max(1, ...vals) * 1.08);
-  const {X, Y} = axesR(ctx, box, 0, tMax, 0, hi, [["time ","n"],["t","i"],[" / s","n"]], gq === "y" ? [["height ","n"],["y","i"],[" / m","n"]] : [["position ","n"],["x","i"],[" / m","n"]]);
-  ctx.save(); ctx.strokeStyle = COL.F; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(X(0), Y(gq === "y" ? set.yT : set.D)); ctx.lineTo(X(tMax), Y(gq === "y" ? set.yT : set.D)); ctx.stroke(); ctx.restore();
-  label(ctx, gq === "y" ? "target height" : "target distance D", box.x + box.w - 6, Y(gq === "y" ? set.yT : set.D) - 10, COL.F, "right", 12);
-  const line = (s, t1, col, wd) => { ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.beginPath();
+  const F = {y:p => p.y, x:p => p.x, vx:p => p.vx, vy:p => p.vy, a:p => -G}, f = F[gq], all = [S, ...same.map(o => o.S)];
+  const vals = all.flatMap(s => [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1].map(k => f(stateAt(s, s.tEnd * k))));
+  if (gq === "y") vals.push(set.yT, ...all.map(s => s.uy > 0 ? s.h + s.uy * s.uy / (2 * G) : s.h));
+  if (gq === "x") vals.push(set.D);
+  let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals); const span = hi - lo || 1;
+  hi = hi > 0 ? niceCeil(hi + span * 0.08) : niceUp(span * 0.12); lo = lo < 0 ? -niceCeil(-lo + span * 0.08) : 0;
+  const LAB = {y:[["height ","n"],["y","i"],[" / m","n"]], x:[["position ","n"],["x","i"],[" / m","n"]], vx:[["v","i"],["x","s"],[" / m s⁻¹","n"]],
+               vy:[["v","i"],["y","s"],[" / m s⁻¹","n"]], a:[["a","i"],[" / m s⁻²","n"]]};
+  const {X, Y} = axesR(ctx, box, 0, tMax, lo, hi, [["time ","n"],["t","i"],[" / s","n"]], LAB[gq]);
+  if (gq === "y" || gq === "x"){
+    ctx.save(); ctx.strokeStyle = COL.F; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(X(0), Y(gq === "y" ? set.yT : set.D)); ctx.lineTo(X(tMax), Y(gq === "y" ? set.yT : set.D)); ctx.stroke(); ctx.restore();
+    label(ctx, gq === "y" ? "target height" : "target distance D", box.x + box.w - 6, Y(gq === "y" ? set.yT : set.D) - 10, COL.F, "right", 12);
+  }
+  const tp = Math.min(R.t, S.tEnd), fq = t => f(stateAt(S, Math.min(Math.max(t, 0), S.tEnd))), tl = [];
+  if (R.phase !== "ready" && toolOn("areaChk")){        // area under vₓ–t = Δx, under v_y–t = Δy, under a–t = Δv_y
+    if (gq === "x" || gq === "y") tl.push("Area: use a velocity or acceleration graph");
+    else { const ar = shadeArea(ctx, X, Y, fq, tp); tl.push(gq === "vx" ? `area = Δx = ${f2(ar)} m` : gq === "vy" ? `area = Δy = ${f2(ar)} m` : `area = Δv_y = ${f2(ar)} m s⁻¹`); }
+  }
+  const col = {y:COL.ink, x:COL.P, vx:COL.P, vy:COL.v, a:COL.v}[gq];
+  const line = (s, t1, c, wd) => { ctx.save(); ctx.strokeStyle = c; ctx.lineWidth = wd; ctx.beginPath();
     for (let i = 0; i <= 80; i++){ const t = t1 * i / 80; i ? ctx.lineTo(X(t), Y(f(stateAt(s, t)))) : ctx.moveTo(X(t), Y(f(stateAt(s, t)))); } ctx.stroke(); ctx.restore(); };
   same.forEach(o => line(o.S, o.S.tEnd, o.a.hit ? COL.ok : COL.grey, 1.5));
-  if (R.phase !== "ready") line(S, R.t, COL.ink, 2.4);
+  if (R.phase !== "ready") line(S, R.t, gq === "y" || gq === "x" ? COL.ink : col, 2.4);
+  if (gq === "a" && R.phase !== "ready"){ ctx.save(); ctx.strokeStyle = COL.P; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(X(0), Y(0) - 1); ctx.lineTo(X(tp), Y(0) - 1); ctx.stroke(); ctx.restore();
+    label(ctx, `a_y = −g = −${f2(G)} m s⁻² (blue) · aₓ = 0 (purple)`, box.x + 10, box.y + box.h - 12, COL.v, "left", 12.5); }
   if (gq === "x" && S.ux > 0){ const tD = set.D / S.ux; if (tD <= tMax){ ctx.save(); ctx.strokeStyle = COL.P; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(X(tD), Y(0)); ctx.lineTo(X(tD), Y(set.D)); ctx.stroke(); ctx.restore();
     label(ctx, `t = D/uₓ = ${f3(tD)} s`, X(tD) + 6, Y(set.D / 2), COL.P, "left", 12.5); } }
+  if (R.phase !== "ready" && toolOn("tanChk")){         // gradient of x–t = vₓ, y–t = v_y, vₓ–t = aₓ, v_y–t = a_y
+    if (gq === "a") tl.push("Tangent: use a position or velocity graph");
+    else { const kk = drawTangent(ctx, X, Y, fq, tp, 0, S.tEnd, box, tMax * 0.16);
+      if (kk !== null) tl.push({x:`tangent gradient = vₓ = ${f2(kk)} m s⁻¹`, y:`tangent gradient = v_y = ${f2(kk)} m s⁻¹`,
+                                vx:`tangent gradient = aₓ = ${f2(kk)} m s⁻²`, vy:`tangent gradient = a_y = ${f2(kk)} m s⁻²`}[gq]); }
+  }
+  toolLabels(ctx, box, tl);
 }
 // u against θ for the attempts at this target, with the needed-speed curve
 function drawAna(){
@@ -772,12 +867,13 @@ function syncControls(){
   $("aim").checked = set.aim;
 }
 const resetRun = reset;                                // name used by the shared task engine
-function updateButtons(){ $("startBtn").disabled = R.phase === "run"; $("startBtn").textContent = R.phase === "done" ? "▶ Shoot again" : "▶ Shoot"; }
+function updateButtons(){ $("startBtn").disabled = R.phase === "run" && !R.paused; $("startBtn").textContent = "▶ Shoot";
+  $("pauseBtn").disabled = R.phase !== "run"; $("pauseBtn").textContent = R.paused ? "▶" : "⏸"; $("pauseBtn").setAttribute("aria-label", R.paused ? "Resume" : "Pause"); }
 function updateReadouts(){
   const S = R.S, s = stateAt(S, R.t), el = $("state");
   $("r_score").textContent = `${score.n} / ${score.hits}`; $("r_t").textContent = `${f3(R.t)} s`; $("r_xy").textContent = `(${f2(s.x)}, ${f2(s.y)}) m`;
   if (R.phase === "done"){ el.className = S.hit ? "pill hit" : "pill slide"; el.textContent = S.hit ? "✔ Hit" : "✘ Miss"; $("r_ev").textContent = "The ball " + S.msg; }
-  else { el.className = R.phase === "run" ? "pill rest" : "pill ready"; el.textContent = R.phase === "run" ? "In flight" : "Ready"; $("r_ev").textContent = "Plan the shot, then ▶ Shoot"; }
+  else { el.className = R.phase === "run" ? "pill rest" : "pill ready"; el.textContent = R.phase === "run" ? (R.paused ? "Paused" : "In flight") : "Ready"; $("r_ev").textContent = "Plan the shot, then ▶ Shoot"; }
 }
 const change = () => { syncControls(); reset(); };
 $("u").addEventListener("input", e => { set.u = +e.target.value; change(); });
@@ -788,6 +884,7 @@ $("D").addEventListener("input", e => { set.D = +e.target.value; change(); });
 $("yT").addEventListener("input", e => { set.yT = +e.target.value; change(); });
 $("aim").addEventListener("change", e => { set.aim = e.target.checked; });
 $("startBtn").addEventListener("click", start);
+$("pauseBtn").addEventListener("click", () => { R.paused = !R.paused; updateButtons(); });
 $("newBtn").addEventListener("click", newTarget);
 $("resetBtn").addEventListener("click", () => { attempts = attempts.filter(a => !sameTarget(a)); save(); renderTrials(); reset(); });
 $("gsel").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; gq = b.dataset.g;
@@ -803,6 +900,17 @@ $("pTasks").addEventListener("change", taskChange);
 $("helpBtn").addEventListener("click", () => $("help").classList.add("on"));
 $("helpClose").addEventListener("click", () => $("help").classList.remove("on"));
 $("help").addEventListener("click", e => { if (e.target.id === "help") $("help").classList.remove("on"); });
+
+// Step controls (sims 10–15): buttons and the ← → keys move the time by 0.1 s and pause the motion
+const STEP_DT = 0.1;
+$("backBtn").addEventListener("click", () => stepBy(-STEP_DT));
+$("fwdBtn").addEventListener("click", () => stepBy(STEP_DT));
+document.addEventListener("keydown", e => {
+  const t = e.target; if (t.tagName === "SELECT" || t.tagName === "TEXTAREA" || (t.tagName === "INPUT" && t.type !== "checkbox")) return;
+  if ($("help").classList.contains("on")) return;
+  if (e.key === "ArrowLeft"){ stepBy(-STEP_DT); e.preventDefault(); }
+  else if (e.key === "ArrowRight"){ stepBy(STEP_DT); e.preventDefault(); }
+});
 
 load(); syncControls(); reset(); renderTrials(); renderTaskSets(); renderTasks();
 let last = performance.now();

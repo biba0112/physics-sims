@@ -189,6 +189,16 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 .ctl select:disabled{opacity:.5}
 @media (max-width:1300px){ #controls input[type=range]{width:130px} #controls select{max-width:150px} }
 @media (max-width:1099px){ #controls input[type=range]{width:118px} #controls select{max-width:150px} }
+
+.btn.step{padding:4px 9px;font-variant-numeric:tabular-nums}
+.tools{display:flex;gap:2px 10px;align-items:center;flex-wrap:wrap}
+.tools .switch{min-height:36px;font-size:.9rem}
+.tools .switch input{width:18px;height:18px}
+
+.cardhead .actions{gap:5px}
+.btn.icon{min-width:44px;padding:4px 8px}
+.cardhead .actions .btn{padding-left:10px;padding-right:10px}
+.cardhead .actions .btn.step{padding-left:7px;padding-right:7px}
 </style>
 </head>
 <body>
@@ -208,8 +218,10 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       <div class="cardhead">
         <div class="actions">
           <button class="btn primary" id="startBtn">▶ Drop</button>
-          <button class="btn" id="pauseBtn" disabled>⏸ Pause</button>
-          <button class="btn" id="resetBtn">↺ Reset</button>
+          <button class="btn icon" id="pauseBtn" disabled title="Pause / resume" aria-label="Pause">⏸</button>
+          <button class="btn step" id="backBtn" title="Step back 0.1 s (← key)" aria-label="Step back 0.1 s">◂ 0.1 s</button>
+          <button class="btn step" id="fwdBtn" title="Step forward 0.1 s (→ key)" aria-label="Step forward 0.1 s">0.1 s ▸</button>
+          <button class="btn icon" id="resetBtn" title="Reset" aria-label="Reset">↺</button>
           <button class="btn navy" id="recBtn" disabled>● Record</button>
         </div>
       </div>
@@ -247,10 +259,12 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
           <button data-g="v" aria-pressed="false"><i>v</i>–<i>t</i></button>
           <button data-g="a" aria-pressed="false"><i>a</i>–<i>t</i></button>
         </div>
-        <span class="hint">Ball A solid · ball B dashed</span>
+        <span class="tools"><span class="hint">Graph tools:</span>
+          <label class="switch"><input type="checkbox" id="areaChk"> Area</label>
+          <label class="switch"><input type="checkbox" id="tanChk"> Tangent</label></span>
       </div>
       <div id="graphWrap"><canvas id="graph" aria-label="Motion graph"></canvas></div>
-      <div class="hint">Move the mouse (or your finger) over the graph to read values. Up is positive, so a falling ball has a
+      <div class="hint">Ball A solid, ball B dashed. Move the mouse (or your finger) over the graph to read values. Up is positive, so a falling ball has a
         <b>negative</b> velocity. The gradient of <i>y</i>–<i>t</i> is <i>v</i>; the gradient of <i>v</i>–<i>t</i> is <i>a</i>.</div>
     </div>
 
@@ -329,6 +343,10 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       <li><b>Timing</b>: the light gate gives the exact time; <b>stopwatch</b> adds a human reaction time (0.15–0.25 s) when
         you start <i>and</i> when you stop, like the class experiment.</li>
       <li>Press <b>● Record</b>. The <b>Data</b> tab plots <i>h</i> against <i>t</i>² for the drops; gradient = <i>g</i>/2.</li>
+      <li><b>◂ 0.1 s / 0.1 s ▸</b> (or the <b>← →</b> keys) step the motion back and forward and pause it, so you can discuss
+        each moment: the velocity and acceleration arrows stay on the screen. <b>Graph tools</b>: <i>Area</i> shades the area under
+        a velocity graph (= displacement) or an acceleration graph (= change in velocity) up to that moment; <i>Tangent</i> draws the
+        tangent there (gradient of a position graph = velocity, of a velocity graph = acceleration).</li>
       <li>Work through the <b>Tasks</b> tab. Write explanations on your worksheet.</li>
     </ol>
     <h3>The physics</h3>
@@ -449,6 +467,14 @@ function start(){
   updateButtons();
 }
 const tEnd = () => Math.max(R.A.tLand, R.B ? R.B.tLand : 0);
+// step the play-back by d seconds and pause (from 'ready' it starts the run first)
+function stepBy(d){
+  if (R.phase === "ready") start();
+  const end = tEnd(); R.phase = "run"; R.paused = true;
+  R.t = Math.min(end, Math.max(0, Math.min(R.t, end) + d));
+  if (R.t >= end - 1e-9){ R.t = end; R.phase = "done"; }
+  updateButtons();
+}
 function step(dt){
   if (R.phase !== "run" || R.paused) return;
   R.t += dt * (set.slow ? 0.25 : 1);
@@ -571,10 +597,16 @@ function drawScene(){
   }
   // balls + velocity arrows
   const vMax = Math.max(Math.abs(R.A.vLand), Math.abs(set.v0), 1), vpx = 70 * Math.max(.8, k) / vMax;
+  const frozen = R.phase === "done" || (R.phase === "run" && R.paused);
+  const aMaxS = Math.max(R.A.g, ...R.A.pts.map(p => Math.abs(p.a))), apx = 55 * Math.max(.8, k) / aMaxS;
   trs.forEach((tr, i) => {
     const s = at(tr, R.t), y = V.Y(s.y) - r;          // y is the bottom of the ball
     drawBall(ctx, tr.o, xs[i], y, r);
-    if (!s.landed && R.phase !== "ready" && Math.abs(s.v) > 0.05) arrow(ctx, xs[i] + r + 6, y, xs[i] + r + 6, y - s.v * vpx, COL.v, 3);
+    if (frozen){                                       // paused / stepped / finished: v and a stay (just before landing if landed)
+      const f = at(tr, Math.min(R.t, tr.tLand - 1e-4)), yf = V.Y(f.y) - r;
+      if (Math.abs(f.v) > 0.02){ arrow(ctx, xs[i] + r + 6, yf, xs[i] + r + 6, yf - f.v * vpx, COL.v, 3); label(ctx, "v", xs[i] + r + 16, yf - f.v * vpx, COL.v, "left", 12); }
+      if (Math.abs(f.a) > 0.02){ arrow(ctx, xs[i] - r - 6, yf, xs[i] - r - 6, yf - f.a * apx, COL.a, 3); label(ctx, "a", xs[i] - r - 16, yf - f.a * apx, COL.a, "right", 12); }
+    } else if (!s.landed && R.phase !== "ready" && Math.abs(s.v) > 0.05) arrow(ctx, xs[i] + r + 6, y, xs[i] + r + 6, y - s.v * vpx, COL.v, 3);
     label(ctx, i ? "B" : "A", xs[i], y + (s.landed ? -r - 10 : 0), COL.ink, "center", 11);
   });
   // status + timer
@@ -582,6 +614,8 @@ function drawScene(){
             : R.phase === "done" ? "Landed" : R.paused ? "Paused" : (set.slow ? "Falling (slow motion ¼×)" : "In free fall");
   label(ctx, st0 + ` · ${fieldNow().name}${airOn() ? " · air" : set.field === "earth" ? " · vacuum" : ""}`, 12, 18, COL.navy, "left", 15);
   label(ctx, `${set.timing === "stop" ? "⏱ stopwatch" : "light gate"}: ${f2(timerReading())} s`, w - 12, 18, COL.P, "right", 17);
+  if (frozen){ const f = at(R.A, Math.min(R.t, R.A.tLand - 1e-4));
+    label(ctx, `${R.phase === "done" ? "just before landing" : `t = ${f2(R.t)} s`} · A: v = ${f2(f.v)} m s⁻¹, a = ${f2(f.a)} m s⁻²`, w - 12, 40, COL.ink, "right", 13); }
 }
 
 /* ============================ 7 FBD ============================ */
@@ -589,7 +623,7 @@ function drawScene(){
 function drawFBD(){
   const {ctx, w, h} = fitCanvas(document.getElementById("fbd"));
   ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
-  const tr = R.A, o = tr.o, g = tr.g, W = o.m * g, s = at(tr, R.t);
+  const tr = R.A, o = tr.o, g = tr.g, W = o.m * g, s = at(tr, R.phase === "done" ? tr.tLand - 1e-4 : R.t);
   const cx = w * 0.36, cy = h * 0.5, Lmax = h * 0.34, scale = Lmax / Math.max(W, tr.FdMax * 1.02), L = F => F * scale;
   const unit = F => F < 0.1 ? `${sig(F * 1000)} mN` : `${sig(F)} N`;
   drawBall(ctx, o, cx, cy, 13);
@@ -618,6 +652,7 @@ function drawFBD(){
       sub = `a = W/m = g = ${f2(g)} m s⁻² downward — for any mass`;
     }
   }
+  if (R.phase === "done") msg = "Just before landing — " + msg.charAt(0).toLowerCase() + msg.slice(1);
   label(ctx, msg, w / 2, 14, COL.navy, "center", 13);
   if (sub) label(ctx, sub, w / 2, h - 14, COL.muted, "center", 12.5);
   // motion arrows: velocity and acceleration (not forces) drawn beside the FBD
@@ -628,10 +663,10 @@ function drawFBD(){
   const vMax = Math.max(Math.abs(tr.vLand), Math.abs(tr.u), 1), aMax = Math.max(g, ...tr.pts.map(p => Math.abs(p.a)));
   if (!s.landed && !(s.held && R.phase === "ready")){
     if (Math.abs(s.v) > 0.02){ arrow(ctx, mx - 12, my, mx - 12, my - s.v / vMax * vL, COL.v, 3);
-      label(ctx, `v = ${f2(s.v)} m s⁻¹`, mx, my - Math.sign(s.v) * (Math.abs(s.v) / vMax * vL + 12), COL.v, "center", 12.5); }
+      label(ctx, `v = ${f2(s.v)} m s⁻¹`, mx - 20, my - s.v / vMax * vL, COL.v, "right", 12.5); }
     else label(ctx, "v = 0 (top)", mx, my - 16, COL.v, "center", 12.5);
     if (Math.abs(s.a) > 0.02){ arrow(ctx, mx + 12, my, mx + 12, my - s.a / aMax * aL, COL.a, 3);
-      label(ctx, `a = ${f2(s.a)} m s⁻²`, mx, my - Math.sign(s.a) * (Math.abs(s.a) / aMax * aL + 12) + (Math.abs(s.v) > 0.02 && Math.sign(s.v) === Math.sign(s.a) ? 16 : 0), COL.a, "center", 12.5); }
+      label(ctx, `a = ${f2(s.a)} m s⁻²`, Math.min(mx + 12, w - 62), my - s.a / aMax * aL - Math.sign(s.a) * 14, COL.a, "center", 12.5); }
   } else {
     label(ctx, s.landed ? "v = 0, a = 0" : (tr.u ? `v = ${f2(tr.u)} m s⁻¹ at release` : "v = 0 at release"), mx, my + 20, COL.muted, "center", 12);
   }
@@ -658,6 +693,31 @@ function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
   ctx.save(); ctx.translate(x - 44, y + h / 2); ctx.rotate(-Math.PI / 2); rich(ctx, yLab, 0, 0, COL.ink); ctx.restore();
   return {X, Y};
 }
+// Graph tools (sims 10–15): signed area under f(t) from 0 to t1 (trapezium rule, blue above / red below the axis),
+// and the tangent to f at time t (central difference) drawn across ±span seconds, clipped to the plot box
+function shadeArea(ctx, X, Y, f, t1, n = 240){
+  if (!(t1 > 0)) return 0;
+  let A = 0, ta = 0, fa = f(0); ctx.save();
+  for (let i = 1; i <= n; i++){
+    const tb = t1 * i / n, fb = f(tb); A += (fa + fb) / 2 * (tb - ta);
+    ctx.fillStyle = fa + fb >= 0 ? "rgba(21,101,192,.22)" : "rgba(198,40,40,.22)";
+    ctx.beginPath(); ctx.moveTo(X(ta), Y(0)); ctx.lineTo(X(ta), Y(fa)); ctx.lineTo(X(tb), Y(fb)); ctx.lineTo(X(tb), Y(0)); ctx.closePath(); ctx.fill();
+    ta = tb; fa = fb;
+  }
+  ctx.restore(); return A;
+}
+function drawTangent(ctx, X, Y, f, t, lo, hi, box, span){
+  const d = 0.004, t0 = Math.max(lo, t - d), t1 = Math.min(hi, t + d);
+  if (t1 - t0 < 1e-6) return null;
+  const k = (f(t1) - f(t0)) / (t1 - t0), y0 = f(t), a = t - span, b = t + span;
+  ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y, box.w, box.h); ctx.clip();
+  ctx.strokeStyle = COL.accent; ctx.lineWidth = 2; ctx.setLineDash([8, 4]);
+  ctx.beginPath(); ctx.moveTo(X(a), Y(y0 + k * (a - t))); ctx.lineTo(X(b), Y(y0 + k * (b - t))); ctx.stroke();
+  ctx.setLineDash([]); ctx.fillStyle = COL.accent; ctx.beginPath(); ctx.arc(X(t), Y(y0), 4.5, 0, 7); ctx.fill();
+  ctx.restore(); return k;
+}
+const toolOn = id => !!document.getElementById(id)?.checked;
+function toolLabels(ctx, box, lines){ lines.filter(Boolean).forEach((s, i) => label(ctx, s, box.x + box.w - 6, box.y + 12 + 19 * i, COL.accent, "right", 13.5)); }
 let cursorT = null, gq = "y";
 const GQ = {y:{lab:[["height ","n"],["y","i"],[" / m","n"]], col:COL.ink, f:p => p.y},
             v:{lab:[["velocity ","n"],["v","i"],[" / m s⁻¹","n"]], col:COL.v, f:p => p.v},
@@ -676,7 +736,12 @@ function drawGraph(){
   const box = {x:58, y:16, w:w - 74, h:h - 66}, tMax = niceCeil(tEnd() * 1.04), [lo, hi] = gRange(), q = GQ[gq];
   const {X, Y} = axesR(ctx, box, 0, tMax, lo, hi, [["time ","n"],["t","i"],[" / s","n"]], q.lab);
   if (R.phase === "ready"){ label(ctx, set.v0 ? "Press ▶ Throw" : "Press ▶ Drop", box.x + box.w / 2, box.y + box.h / 2, COL.muted, "center", 16); return; }
-  const trs = R.B ? [R.A, R.B] : [R.A];
+  const trs = R.B ? [R.A, R.B] : [R.A], RA = R.A, tp = Math.min(R.t, RA.tLand - 1e-6), tl = [];
+  const fA = t => q.f(at(RA, Math.min(Math.max(t, 1e-9), RA.tLand - 1e-6)));
+  if (toolOn("areaChk")){                              // area under v–t = Δy; under a–t = Δv
+    if (gq === "y") tl.push("Area: use the v–t or a–t graph");
+    else { const ar = shadeArea(ctx, X, Y, fA, tp); tl.push(gq === "v" ? `area = Δy = ${f2(ar)} m` : `area = Δv = ${f2(ar)} m s⁻¹`); }
+  }
   trs.forEach((tr, i) => {
     ctx.save(); ctx.strokeStyle = i ? COL.grey : q.col; ctx.lineWidth = 2.4; ctx.lineJoin = "round"; if (i) ctx.setLineDash([7, 5]);
     ctx.beginPath(); let first = true;
@@ -684,6 +749,12 @@ function drawGraph(){
     if (R.t > tr.tLand && gq !== "y"){ ctx.lineTo(X(tr.tLand), Y(q.f(tr.pts[tr.pts.length - 1]))); }
     ctx.stroke(); ctx.restore();
   });
+  if (toolOn("tanChk")){                               // gradient of y–t = v; of v–t = a
+    if (gq === "a") tl.push("Tangent: use the y–t or v–t graph");
+    else { const kk = drawTangent(ctx, X, Y, fA, tp, 0, RA.tLand, box, tMax * 0.16);
+      if (kk !== null) tl.push(gq === "y" ? `tangent gradient = v = ${f2(kk)} m s⁻¹` : `tangent gradient = a = ${f2(kk)} m s⁻²`); }
+  }
+  toolLabels(ctx, box, tl);
   // key points once they have happened
   const A = R.A;
   if (gq === "y" && A.tTop !== null && R.t >= A.tTop){ ctx.fillStyle = COL.v; ctx.beginPath(); ctx.arc(X(A.tTop), Y(A.yTop), 5, 0, 7); ctx.fill();
@@ -893,8 +964,8 @@ const resetRun = reset;                                // name used by the share
 function updateButtons(){
   const p = R.phase, verb = set.v0 ? "Throw" : "Drop";
   $("startBtn").disabled = p === "run";
-  $("startBtn").textContent = p === "done" ? `▶ ${verb} again` : `▶ ${verb}`;
-  $("pauseBtn").disabled = p !== "run"; $("pauseBtn").textContent = R.paused ? "▶ Resume" : "⏸ Pause";
+  $("startBtn").textContent = `▶ ${verb}`;
+  $("pauseBtn").disabled = p !== "run"; $("pauseBtn").textContent = R.paused ? "▶" : "⏸"; $("pauseBtn").setAttribute("aria-label", R.paused ? "Resume" : "Pause");
   $("recBtn").disabled = p !== "done" || R.recorded; $("recBtn").textContent = R.recorded ? "✔ Recorded" : "● Record";
 }
 function updateReadouts(){
@@ -954,6 +1025,17 @@ gcv.addEventListener("pointermove", e => {
 });
 gcv.addEventListener("pointerleave", () => { cursorT = null; });
 gcv.addEventListener("pointerdown", e => { gcv.dispatchEvent(new PointerEvent("pointermove", e)); });
+
+// Step controls (sims 10–15): buttons and the ← → keys move the time by 0.1 s and pause the motion
+const STEP_DT = 0.1;
+$("backBtn").addEventListener("click", () => stepBy(-STEP_DT));
+$("fwdBtn").addEventListener("click", () => stepBy(STEP_DT));
+document.addEventListener("keydown", e => {
+  const t = e.target; if (t.tagName === "SELECT" || t.tagName === "TEXTAREA" || (t.tagName === "INPUT" && t.type !== "checkbox")) return;
+  if ($("help").classList.contains("on")) return;
+  if (e.key === "ArrowLeft"){ stepBy(-STEP_DT); e.preventDefault(); }
+  else if (e.key === "ArrowRight"){ stepBy(STEP_DT); e.preventDefault(); }
+});
 
 load(); syncControls(); reset(); renderTrials(); renderTaskSets(); renderTasks();
 let last = performance.now();
