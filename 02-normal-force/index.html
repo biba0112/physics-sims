@@ -161,6 +161,12 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
   #fbdWrap{flex:none;height:320px}
   .right{height:640px;flex:none}
 }
+/* Author credit (header, far right) */
+.credit{text-align:right;font-size:.74rem;line-height:1.3;opacity:.92;white-space:nowrap}
+.credit a{color:#fff;text-decoration:underline}
+@media (max-width:759px){header{flex-wrap:wrap;row-gap:4px} header .btn{white-space:nowrap}
+  .credit{order:3;flex-basis:100%;text-align:left;font-size:.7rem}
+  .credit br{display:none} .credit a{margin-left:6px}}
 </style>
 </head>
 <body>
@@ -168,10 +174,11 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 <header>
   <div>
     <h1>Normal force — what does a scale really measure?</h1>
-    <div class="sub">IBDP Physics SL · A.2 Types of forces · Simulation 02 · g = 9.81 N kg⁻¹</div>
+    <div class="sub">IBDP Physics SL · A.2 Types of forces · g = 9.81 N kg⁻¹</div>
   </div>
   <div class="grow"></div>
   <button class="btn" id="helpBtn" aria-label="How to use">? How to use</button>
+  <div class="credit">Biljana Taneska · Physics teacher<br><a href="mailto:btaneska@vis.ac.at">btaneska@vis.ac.at</a></div>
 </header>
 
 <main>
