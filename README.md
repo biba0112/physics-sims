@@ -1,6 +1,6 @@
 # Physics Simulations — IBDP Physics SL, Grade 11
 
-Interactive simulations for Topic A.1 (projectile motion) and Topic A.2 (forces). They open in any modern browser on laptops, Chromebooks and tablets,
+Interactive simulations for Topic A.1 (projectile motion) and Topic A.2 (forces and momentum). They open in any modern browser on laptops, Chromebooks and tablets,
 and keep working without internet once loaded.
 
 **All simulations:** https://biba0112.github.io/physics-sims/
@@ -23,6 +23,8 @@ and keep working without internet once loaded.
 | [Buoyancy](https://biba0112.github.io/physics-sims/08-buoyancy/) | A.2 Types of forces | Archimedes' principle with a newton meter and a eureka can: sink, float or hover? | [Word](https://biba0112.github.io/physics-sims/08-buoyancy/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/08-buoyancy/worksheet.pdf) |
 | [Pendulum tension](https://biba0112.github.io/physics-sims/09-pendulum-tension/) | A.2 Forces · circular motion · energy | Hold a pendulum aside or let it swing: how does the tension in the string change? | [Word](https://biba0112.github.io/physics-sims/09-pendulum-tension/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/09-pendulum-tension/worksheet.pdf) |
 | [Circular motion](https://biba0112.github.io/physics-sims/16-circular-motion/) | A.2 Forces · circular motion | A rotating chair, a satellite, a car on a bend and a playground carousel: what provides the centripetal force? | [Word](https://biba0112.github.io/physics-sims/16-circular-motion/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/16-circular-motion/worksheet.pdf) |
+| [Impulse](https://biba0112.github.io/physics-sims/17-impulse/) | A.2 Momentum and impulse | A cart hits a force sensor, an egg lands in a bedsheet, a racket hits a ball: impulse = area under the F–t graph = Δp. | [Word](https://biba0112.github.io/physics-sims/17-impulse/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/17-impulse/worksheet.pdf) |
+| [Collisions and explosions](https://biba0112.github.io/physics-sims/18-collisions-explosions/) | A.2 Momentum and impulse | Elastic, inelastic and sticky collisions and explosions: momentum is conserved — and kinetic energy (A.3 link). | [Word](https://biba0112.github.io/physics-sims/18-collisions-explosions/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/18-collisions-explosions/worksheet.pdf) |
 
 Each simulation has a **Tasks** tab with three parts — *Pre-lab* (predict), *During the lab* (compare with the hands-on
 activity) and *Homework* (data, graphs and calculations) — matching its worksheet.
