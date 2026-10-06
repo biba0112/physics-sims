@@ -7,6 +7,7 @@
 <!--
   IBDP Physics SL · Grade 11 · Topic A.2 Types of forces (extension beyond the SL guide)
   Simulation 06 — Springs in series and in parallel (pairs with two school springs and the car-suspension problem)
+  Load & unload mode (checkpoint, 6 Oct 2026): loading/unloading curves, hysteresis loop of a rubber band, elastic limit E.
   Self-contained: no internet, no external libraries. Open in any modern browser.
   Built from the simulation template (Simulation 01 CSS, helpers and task engine).
 
@@ -186,7 +187,8 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
     <div class="card scenecard">
       <div class="cardhead">
         <h2 id="sceneTitle">Experiment</h2>
-        <div class="actions"><button class="btn navy" id="recBtn">● Record</button></div>
+        <div class="actions"><button class="btn" id="newBtn" title="Start again with an undamaged spring">↺ New spring</button>
+          <button class="btn navy" id="recBtn">● Record</button></div>
       </div>
       <div id="sceneWrap"><canvas id="scene" aria-label="Springs on a clamp stand"></canvas></div>
     </div>
@@ -206,8 +208,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
     </div>
     <div class="panel on" id="pGraph">
       <div id="graphWrap"><canvas id="graph" aria-label="Force against extension for each arrangement"></canvas></div>
-      <div class="hint">Load against total extension for spring A alone, spring B alone, both in series and both in parallel.
-        The thick line is the arrangement you are using; the dot is the load now. Gradient = effective spring constant.</div>
+      <div class="hint" id="graphHint"></div>
     </div>
     <div class="panel" id="pData">
       <div class="row">
@@ -232,6 +233,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
         <button data-arr="single" aria-pressed="true">A alone</button>
         <button data-arr="series" aria-pressed="false">Series</button>
         <button data-arr="parallel" aria-pressed="false">Parallel</button>
+        <button data-arr="cycle" aria-pressed="false">Load &amp; unload</button>
       </div>
     </div>
     <div class="ctl"><label for="sA">Spring A</label><select id="sA"></select></div>
@@ -255,6 +257,9 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       <li>Add a load with <b>+</b>. Read the total extension <i>x</i> and press <b>● Record</b>.</li>
       <li>Repeat for several loads and arrangements. The <b>Data &amp; analysis</b> tab fits a line for each arrangement:
         its gradient is the <b>effective spring constant</b> <i>k</i><sub>eff</sub>.</li>
+      <li><b>Load &amp; unload</b> (checkpoint): one spring or the rubber band. Add masses, then take them off again. The Graph
+        tab draws the loading curve (orange) and the unloading curve (blue), the <b>elastic limit E</b> of a steel spring and
+        the <b>hysteresis loop</b> of the rubber band.</li>
     </ol>
     <h3>The physics</h3>
     <ul>
@@ -263,9 +268,13 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       <li><b>Parallel</b> (side by side, bar kept level): both springs have the <b>same extension</b> and share the load:
         <span class="eq">F = k<sub>A</sub>x + k<sub>B</sub>x ⇒ k<sub>eff</sub> = k<sub>A</sub> + k<sub>B</sub></span>.</li>
       <li>A <b>rubber band</b> does not obey Hooke's law: its F–x graph curves, so it has no single k.</li>
+      <li><b>Hysteresis</b>: the band's unloading curve lies below its loading curve. Area under the loading curve = energy stored;
+        area under the unloading curve = energy given back; the <b>loop area</b> = energy turned into heat in the band.</li>
+      <li>Past the <b>elastic limit E</b> a steel spring is permanently stretched: it does not return to its original length.</li>
     </ul>
     <p class="hint">Series and parallel springs are not in the IB SL guide; they extend Hooke's law and match the "car suspension"
-      problem (four springs share the car's weight). Model: light springs and bar, below the elastic limit.</p>
+      problem (four springs share the car's weight). Model: light springs and bar, below the elastic limit (except in
+      Load &amp; unload, where steel springs soften past E and keep 30 % of the extra stretch).</p>
     <p style="text-align:right"><button class="btn primary" id="helpClose">Close</button></p>
   </div>
 </div>
@@ -276,14 +285,17 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 const G = 9.81;                 // N kg⁻¹ (IB data booklet)
 const MAXG = 300;               // g, largest load
 const SPRINGS = [
-  {id:"inv",   name:"Steel — medium (investigation, 25 N m⁻¹)", k:25, col:"#455A64"},
-  {id:"inv2",  name:"Steel — medium, second one (25 N m⁻¹)",    k:25, col:"#546E7A"},
-  {id:"soft",  name:"Steel — soft (12 N m⁻¹)",                  k:12, col:"#78909C"},
-  {id:"stiff", name:"Steel — stiff (40 N m⁻¹)",                 k:40, col:"#263238"},
-  {id:"brass", name:"Brass (18 N m⁻¹)",                         k:18, col:"#B8860B"},
-  {id:"band",  name:"Rubber band (not Hooke's law)",            k:null, col:"#8D6E63"},
-];
+  {id:"inv",   name:"Steel — medium (investigation, 25 N m⁻¹)", k:25, col:"#455A64", Flim:6.0, cmax:800},
+  {id:"inv2",  name:"Steel — medium, second one (25 N m⁻¹)",    k:25, col:"#546E7A", Flim:6.0, cmax:800},
+  {id:"soft",  name:"Steel — soft (12 N m⁻¹)",                  k:12, col:"#78909C", Flim:3.0, cmax:400},
+  {id:"stiff", name:"Steel — stiff (40 N m⁻¹)",                 k:40, col:"#263238", Flim:9.0, cmax:1000},
+  {id:"brass", name:"Brass (18 N m⁻¹)",                         k:18, col:"#B8860B", Flim:4.5, cmax:600},
+  {id:"band",  name:"Rubber band (not Hooke's law)",            k:null, col:"#8D6E63", Flim:null, cmax:500},
+];                               // Flim = elastic limit E (N) and cmax = largest load (g): Load & unload mode only
 const BAND = {a:8, b:250};       // rubber band: F = a x + b x² (N, x in m)
+// Load & unload mode: steel softens to half its k past E and keeps 30 % of the extra stretch (as in the Spring force
+// simulation); rubber band unloads along F = F_max·v^p, keeps 4 % of its stretch and recovers with time constant tau (s)
+const CYC = {soft:0.5, keep:0.3, a:BAND.a, b:BAND.b, p:2.5, bandKeep:0.04, tau:2.0};
 const COL = {W:"#2A5D8A", N:"#2E7D32", F:"#C62828", P:"#6A1B9A", H:"#00838F", H2:"#26A69A", navy:"#1F3A5F", accent:"#E65100",
              ink:"#263238", muted:"#606A72", grid:"#E3E9F0", grey:"#90A4AE", A:"#00838F", B:"#7B1FA2", ser:"#E65100", par:"#2E7D32"};
 const sprById = id => SPRINGS.find(s => s.id === id);
@@ -306,13 +318,68 @@ function linFit(pts){ const n = pts.length; if (n < 2) return null;
   const k = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / sxx; return {k, b:my - k * mx}; }
 function originFit(pts){ const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0);
   return sxx && pts.length >= 2 ? {k:pts.reduce((a, p) => a + p[0] * p[1], 0) / sxx, b:0} : null; }
+// ---- Load & unload checkpoint: hysteresis loop and elastic limit (the same model in both spring simulations) ----
+// Steel spring: Hooke's law up to the elastic limit F_lim, softer beyond it. Unloading runs in a straight line from the
+// turning point down to the permanent extension (30 % of the stretch beyond the limit stays). Below the limit the
+// unloading line retraces the loading line: no loop. Rubber band: F = ax + bx² on loading and a lower curve
+// F = F_max·v^p on unloading (hysteresis); it keeps 4 % of its stretch and then slowly recovers.
+// A cycle c = {sB, Fm, xm}: permanent extension at the start, largest load so far and its extension (all SI).
+const isBand = sp => !sp.k;
+function loadX(sp, F, s){                                    // loading branch: extension (m) from the original length
+  if (isBand(sp)) return s + (-CYC.a + Math.sqrt(CYC.a * CYC.a + 4 * CYC.b * F)) / (2 * CYC.b);
+  const xl = sp.Flim / sp.k;
+  return F <= sp.Flim ? s + F / sp.k : s + xl + (F - sp.Flim) / (CYC.soft * sp.k);
+}
+function setAfter(sp, c){                                    // permanent extension left after unloading to zero
+  if (isBand(sp)) return c.sB + CYC.bandKeep * (c.xm - c.sB);
+  return c.sB + (c.Fm > sp.Flim ? CYC.keep * (c.Fm - sp.Flim) / (CYC.soft * sp.k) : 0);
+}
+function unloadX(sp, F, c){                                  // unloading branch, from the turning point down to the set
+  if (F >= c.Fm) return c.xm;
+  const xs = setAfter(sp, c), u = Math.max(0, F) / c.Fm;
+  return xs + (c.xm - xs) * (isBand(sp) ? Math.pow(u, 1 / CYC.p) : u);
+}
+function energyIn(sp, c){                                    // work done on the spring while loading = area under loading curve (J)
+  if (isBand(sp)){ const d = c.xm - c.sB; return CYC.a * d * d / 2 + CYC.b * d * d * d / 3; }
+  if (c.Fm <= sp.Flim) return c.Fm * c.Fm / (2 * sp.k);
+  return sp.Flim * sp.Flim / (2 * sp.k) + (sp.Flim + c.Fm) / 2 * (c.Fm - sp.Flim) / (CYC.soft * sp.k);
+}
+function energyOut(sp, c, F = 0){                            // energy given back while unloading from F_max down to F (J)
+  const xs = setAfter(sp, c), u = Math.max(0, F) / c.Fm;
+  if (isBand(sp)) return c.Fm * (c.xm - xs) / (CYC.p + 1) * (1 - Math.pow(u, (CYC.p + 1) / CYC.p));
+  return (c.Fm + F) / 2 * (c.xm - xs) * (1 - u);
+}
+const C = {};                                                // the cycle being loaded/unloaded now, and the last finished one
+function resetCycle(){ Object.assign(C, {sB:0, Fm:0, xm:0, s:0, xe:0, Flast:null, dir:"load", prev:null, dots:[], prevDots:[]}); }
+resetCycle();
+function cycleLoad(sp, F){                                   // call whenever the load changes
+  if (C.Flast !== null && Math.abs(F - C.Flast) < 1e-9) return;
+  C.dir = C.Flast === null || F > C.Flast ? "load" : "unload"; C.Flast = F;
+  if (F <= 1e-9){                                            // fully unloaded: the cycle is finished
+    if (C.Fm > 0){ C.s = setAfter(sp, C); C.prev = {sB:C.sB, Fm:C.Fm, xm:C.xm}; C.prevDots = C.dots; C.dots = []; C.Fm = 0; C.xm = C.s; }
+    C.xe = C.s; return;
+  }
+  if (C.Fm === 0) C.sB = C.s;                                // a new cycle starts from the present length
+  if (F >= C.Fm - 1e-9){ C.Fm = F; C.xm = loadX(sp, F, C.sB); C.xe = C.xm; }
+  else C.xe = unloadX(sp, F, C);                             // unloading (or reloading back up the same line)
+}
+function cycleTick(sp, dt){                                  // a rubber band slowly recovers its length when unloaded
+  if (isBand(sp) && C.Fm === 0 && C.s > 0){ C.s *= Math.exp(-dt / CYC.tau); if (C.s < 2e-5) C.s = 0; C.xe = C.s; }
+}
+function cycleDot(F){                                        // remember each settled load for the loop graph
+  const list = F <= 1e-9 && C.prev ? C.prevDots : C.dots;    // the zero-load point closes the finished loop
+  if (!list.some(p => Math.abs(p.F - F) < 1e-6 && p.dir === C.dir)) list.push({x:C.xe, F, dir:C.dir});
+}
+const cycView = () => C.Fm > 0 ? C : C.prev;                 // the cycle the readouts talk about
 
 /* ============================ 5 RUN ============================ */
 const set = {arr:"single", A:"inv", B:"inv2", g:100};
 const st = {x:0, v:0};                                    // the load bounces and settles
 const loadF = () => set.g / 1000 * G;
-const now = () => solve(set.arr, sprById(set.A), sprById(set.B), loadF());
+const cycleMode = () => set.arr === "cycle";
+const now = () => cycleMode() ? {x:C.xe, FA:loadF(), FB:0, xA:C.xe, xB:0} : solve(set.arr, sprById(set.A), sprById(set.B), loadF());
 function step(dt){
+  if (cycleMode()) cycleTick(sprById(set.A), dt);
   const xe = now().x, m = Math.max(set.g / 1000, 0.02), F = loadF();
   const keff = F > 0 && xe > 0 ? F / xe : 20;
   st.v += (-keff * (st.x - xe) / m - 7 * st.v) * dt; st.x += st.v * dt;
@@ -402,11 +469,12 @@ function drawScene(){
   const {ctx, w, h} = fitCanvas($("scene")); ctx.clearRect(0, 0, w, h); bg(ctx, w, h);
   const A = sprById(set.A), B = sprById(set.B), top = 30, L0 = 0.12;                       // each spring 12 cm long unloaded
   let worst = 0; for (const arr of ["single", "series", "parallel"]) worst = Math.max(worst, solve(arr, A, B, MAXG / 1000 * G).x);
+  if (cycleMode()) worst = Math.max(C.xm, C.prev ? C.prev.xm : 0, loadX(A, A.cmax / 1000 * G, C.s)) * 1.1;
   const nat = set.arr === "series" ? 2 * L0 + 0.02 : L0, ppm = (h - top - 70) / (2 * L0 + 0.02 + Math.max(0.3, worst)), cx = w * 0.34;
   ctx.fillStyle = "#546E7A"; ctx.fillRect(w * 0.06, top - 8, 8, h - top); ctx.fillRect(w * 0.06, top - 10, cx - w * 0.06 + 50, 8); ctx.fillRect(w * 0.02, h - 10, w * 0.2, 8);
   const sol = solve(set.arr, A, B, loadF()), k = sol.x > 0 ? st.x / sol.x : 1;               // share the bounce between the springs
   let yLoad;
-  if (set.arr === "single"){ yLoad = top + (L0 + st.x) * ppm; spring(ctx, A, cx, top, yLoad); label(ctx, "A", cx - 18, top + L0 * ppm / 2, COL.A, "right", 13); }
+  if (set.arr === "single" || cycleMode()){ yLoad = top + (L0 + st.x) * ppm; spring(ctx, A, cx, top, yLoad); label(ctx, "A", cx - 18, top + L0 * ppm / 2, COL.A, "right", 13); }
   else if (set.arr === "series"){
     const yMid = top + (L0 + sol.xA * k) * ppm; spring(ctx, A, cx, top, yMid);
     ctx.fillStyle = "#37474F"; ctx.beginPath(); ctx.arc(cx, yMid + 3, 4, 0, 7); ctx.fill();
@@ -432,6 +500,10 @@ function drawScene(){
   arrow(ctx, cx + 8, yLoad + 4, rx - 1, yLoad + 4, COL.F, 2);
   label(ctx, `x = ${(100 * st.x).toFixed(1)} cm`, w - 10, 18, COL.F, "right", 16);
   label(ctx, settled() ? "At rest" : "Bouncing…", w - 10, 40, COL.navy, "right", 14);
+  if (cycleMode()){ const past = !isBand(A) && C.Fm > A.Flim + 1e-9;
+    if (isBand(A) && C.Fm === 0 && C.s > 1e-4) label(ctx, "recovering its length…", w - 10, 62, "#8D6E63", "right", 12);
+    else if (!isBand(A) && C.s > 1e-4 && C.Fm === 0) label(ctx, "permanently stretched", w - 10, 62, COL.accent, "right", 12);
+    else if (past) label(ctx, "past the elastic limit E!", w - 10, 62, COL.accent, "right", 12); }
 }
 
 /* ============================ 7 FBD ============================ */
@@ -494,6 +566,13 @@ function drawGraph(){
   const cv = $("graph"); if (!cv.offsetParent) return;
   const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
   const A = sprById(set.A), B = sprById(set.B), Fm = MAXG / 1000 * G;
+  if (cycleMode()){
+    drawLoopGraph(ctx, w, h, A, loadF(), A.cmax / 1000 * G);
+    $("graphHint").textContent = isBand(A) ? "Rubber band: area under the loading curve = energy stored; under the unloading curve = energy given back; loop area = energy turned into heat."
+      : "Steel spring: below E the unloading line retraces the loading line (no loop). Past E it comes back along a straight line almost parallel to the Hooke's-law line and stays longer: a permanent extension.";
+    return;
+  }
+  $("graphHint").textContent = "Load against total extension for spring A alone, spring B alone, both in series and both in parallel. The thick line is the arrangement you are using; the dot is the load now. Gradient = effective spring constant.";
   const xm = niceCeil(100 * Math.max(...["single", "series", "parallel"].map(a => solve(a, A, B, Fm).x), xof(B, Fm)) * 1.05);
   const box = {x:62, y:34, w:w - 78, h:h - 84};
   const g = axesR(ctx, box, 0, xm, 0, niceCeil(Fm * 1.1), [["total extension ", "n"], ["x", "i"], [" / cm", "n"]], [["load ", "n"], ["F", "i"], [" / N", "n"]]);
@@ -507,6 +586,59 @@ function drawGraph(){
     label(ctx, name, lx, 14, col, "left", 13); ctx.font = `600 13px "Segoe UI",Calibri,Arial,sans-serif`; lx += ctx.measureText(name).width + 22;
   }
   ctx.fillStyle = COL.ink; ctx.beginPath(); ctx.arc(g.X(100 * now().x), g.Y(loadF()), 6, 0, 7); ctx.fill();
+}
+// Load & unload checkpoint: loading curve (orange) and unloading curve (blue), the finished loop shaded (its area is the
+// energy turned into heat), the elastic limit E and the permanent extension of a steel spring.
+function drawLoopGraph(ctx, w, h, sp, F, Fmax){
+  const box = {x:62, y:22, w:w - 78, h:h - 74}, live = C.Fm > 0 ? C : null, done = C.prev, s0 = live ? live.sB : C.s;
+  const xM = niceCeil(100 * Math.max(loadX(sp, Fmax, s0), done ? done.xm : 0, 0.05) * 1.05), FM = niceCeil(Fmax * 1.08);
+  const g = axesR(ctx, box, 0, xM, 0, FM, [["extension from the original length ", "n"], ["x", "i"], [" / cm", "n"]], [["load ", "n"], ["F", "i"], [" / N", "n"]]);
+  const P = ([x, f]) => [g.X(100 * x), g.Y(f)];
+  const upPts = (c, top) => Array.from({length:61}, (_, i) => { const f = top * i / 60; return [loadX(sp, f, c.sB), f]; });
+  const downPts = (c, bot) => Array.from({length:61}, (_, i) => { const f = c.Fm - (c.Fm - bot) * i / 60; return [unloadX(sp, f, c), f]; });
+  const line = (pts, col, wd, dash) => { ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.lineJoin = "round"; if (dash) ctx.setLineDash(dash);
+    ctx.beginPath(); pts.forEach((p, i) => { const [X, Y] = P(p); i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); ctx.stroke(); ctx.restore(); };
+  const fill = (pts, col) => { ctx.save(); ctx.fillStyle = col; ctx.beginPath(); pts.forEach((p, i) => { const [X, Y] = P(p); i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); ctx.closePath(); ctx.fill(); ctx.restore(); };
+  const mid = (pts, col) => { const [X1, Y1] = P(pts[27]), [X2, Y2] = P(pts[33]); if (Math.hypot(X2 - X1, Y2 - Y1) > 6) arrow(ctx, X1, Y1, X2, Y2, col, 2.5); };
+  const dots = (list, alpha) => { for (const d of list){ ctx.fillStyle = d.dir === "load" ? `rgba(230,81,0,${alpha})` : `rgba(21,101,192,${alpha})`;
+    const [X, Y] = P([d.x, d.F]); ctx.beginPath(); ctx.arc(X, Y, 4.5, 0, 7); ctx.fill(); } };
+  // Hooke's-law line through the start of this cycle: the steel curve leaves it at the elastic limit
+  if (!isBand(sp)){ const xe = Math.min(xM / 100, s0 + FM / sp.k); line([[s0, 0], [xe, sp.k * (xe - s0)]], "#90A4AE", 1.4, [6, 5]); }
+  // the last finished loop: shaded orange (grey once a new cycle has started)
+  if (done){
+    const up = upPts(done, done.Fm), down = downPts(done, 0);
+    fill(up.concat(down), live ? "rgba(144,164,174,.16)" : "rgba(230,81,0,.18)");
+    line(up, live ? "#B0BEC5" : COL.accent, live ? 1.5 : 3); line(down, live ? "#B0BEC5" : "#1565C0", live ? 1.5 : 3);
+    if (!live){ mid(up, COL.accent); mid(down, "#1565C0"); dots(C.prevDots, .9); } else dots(C.prevDots, .25);
+    const xs = setAfter(sp, done);
+    if (!live && xs > 2e-4){                                 // permanent extension along the x-axis
+      ctx.save(); ctx.strokeStyle = COL.F; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(g.X(0), g.Y(0)); ctx.lineTo(g.X(100 * xs), g.Y(0)); ctx.stroke(); ctx.restore(); }
+  }
+  // the cycle in progress
+  if (live){
+    const up = upPts(live, live.Fm); line(up, COL.accent, 3); mid(up, COL.accent);
+    if (F < live.Fm - 1e-9){ const down = downPts(live, F); line(down, "#1565C0", 3); mid(down, "#1565C0"); }
+    dots(C.dots, .9);
+  }
+  // elastic limit E (steel only), drawn on top
+  if (!isBand(sp)){ const [X, Y] = P([s0 + sp.Flim / sp.k, sp.Flim]);
+    ctx.fillStyle = "#fff"; ctx.strokeStyle = COL.F; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X, Y, 6.5, 0, 7); ctx.fill(); ctx.stroke();
+    label(ctx, `E — elastic limit (${sp.Flim.toFixed(1)} N)`, X - 12, Y - 14, COL.F, "right", 13); }
+  // where the load is now
+  const [Xn, Yn] = P([C.xe, F]); ctx.fillStyle = COL.ink; ctx.beginPath(); ctx.arc(Xn, Yn, 6, 0, 7); ctx.fill();
+  // notes in the bottom-right corner (below the curves)
+  const notes = [];
+  if (done && !live){
+    const Ein = energyIn(sp, done), Eout = energyOut(sp, done), xs = setAfter(sp, done);
+    notes.push([`loop area = energy → heat ≈ ${(Ein - Eout).toFixed(3)} J`, Ein - Eout > 1e-3 ? COL.accent : COL.muted]);
+    if (isBand(sp)) notes.push([`unloading curve BELOW loading curve: hysteresis`, "#1565C0"]);
+    else if (xs > 2e-4) notes.push([`permanent extension = ${(100 * xs).toFixed(1)} cm`, COL.F]);
+    else notes.push([`no loop: below E the spring gives all its energy back`, COL.N]);
+  } else if (live){
+    notes.push([F < live.Fm - 1e-9 ? "unloading ↓ (blue)" : "loading ↑ (orange)", F < live.Fm - 1e-9 ? "#1565C0" : COL.accent]);
+    if (!isBand(sp) && live.Fm > sp.Flim + 1e-9) notes.push(["past the elastic limit E!", COL.F]);
+  } else notes.push(["add masses to start loading", COL.muted]);
+  notes.forEach(([t, c], i) => label(ctx, t, box.x + box.w - 6, box.y + box.h - 14 - 18 * (notes.length - 1 - i), c, "right", 13));
 }
 function drawAna(){
   const cv = $("ana"); if (!cv.offsetParent) return;
@@ -546,6 +678,31 @@ function renderTrials(){
 /* ============================ 10 TASKS ============================ */
 // Step types: "do" (instruction + done tick), "predict" (lock in a choice, then check), "num" (checked within ±5 %).
 const kSer = (a, b) => 1 / (1 / a + 1 / b);
+// Checkpoint answers come from the model functions (cycle c = {sB, Fm, xm}).
+const cyc = (sp, F) => ({sB:0, Fm:F, xm:loadX(sp, F, 0)});
+const CYCLE_TASKS = [
+  {type:"do", setup:{arr:"cycle", A:"inv", g:0}, text:"Load & unload, investigation spring: add 50 g at a time up to 300 g, then take the masses off one by one. Watch the Graph tab."},
+  {type:"predict", text:"Below the elastic limit, how does the unloading line compare with the loading line?",
+   opts:["It lies on top of it: no loop, the extension goes back to 0", "It lies below it: a loop", "It ends at a longer length"], correct:0,
+   why:"Below E the spring is elastic: it gives back all the energy stored in it, so unloading retraces loading and the loop has zero area."},
+  {type:"num", text:"The elastic limit E of the investigation spring is 6.0 N. What is the smallest load, a whole number of 50 g masses, that takes it past E?",
+   answer:() => 50 * Math.ceil(6.0 / G * 1000 / 50), unit:"g", hint:"m = F/g = 6.0/9.81 kg — then round UP to the next 50 g."},
+  {type:"predict", setup:{arr:"cycle", A:"inv", g:0}, text:"Now load the spring to 800 g (past E), then unload to 0 g. When all the masses are off, the extension…",
+   opts:["is back to 0", "is more than 0: the spring is permanently longer", "is less than 0: the spring is shorter"], correct:1,
+   why:"Past the elastic limit the spring is permanently deformed. It comes back along a straight line almost parallel to the Hooke's-law line and stops with a permanent extension."},
+  {type:"num", text:"Read the permanent extension after loading to 800 g and unloading (in cm).",
+   answer:() => 100 * setAfter(sprById("inv"), cyc(sprById("inv"), 0.8 * G)), unit:"cm", hint:"The extension readout at 0 g (or the red bar on the graph)."},
+  {type:"do", setup:{arr:"cycle", A:"band", g:0}, text:"Rubber band: load it to 500 g in 50 g steps, then unload to 0 g. Watch the loop form on the Graph tab."},
+  {type:"predict", text:"Why does the rubber band's unloading curve lie BELOW its loading curve?",
+   opts:["It gives back less energy than was stored: the difference becomes heat (internal energy) in the band", "The masses get lighter on the way down", "Because F = kx with a smaller k"], correct:0,
+   why:"Area under the loading curve = energy stored; area under the unloading curve = energy given back. The loop area is the energy dissipated as heat — a stretched band feels warm. This is hysteresis."},
+  {type:"num", text:"Use the readouts after the full 500 g cycle: what percentage of the energy stored on loading became heat?",
+   answer:() => { const sp = sprById("band"), c = cyc(sp, 0.5 * G); return 100 * (energyIn(sp, c) - energyOut(sp, c)) / energyIn(sp, c); }, unit:"%",
+   hint:"percentage = (energy in − energy out) / energy in × 100"},
+  {type:"predict", text:"Which material would you choose for the rubber mounts that stop a washing machine shaking?",
+   opts:["one with a LARGE hysteresis loop", "one with NO loop", "it makes no difference"], correct:0,
+   why:"A large loop turns the vibration energy into heat each cycle, so the shaking dies away (damping). A catapult or a trampoline wants a SMALL loop, so most of the energy comes back."},
+];
 const TASKS = [
  {id:"pre", title:"1 · Pre-lab: predict", time:"≈ 15 min", steps:[
   {type:"do", setup:{arr:"single", A:"inv", B:"inv2", g:100}, text:"One investigation spring (k = 25 N m⁻¹) with 100 g. Note the extension, then switch between Series and Parallel (two identical springs)."},
@@ -586,6 +743,7 @@ const TASKS = [
    opts:["It obeys Hooke's law with k ≈ 25 N m⁻¹", "Its F–x graph curves, so it has no single spring constant", "Its extension does not change"], correct:1,
    why:"F/x changes with the load — the graph is not a straight line through the origin, so Hooke's law does not apply. (This rubber band gets stiffer as it stretches.)"},
  ]},
+ {id:"cyc", title:"4 · Checkpoint: hysteresis & elastic limit", time:"≈ 15 min", steps:CYCLE_TASKS},
 ];
 let taskState = {}, curSet = "pre";
 function renderTaskSets(){
@@ -650,15 +808,31 @@ const $ = id => document.getElementById(id);
 function save(){ try { localStorage.setItem("sim06-springs", JSON.stringify({trials, taskState, curSet})); } catch (e) {} }
 function load_(){ try { const d = JSON.parse(localStorage.getItem("sim06-springs") || "{}");
   trials = d.trials || []; taskState = d.taskState || {}; curSet = d.curSet || "pre"; } catch (e) {} }
-function applySetup(s){ Object.assign(set, s); syncControls(); }
+function applySetup(s){ Object.assign(set, s); if (s.arr === "cycle"){ resetCycle(); st.x = 0; st.v = 0; } syncControls(); }
 function syncControls(){
   document.querySelectorAll("#arr button").forEach(b => b.setAttribute("aria-pressed", b.dataset.arr === set.arr));
-  $("sA").value = set.A; $("sB").value = set.B; $("sBc").style.display = set.arr === "single" ? "none" : "";
-  $("mOut").textContent = `${set.g} g`; $("mMinus").disabled = set.g <= 0; $("mPlus").disabled = set.g >= MAXG;
-  $("sceneTitle").textContent = {single:"One spring", series:"Two springs in series", parallel:"Two springs in parallel"}[set.arr];
+  const maxG = cycleMode() ? sprById(set.A).cmax : MAXG; set.g = Math.min(set.g, maxG);
+  $("sA").value = set.A; $("sB").value = set.B; $("sBc").style.display = set.arr === "single" || cycleMode() ? "none" : "";
+  $("mOut").textContent = `${set.g} g`; $("mMinus").disabled = set.g <= 0; $("mPlus").disabled = set.g >= maxG;
+  $("sceneTitle").textContent = {single:"One spring", series:"Two springs in series", parallel:"Two springs in parallel", cycle:"Load & unload: hysteresis and the elastic limit"}[set.arr];
+  $("recBtn").style.display = cycleMode() ? "none" : ""; $("newBtn").style.display = cycleMode() ? "" : "none";
+  $("newBtn").textContent = isBand(sprById(set.A)) ? "↺ New band" : "↺ New spring";
+  if (cycleMode()) cycleLoad(sprById(set.A), loadF());
 }
 function readouts(){
   const sol = now(), F = loadF(), A = sprById(set.A), B = sprById(set.B);
+  if (cycleMode()){
+    const c = cycView(), E = c ? energyIn(A, c) : 0, back = c ? energyOut(A, c, C.Fm > 0 ? F : 0) : 0, done = C.Fm === 0 && c;
+    const rows = [["Load <i>F</i> = <i>mg</i>", `${set.g} g → ${f3(F)} N`, COL.W],
+      ["Extension <i>x</i>", `${(100 * Math.max(0, st.x)).toFixed(1)} cm`, COL.F],
+      ["Largest load · its extension", c ? `${f2(c.Fm)} N · ${(100 * c.xm).toFixed(1)} cm` : "—"],
+      [isBand(A) ? "Elastic limit" : `Elastic limit E (${A.Flim.toFixed(1)} N)`, isBand(A) ? "never obeys Hooke's law" : c && c.Fm > A.Flim + 1e-9 ? "passed ✘" : "not passed ✔", isBand(A) ? null : COL.F],
+      ["Energy stored · given back", c ? `${f3(E)} J · ${f3(back)} J` : "—", COL.accent],
+      ["Loop area = energy → heat", done ? `${f3(E - back)} J (${(100 * (E - back) / E).toFixed(0)} %)` : c ? "unload to 0 g to close the loop" : "—", COL.accent],
+      ["Permanent extension", `${(100 * C.s).toFixed(1)} cm`]];
+    $("ro").innerHTML = rows.map(([a, b, c]) => `<tr><td>${a}</td><td class="v"${c ? ` style="color:${c}"` : ""}>${b}</td></tr>`).join("");
+    return;
+  }
   const rows = [["Load <i>F</i> = <i>mg</i>", `${set.g} g → ${f3(F)} N`, COL.W],
     ["Total extension <i>x</i>", `${(100 * sol.x).toFixed(1)} cm = ${f3(sol.x)} m`, COL.F],
     ["Effective <i>k</i> = <i>F</i>/<i>x</i>", F > 0 ? `${(F / sol.x).toFixed(1)} N m⁻¹` : "—"],
@@ -668,11 +842,14 @@ function readouts(){
 }
 
 for (const id of ["sA", "sB"]) $(id).innerHTML = SPRINGS.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
-$("sA").addEventListener("change", e => { set.A = e.target.value; syncControls(); });
+$("sA").addEventListener("change", e => { set.A = e.target.value; if (cycleMode()){ resetCycle(); st.x = 0; st.v = 0; } syncControls(); });
 $("sB").addEventListener("change", e => { set.B = e.target.value; syncControls(); });
-document.querySelectorAll("#arr button").forEach(b => b.addEventListener("click", () => { set.arr = b.dataset.arr; syncControls(); }));
+document.querySelectorAll("#arr button").forEach(b => b.addEventListener("click", () => {
+  if (b.dataset.arr === set.arr) return;
+  set.arr = b.dataset.arr; if (cycleMode()){ resetCycle(); st.x = 0; st.v = 0; } syncControls(); }));
 $("mMinus").addEventListener("click", () => { set.g = Math.max(0, set.g - 50); syncControls(); });
-$("mPlus").addEventListener("click", () => { set.g = Math.min(MAXG, set.g + 50); syncControls(); });
+$("mPlus").addEventListener("click", () => { set.g = Math.min(cycleMode() ? sprById(set.A).cmax : MAXG, set.g + 50); syncControls(); });
+$("newBtn").addEventListener("click", () => { resetCycle(); st.x = 0; st.v = 0; syncControls(); });
 $("recBtn").addEventListener("click", recordTrial);
 $("clearBtn").addEventListener("click", () => { if (confirm("Delete all recorded trials?")){ trials = []; save(); renderTrials(); } });
 $("trials").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b){ trials.splice(+b.dataset.del, 1); save(); renderTrials(); } });
@@ -689,6 +866,7 @@ let last = performance.now();
 function frame(t){
   let dt = Math.min(0.05, (t - last) / 1000); last = t;
   while (dt > 1e-6){ const hh = Math.min(0.002, dt); step(hh); dt -= hh; }
+  if (cycleMode() && settled()) cycleDot(loadF());
   drawScene(); drawFBD(); drawGraph(); drawAna(); readouts();
   requestAnimationFrame(frame);
 }
