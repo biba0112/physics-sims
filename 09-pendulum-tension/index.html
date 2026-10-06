@@ -167,6 +167,18 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 @media (max-width:759px){header{flex-wrap:wrap;row-gap:4px} header .btn{white-space:nowrap}
   .credit{order:3;flex-basis:100%;text-align:left;font-size:.7rem}
   .credit br{display:none} .credit a{margin-left:6px}}
+
+/* Number boxes next to the sliders (same as the circular motion simulation): type a value + Enter */
+.rn{display:flex;align-items:center;gap:6px}
+.rn input[type=range]{width:120px}
+.nb{font:inherit;font-size:.95rem;width:76px;min-height:44px;padding:2px 6px;border:1px solid #B0BEC5;border-radius:8px;
+  text-align:right;font-variant-numeric:tabular-nums;background:#fff}
+.nb.clamped{border-color:var(--accent);background:var(--soft)}
+.nb:disabled{opacity:.45}
+.rn .u{font-size:.85rem;color:var(--muted);white-space:nowrap}
+.dup{display:none}
+@media (max-width:1300px){ .rn input[type=range]{width:100px} .nb{width:70px} }
+@media (max-width:1099px){ .rn input[type=range]{width:84px} .nb{width:64px} }
 </style>
 </head>
 <body>
@@ -228,9 +240,9 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
   <section class="card" id="controls" aria-label="Controls">
     <div class="ctl"><label for="obj">Object</label><select id="obj"></select><span class="mu" id="objLab"></span></div>
     <div class="ctl" id="sizeC"><label for="size" id="sizeLab">Radius</label><input type="range" id="size" min="1" max="5" step="0.5"></div>
-    <div class="ctl"><label for="len">String length = <span id="lOut"></span> m</label>
+    <div class="ctl"><label for="len">String length<span class="dup"> = <span id="lOut"></span> m</span></label>
       <input type="range" id="len" min="0.2" max="2" step="0.05"></div>
-    <div class="ctl"><label for="ang">Angle θ₀ = <span id="aOut"></span>°</label>
+    <div class="ctl"><label for="ang">Angle θ₀<span class="dup"> = <span id="aOut"></span>°</span></label>
       <input type="range" id="ang" min="0" max="80" step="1"></div>
   </section>
 </main>
@@ -240,6 +252,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
     <h3 id="helpTitle">How to use this simulation</h3>
     <ol>
       <li>Choose the <b>object</b> and its <b>size</b>, the <b>string length</b> and the <b>angle θ₀</b>.</li>
+      <li>Set the values with the <b>sliders</b>, or <b>type a value</b> in the box next to a slider and press <b>Enter</b>. A value outside the allowed range is set to the nearest allowed value.</li>
       <li><b>✋ Hold aside</b>: a hand holds the bob still at θ₀ with a horizontal pull. Read the newton meter.</li>
       <li><b>▶ Release</b>: the bob swings. The newton meter reading changes all the time; the Graph tab shows it.
         After a few swings press <b>● Record</b> (peak tension and period).</li>
@@ -652,8 +665,8 @@ function applySetup(s){ Object.assign(set, s); reset(); syncControls(); }
 function syncControls(){
   const o = objById(set.obj), b = bob(), sz = $("size");
   $("obj").value = set.obj; $("sizeC").style.display = o.kind === "fixed" ? "none" : "";
-  if (o.kind === "mass"){ sz.min = 50; sz.max = 300; sz.step = 50; if (set.size < 50) set.size = 200; $("sizeLab").textContent = `Mass = ${set.size} g`; }
-  else { sz.min = 1; sz.max = 5; sz.step = 0.5; if (set.size > 5) set.size = 2; $("sizeLab").textContent = `Radius r = ${set.size.toFixed(1)} cm`; }
+  if (o.kind === "mass"){ sz.min = 50; sz.max = 300; sz.step = 50; if (set.size < 50) set.size = 200; $("sizeLab").textContent = "Mass m"; }
+  else { sz.min = 1; sz.max = 5; sz.step = 0.5; if (set.size > 5) set.size = 2; $("sizeLab").textContent = "Radius r"; }
   sz.value = set.size;
   $("objLab").innerHTML = `m = ${b.m < 0.1 ? (1000 * b.m).toFixed(1) + " g" : f3(b.m) + " kg"} · r = ${(100 * b.r).toFixed(1)} cm · L to centre = ${f2(b.L)} m`;
   $("len").value = set.L; $("lOut").textContent = set.L.toFixed(2); $("ang").value = set.th; $("aOut").textContent = set.th;
@@ -704,6 +717,49 @@ function frame(t){
   drawScene(); drawFBD(); drawGraph(); drawAna(); readouts();
   requestAnimationFrame(frame);
 }
+
+// Number boxes (same as the circular motion simulation): every slider has a box next to it. Type a value and press
+// Enter (or leave the box): it is kept to the allowed range and keeps the precision you typed; the slider follows.
+const nbFmt = v => String(+Number(v).toPrecision(5));
+function nbToast(msg){
+  let el = document.getElementById("nbToast");
+  if (!el){ el = document.createElement("div"); el.id = "nbToast"; el.setAttribute("role", "status");
+    el.style.cssText = "position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#1F3A5F;color:#fff;padding:10px 16px;border-radius:10px;z-index:20;max-width:90vw;font-size:.95rem";
+    document.body.appendChild(el); }
+  el.textContent = msg; el.style.display = "block"; clearTimeout(nbToast.tm); nbToast.tm = setTimeout(() => el.style.display = "none", 3200);
+}
+function numBoxes(list){
+  for (const c of list){
+    const sl = document.getElementById(c.id), rn = document.createElement("div"); rn.className = "rn";
+    sl.parentNode.insertBefore(rn, sl); rn.appendChild(sl);
+    const nb = document.createElement("input"); nb.className = "nb"; nb.type = "text"; nb.id = c.id + "N";
+    nb.inputMode = "decimal"; nb.setAttribute("aria-label", "type a value");
+    const u = document.createElement("span"); u.className = "u"; rn.append(nb, u);
+    const unit = () => typeof c.unit === "function" ? c.unit() : c.unit;
+    const lim = () => c.lim ? c.lim() : c.list ? [c.list[0], c.list[c.list.length - 1]] : [+sl.min, +sl.max];
+    let last = null;
+    const commit = () => {
+      const raw = nb.value.trim().replace(",", "."), v = Number(raw);
+      if (raw === last) return;
+      if (!raw || !isFinite(v)){ nb.value = nbFmt(c.get()); return; }
+      last = raw; const [mn, mx] = lim(), cv = Math.min(mx, Math.max(mn, v));
+      nb.classList.toggle("clamped", cv !== v);
+      if (cv !== v){ nbToast(`Allowed range: ${nbFmt(mn)} to ${nbFmt(mx)} ${unit()}. Set to ${nbFmt(cv)}.`); setTimeout(() => nb.classList.remove("clamped"), 1800); }
+      if (c.put) c.put(cv);
+      else { const st = sl.getAttribute("step"); sl.step = "any"; sl.value = cv;      // pass the exact value to the slider's own handler
+        sl.dispatchEvent(new Event("input", {bubbles:true})); sl.setAttribute("step", st); }
+    };
+    nb.addEventListener("focus", () => { last = null; });
+    nb.addEventListener("change", commit);
+    nb.addEventListener("keydown", e => { if (e.key === "Enter"){ commit(); nb.select(); } });
+    c.show = () => { const t = unit(); if (u.textContent !== t) u.textContent = t; nb.disabled = sl.disabled || (c.off ? c.off() : false);
+      const [mn, mx] = lim(); nb.title = `Type a value (${nbFmt(mn)}–${nbFmt(mx)} ${t}) and press Enter`;
+      if (document.activeElement !== nb){ const s = nbFmt(c.get()); if (nb.value !== s) nb.value = s; } };
+  }
+  const tick = () => { for (const c of list) c.show(); requestAnimationFrame(tick); };
+  tick();
+}
+numBoxes([{id:"size", unit:() => +$("size").max > 10 ? "g" : "cm", get:() => set.size}, {id:"len", unit:"m", get:() => set.L}, {id:"ang", unit:"°", get:() => set.th}]);
 requestAnimationFrame(frame);
 </script>
 </body>

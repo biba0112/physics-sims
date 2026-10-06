@@ -205,6 +205,18 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 @media (max-width:759px){header{flex-wrap:wrap;row-gap:4px} header .btn{white-space:nowrap}
   .credit{order:3;flex-basis:100%;text-align:left;font-size:.7rem}
   .credit br{display:none} .credit a{margin-left:6px}}
+
+/* Number boxes next to the sliders (same as the circular motion simulation): type a value + Enter */
+.rn{display:flex;align-items:center;gap:6px}
+.rn input[type=range]{width:120px}
+.nb{font:inherit;font-size:.95rem;width:76px;min-height:44px;padding:2px 6px;border:1px solid #B0BEC5;border-radius:8px;
+  text-align:right;font-variant-numeric:tabular-nums;background:#fff}
+.nb.clamped{border-color:var(--accent);background:var(--soft)}
+.nb:disabled{opacity:.45}
+.rn .u{font-size:.85rem;color:var(--muted);white-space:nowrap}
+.dup{display:none}
+@media (max-width:1300px){ .rn input[type=range]{width:100px} .nb{width:70px} }
+@media (max-width:1099px){ .rn input[type=range]{width:84px} .nb{width:64px} }
 </style>
 </head>
 <body>
@@ -300,11 +312,11 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 
   <section class="card" id="controls" aria-label="Controls">
     <div class="ctl">
-      <label for="h">Height <i>h</i> = <span id="hOut" class="nt">1.00</span> <span class="nt">m</span></label>
+      <label for="h">Height <i>h</i><span class="dup"> = <span id="hOut" class="nt">1.00</span> <span class="nt">m</span></span></label>
       <input type="range" id="h" min="0" max="10" step="1" value="0">
     </div>
     <div class="ctl">
-      <label for="v0">Launch <i>v</i><span class="nt">₀</span> = <span id="v0Out" class="nt">0.0</span></label>
+      <label for="v0">Launch <i>v</i><span class="nt">₀</span><span class="dup"> = <span id="v0Out" class="nt">0.0</span></span></label>
       <input type="range" id="v0" min="-10" max="15" step="0.5" value="0">
     </div>
     <div class="ctl">
@@ -344,6 +356,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
     <ol>
       <li>Choose the <b>release height</b> <i>h</i> and the <b>launch velocity</b> <i>v</i>₀. With <i>v</i>₀ = 0 the ball is
         <b>dropped</b>; positive <i>v</i>₀ throws it <b>up</b>, negative <i>v</i>₀ throws it <b>down</b>.</li>
+      <li>Set the values with the <b>sliders</b>, or <b>type a value</b> in the box next to a slider and press <b>Enter</b>. A value outside the allowed range is set to the nearest allowed value.</li>
       <li>Press <b>▶ Drop</b> (or <b>▶ Throw</b>). The <b>strobe</b> shows where the ball was every 0.1 s — the gaps grow
         because the ball speeds up. <b>Slow ¼×</b> plays the motion at a quarter of real speed (the times stay real).</li>
       <li>Add <b>ball B</b> to drop two objects side by side. Switch <b>air resistance</b> on (Earth only) to see when mass matters.</li>
@@ -1004,7 +1017,7 @@ function save(){ try { localStorage.setItem("sim10-freefall", JSON.stringify({tr
 function load(){ try { const d = JSON.parse(localStorage.getItem("sim10-freefall") || "{}");
   trials = d.trials || []; taskState = d.taskState || {}; curSet = d.curSet || "pre"; } catch (e) {} }
 function syncControls(){
-  let i = HEIGHTS.findIndex(x => Math.abs(x - set.h) < 1e-6); if (i < 0){ i = HEIGHTS.indexOf(1); set.h = 1; }
+  const i = HEIGHTS.reduce((b, x, k) => Math.abs(x - set.h) < Math.abs(HEIGHTS[b] - set.h) ? k : b, 0);   // a typed h stays exact; the slider shows the nearest
   $("h").max = HEIGHTS.length - 1; $("h").value = i; $("hOut").textContent = f2(set.h);
   $("v0").value = set.v0; $("v0Out").textContent = set.v0 ? `${set.v0 > 0 ? "+" : ""}${set.v0.toFixed(1)} m s⁻¹` : "0 (drop)";
   $("field").value = set.field; $("objA").value = set.objA; $("objB").value = set.objB; $("timing").value = set.timing;
@@ -1098,6 +1111,49 @@ function frame(now){
   drawScene(); drawFBD(); drawGraph(); drawAna(); updateReadouts();
   requestAnimationFrame(frame);
 }
+
+// Number boxes (same as the circular motion simulation): every slider has a box next to it. Type a value and press
+// Enter (or leave the box): it is kept to the allowed range and keeps the precision you typed; the slider follows.
+const nbFmt = v => String(+Number(v).toPrecision(5));
+function nbToast(msg){
+  let el = document.getElementById("nbToast");
+  if (!el){ el = document.createElement("div"); el.id = "nbToast"; el.setAttribute("role", "status");
+    el.style.cssText = "position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#1F3A5F;color:#fff;padding:10px 16px;border-radius:10px;z-index:20;max-width:90vw;font-size:.95rem";
+    document.body.appendChild(el); }
+  el.textContent = msg; el.style.display = "block"; clearTimeout(nbToast.tm); nbToast.tm = setTimeout(() => el.style.display = "none", 3200);
+}
+function numBoxes(list){
+  for (const c of list){
+    const sl = document.getElementById(c.id), rn = document.createElement("div"); rn.className = "rn";
+    sl.parentNode.insertBefore(rn, sl); rn.appendChild(sl);
+    const nb = document.createElement("input"); nb.className = "nb"; nb.type = "text"; nb.id = c.id + "N";
+    nb.inputMode = "decimal"; nb.setAttribute("aria-label", "type a value");
+    const u = document.createElement("span"); u.className = "u"; rn.append(nb, u);
+    const unit = () => typeof c.unit === "function" ? c.unit() : c.unit;
+    const lim = () => c.lim ? c.lim() : c.list ? [c.list[0], c.list[c.list.length - 1]] : [+sl.min, +sl.max];
+    let last = null;
+    const commit = () => {
+      const raw = nb.value.trim().replace(",", "."), v = Number(raw);
+      if (raw === last) return;
+      if (!raw || !isFinite(v)){ nb.value = nbFmt(c.get()); return; }
+      last = raw; const [mn, mx] = lim(), cv = Math.min(mx, Math.max(mn, v));
+      nb.classList.toggle("clamped", cv !== v);
+      if (cv !== v){ nbToast(`Allowed range: ${nbFmt(mn)} to ${nbFmt(mx)} ${unit()}. Set to ${nbFmt(cv)}.`); setTimeout(() => nb.classList.remove("clamped"), 1800); }
+      if (c.put) c.put(cv);
+      else { const st = sl.getAttribute("step"); sl.step = "any"; sl.value = cv;      // pass the exact value to the slider's own handler
+        sl.dispatchEvent(new Event("input", {bubbles:true})); sl.setAttribute("step", st); }
+    };
+    nb.addEventListener("focus", () => { last = null; });
+    nb.addEventListener("change", commit);
+    nb.addEventListener("keydown", e => { if (e.key === "Enter"){ commit(); nb.select(); } });
+    c.show = () => { const t = unit(); if (u.textContent !== t) u.textContent = t; nb.disabled = sl.disabled || (c.off ? c.off() : false);
+      const [mn, mx] = lim(); nb.title = `Type a value (${nbFmt(mn)}–${nbFmt(mx)} ${t}) and press Enter`;
+      if (document.activeElement !== nb){ const s = nbFmt(c.get()); if (nb.value !== s) nb.value = s; } };
+  }
+  const tick = () => { for (const c of list) c.show(); requestAnimationFrame(tick); };
+  tick();
+}
+numBoxes([{id:"h", unit:"m", get:() => set.h, list:HEIGHTS, put:v => { set.h = v; change(); }}, {id:"v0", unit:"m s⁻¹", get:() => set.v0}]);
 requestAnimationFrame(frame);
 </script>
 </body>

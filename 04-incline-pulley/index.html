@@ -167,6 +167,18 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 @media (max-width:759px){header{flex-wrap:wrap;row-gap:4px} header .btn{white-space:nowrap}
   .credit{order:3;flex-basis:100%;text-align:left;font-size:.7rem}
   .credit br{display:none} .credit a{margin-left:6px}}
+
+/* Number boxes next to the sliders (same as the circular motion simulation): type a value + Enter */
+.rn{display:flex;align-items:center;gap:6px}
+.rn input[type=range]{width:120px}
+.nb{font:inherit;font-size:.95rem;width:76px;min-height:44px;padding:2px 6px;border:1px solid #B0BEC5;border-radius:8px;
+  text-align:right;font-variant-numeric:tabular-nums;background:#fff}
+.nb.clamped{border-color:var(--accent);background:var(--soft)}
+.nb:disabled{opacity:.45}
+.rn .u{font-size:.85rem;color:var(--muted);white-space:nowrap}
+.dup{display:none}
+@media (max-width:1300px){ .rn input[type=range]{width:100px} .nb{width:70px} }
+@media (max-width:1099px){ .rn input[type=range]{width:84px} .nb{width:64px} }
 </style>
 </head>
 <body>
@@ -236,11 +248,11 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
       <select id="surf"></select>
       <span class="mu" id="muLab"></span>
     </div>
-    <div class="ctl"><label for="m1">Block m₁ = <span id="m1Out"></span> kg</label>
+    <div class="ctl"><label for="m1">Block m₁<span class="dup"> = <span id="m1Out"></span> kg</span></label>
       <input type="range" id="m1" min="0.1" max="5" step="0.05"></div>
-    <div class="ctl"><label for="m2">Hanging m₂ = <span id="m2Out"></span> kg</label>
+    <div class="ctl"><label for="m2">Hanging m₂<span class="dup"> = <span id="m2Out"></span> kg</span></label>
       <input type="range" id="m2" min="0" max="3" step="0.01"></div>
-    <div class="ctl"><label for="ang">Ramp angle θ = <span id="angOut"></span>°</label>
+    <div class="ctl"><label for="ang">Ramp angle θ<span class="dup"> = <span id="angOut"></span>°</span></label>
       <input type="range" id="ang" min="0" max="50" step="1"></div>
   </section>
 </main>
@@ -251,6 +263,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
     <ol>
       <li>Choose the <b>surfaces</b>, the block mass <b>m₁</b>, the hanging mass <b>m₂</b> and the <b>ramp angle</b>
         (θ = 0° is a flat bench, like the Smart Cart demo).</li>
+      <li>Set the values with the <b>sliders</b>, or <b>type a value</b> in the box next to a slider and press <b>Enter</b>. A value outside the allowed range is set to the nearest allowed value.</li>
       <li>The block is held at the start. Press <b>▶ Release</b>. If static friction can hold it, nothing moves;
         otherwise the system accelerates until the block has moved 0.25 m.</li>
       <li>Press <b>● Record</b> after a run. The <b>Data &amp; analysis</b> tab plots <i>a</i> against the tension <i>T</i>.</li>
@@ -753,6 +766,49 @@ function frame(now){
   drawScene(); drawFBD(); drawGraph(); drawAna(); readouts();
   requestAnimationFrame(frame);
 }
+
+// Number boxes (same as the circular motion simulation): every slider has a box next to it. Type a value and press
+// Enter (or leave the box): it is kept to the allowed range and keeps the precision you typed; the slider follows.
+const nbFmt = v => String(+Number(v).toPrecision(5));
+function nbToast(msg){
+  let el = document.getElementById("nbToast");
+  if (!el){ el = document.createElement("div"); el.id = "nbToast"; el.setAttribute("role", "status");
+    el.style.cssText = "position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#1F3A5F;color:#fff;padding:10px 16px;border-radius:10px;z-index:20;max-width:90vw;font-size:.95rem";
+    document.body.appendChild(el); }
+  el.textContent = msg; el.style.display = "block"; clearTimeout(nbToast.tm); nbToast.tm = setTimeout(() => el.style.display = "none", 3200);
+}
+function numBoxes(list){
+  for (const c of list){
+    const sl = document.getElementById(c.id), rn = document.createElement("div"); rn.className = "rn";
+    sl.parentNode.insertBefore(rn, sl); rn.appendChild(sl);
+    const nb = document.createElement("input"); nb.className = "nb"; nb.type = "text"; nb.id = c.id + "N";
+    nb.inputMode = "decimal"; nb.setAttribute("aria-label", "type a value");
+    const u = document.createElement("span"); u.className = "u"; rn.append(nb, u);
+    const unit = () => typeof c.unit === "function" ? c.unit() : c.unit;
+    const lim = () => c.lim ? c.lim() : c.list ? [c.list[0], c.list[c.list.length - 1]] : [+sl.min, +sl.max];
+    let last = null;
+    const commit = () => {
+      const raw = nb.value.trim().replace(",", "."), v = Number(raw);
+      if (raw === last) return;
+      if (!raw || !isFinite(v)){ nb.value = nbFmt(c.get()); return; }
+      last = raw; const [mn, mx] = lim(), cv = Math.min(mx, Math.max(mn, v));
+      nb.classList.toggle("clamped", cv !== v);
+      if (cv !== v){ nbToast(`Allowed range: ${nbFmt(mn)} to ${nbFmt(mx)} ${unit()}. Set to ${nbFmt(cv)}.`); setTimeout(() => nb.classList.remove("clamped"), 1800); }
+      if (c.put) c.put(cv);
+      else { const st = sl.getAttribute("step"); sl.step = "any"; sl.value = cv;      // pass the exact value to the slider's own handler
+        sl.dispatchEvent(new Event("input", {bubbles:true})); sl.setAttribute("step", st); }
+    };
+    nb.addEventListener("focus", () => { last = null; });
+    nb.addEventListener("change", commit);
+    nb.addEventListener("keydown", e => { if (e.key === "Enter"){ commit(); nb.select(); } });
+    c.show = () => { const t = unit(); if (u.textContent !== t) u.textContent = t; nb.disabled = sl.disabled || (c.off ? c.off() : false);
+      const [mn, mx] = lim(); nb.title = `Type a value (${nbFmt(mn)}–${nbFmt(mx)} ${t}) and press Enter`;
+      if (document.activeElement !== nb){ const s = nbFmt(c.get()); if (nb.value !== s) nb.value = s; } };
+  }
+  const tick = () => { for (const c of list) c.show(); requestAnimationFrame(tick); };
+  tick();
+}
+numBoxes([{id:"m1", unit:"kg", get:() => set.m1}, {id:"m2", unit:"kg", get:() => set.m2}, {id:"ang", unit:"°", get:() => set.th}]);
 requestAnimationFrame(frame);
 </script>
 </body>
