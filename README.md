@@ -1,6 +1,6 @@
 # Physics Simulations — IBDP Physics SL, Grade 11
 
-Interactive simulations for Topic A.1 (projectile motion) and Topic A.2 (forces and momentum). They open in any modern browser on laptops, Chromebooks and tablets,
+Interactive simulations for Topic A.1 (projectile motion), Topic A.2 (forces and momentum) and Topic A.3 (work, energy and power). They open in any modern browser on laptops, Chromebooks and tablets,
 and keep working without internet once loaded.
 
 **All simulations:** https://biba0112.github.io/physics-sims/
@@ -25,6 +25,10 @@ and keep working without internet once loaded.
 | [Circular motion](https://biba0112.github.io/physics-sims/16-circular-motion/) | A.2 Forces · circular motion | A rotating chair, a satellite, a car on a bend and a playground carousel: what provides the centripetal force? | [Word](https://biba0112.github.io/physics-sims/16-circular-motion/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/16-circular-motion/worksheet.pdf) |
 | [Impulse](https://biba0112.github.io/physics-sims/17-impulse/) | A.2 Momentum and impulse | A cart hits a force sensor, an egg lands in a bedsheet, a racket hits a ball: impulse = area under the F–t graph = Δp. | [Word](https://biba0112.github.io/physics-sims/17-impulse/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/17-impulse/worksheet.pdf) |
 | [Collisions and explosions](https://biba0112.github.io/physics-sims/18-collisions-explosions/) | A.2 Momentum and impulse | Elastic, inelastic and sticky collisions and explosions: momentum is conserved — and kinetic energy (A.3 link). | [Word](https://biba0112.github.io/physics-sims/18-collisions-explosions/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/18-collisions-explosions/worksheet.pdf) |
+| [Work done](https://biba0112.github.io/physics-sims/19-work-done/) | A.3 Work, energy and power | Pull a box at an angle, lift or push a load up a ramp, pull a Smart Cart, brake a car: work is force × distance — and the area under the force–distance graph. | [Word](https://biba0112.github.io/physics-sims/19-work-done/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/19-work-done/worksheet.pdf) |
+| [Energy conservation](https://biba0112.github.io/physics-sims/20-energy-conservation/) | A.3 Work, energy and power | A cart on a ramp, a roller coaster, a pendulum to the nose, a flying spring: energy moves between kinetic, gravitational and elastic stores — the total stays the same. | [Word](https://biba0112.github.io/physics-sims/20-energy-conservation/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/20-energy-conservation/worksheet.pdf) |
+| [Power](https://biba0112.github.io/physics-sims/21-power/) | A.3 Work, energy and power | Who is the most powerful on the stairs? A car up a hill and a lift motor: power is the rate of doing work, P = Fv. | [Word](https://biba0112.github.io/physics-sims/21-power/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/21-power/worksheet.pdf) |
+| [Efficiency and energy density](https://biba0112.github.io/physics-sims/22-efficiency-energy-density/) | A.3 Work, energy and power | Bouncing balls, a motor lifting a load, Sankey diagrams to scale, and how far a car goes on a tank of fuel. | [Word](https://biba0112.github.io/physics-sims/22-efficiency-energy-density/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/22-efficiency-energy-density/worksheet.pdf) |
 
 Each simulation has a **Tasks** tab with three parts — *Pre-lab* (predict), *During the lab* (compare with the hands-on
 activity) and *Homework* (data, graphs and calculations) — matching its worksheet.
