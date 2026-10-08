@@ -30,6 +30,32 @@ a.ghost{border:1px solid var(--line);color:var(--navy);background:#fff}
 .card.quiz .tag{color:#2E7D32}
 .lead{grid-column:1/-1;margin:0;color:var(--muted)}
 .group{grid-column:1/-1;margin:10px 0 0;color:var(--navy);font-size:1.15rem;border-bottom:2px solid var(--accent);padding-bottom:4px}
+
+.qbtn{background:#2E7D32;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;
+  min-height:44px;cursor:pointer;white-space:nowrap}
+.qbtn:hover{background:#256628}
+.hbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+dialog.qd{border:0;border-radius:14px;padding:0;width:min(680px,calc(100vw - 32px));max-height:calc(100vh - 40px);
+  color:#263238;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+dialog.qd::backdrop{background:rgba(15,30,50,.55)}
+.qd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#1F3A5F;color:#fff;
+  padding:12px 16px;border-bottom:4px solid #E65100;position:sticky;top:0}
+.qd-head h2{margin:0;font-size:1.15rem}
+.qd-x{background:none;border:0;color:#fff;font-size:1.5rem;line-height:1;cursor:pointer;min-width:44px;min-height:44px}
+.qd-body{padding:6px 16px 14px}
+.qd-body>p{margin:8px 0;color:#606A72;font-size:.92rem}
+.qd-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #DDE6F0;flex-wrap:wrap}
+.qd-row .t{flex:1;min-width:180px}
+.qd-row .tag{display:block;font-size:.75rem;font-weight:700;color:#2E7D32;text-transform:uppercase;letter-spacing:.04em}
+.qd-row b{color:#1F3A5F;font-size:1.05rem}
+.qd-row .sc{display:block;font-size:.85rem;color:#606A72}
+.qd-row .sc.done{color:#2E7D32;font-weight:600}
+.qd-row.here{background:#FFF3E0;margin:0 -16px;padding:10px 16px}
+.qd-row .here-tag{font-size:.75rem;font-weight:700;color:#E65100;margin-left:6px}
+.qd-row .acts{display:flex;gap:8px;flex:none}
+.qd-row a{display:inline-flex;align-items:center;border-radius:8px;padding:8px 14px;min-height:42px;text-decoration:none;font-weight:600}
+.qd-row a.go{background:#E65100;color:#fff}
+.qd-row a.pdf{border:1px solid #DDE6F0;color:#1F3A5F;background:#fff}
 </style>
 </head>
 <body>
@@ -38,7 +64,9 @@ a.ghost{border:1px solid var(--line);color:var(--navy);background:#fff}
     <h1>Physics Simulations</h1>
     <p>IBDP Physics SL · Grade 11 · Projectile motion (A.1), forces and momentum (A.2), work, energy and power (A.3) · topic quizzes</p>
   </div>
+  <div class="hbar"><button class="qbtn" type="button" id="qbtn" aria-haspopup="dialog">✔ Test yourself — topic quizzes</button>
   <div class="credit">Biljana Taneska · Physics teacher<br><a href="mailto:btaneska@vis.ac.at">btaneska@vis.ac.at</a></div>
+  </div>
 </header>
 <main>
   <h2 class="group">Projectile motion (A.1)</h2>
@@ -324,5 +352,22 @@ a.ghost{border:1px solid var(--line);color:var(--navy);background:#fff}
   <p class="note">Works in any modern browser on laptops, Chromebooks and tablets. Once opened, the simulation keeps
     working without internet.</p>
 </main>
+<dialog class="qd" id="qd" aria-labelledby="qd-t"><div class="qd-head"><h2 id="qd-t">Test yourself — topic quizzes</h2><button class="qd-x" type="button" id="qd-x" aria-label="Close">✕</button></div><div class="qd-body"><p>Practised the simulations and worksheets? 10 multiple-choice questions per topic, with instant feedback. Your best scores are saved on this device only.</p><div class="qd-row"><div class="t"><span class="tag">A.1 Kinematics</span><b>Projectile motion</b><span class="sc" data-slug="quiz-projectile-motion">Not tried yet</span></div><span class="acts"><a class="go" href="quiz-projectile-motion/">✔ Start</a><a class="pdf" href="quiz-projectile-motion/quiz.pdf">PDF</a></span></div><div class="qd-row"><div class="t"><span class="tag">A.2 Forces · Newton&#x27;s laws</span><b>Forces</b><span class="sc" data-slug="quiz-forces">Not tried yet</span></div><span class="acts"><a class="go" href="quiz-forces/">✔ Start</a><a class="pdf" href="quiz-forces/quiz.pdf">PDF</a></span></div><div class="qd-row"><div class="t"><span class="tag">A.2 Circular motion</span><b>Circular motion</b><span class="sc" data-slug="quiz-circular-motion">Not tried yet</span></div><span class="acts"><a class="go" href="quiz-circular-motion/">✔ Start</a><a class="pdf" href="quiz-circular-motion/quiz.pdf">PDF</a></span></div><div class="qd-row"><div class="t"><span class="tag">A.2 Momentum</span><b>Momentum and impulse</b><span class="sc" data-slug="quiz-momentum">Not tried yet</span></div><span class="acts"><a class="go" href="quiz-momentum/">✔ Start</a><a class="pdf" href="quiz-momentum/quiz.pdf">PDF</a></span></div><div class="qd-row"><div class="t"><span class="tag">A.3 Work and energy</span><b>Work and energy</b><span class="sc" data-slug="quiz-work-energy">Not tried yet</span></div><span class="acts"><a class="go" href="quiz-work-energy/">✔ Start</a><a class="pdf" href="quiz-work-energy/quiz.pdf">PDF</a></span></div><div class="qd-row"><div class="t"><span class="tag">A.3 Power and efficiency</span><b>Power and efficiency</b><span class="sc" data-slug="quiz-power-efficiency">Not tried yet</span></div><span class="acts"><a class="go" href="quiz-power-efficiency/">✔ Start</a><a class="pdf" href="quiz-power-efficiency/quiz.pdf">PDF</a></span></div></div></dialog>
+<script>
+(function(){
+  const d = document.getElementById("qd"), b = document.getElementById("qbtn");
+  function best(slug){ try { return JSON.parse(localStorage.getItem("physics-" + slug + "-best") || "null"); } catch (e) { return null; } }
+  function fill(){ d.querySelectorAll(".sc").forEach(s => { const v = best(s.dataset.slug);
+    s.textContent = v === null ? "Not tried yet" : "Best: " + v + " / 10"; s.classList.toggle("done", v !== null); }); }
+  b.onclick = () => { fill(); d.showModal(); };
+  document.getElementById("qd-x").onclick = () => d.close();
+  d.addEventListener("click", e => { if (e.target === d) d.close(); });   // click on the dimmed backdrop
+  d.querySelectorAll("a.go").forEach(a => a.addEventListener("click", e => {
+    if (a.dataset.here){ e.preventDefault(); d.close(); return; }
+    if (typeof window.quizInProgress === "function" && window.quizInProgress() &&
+        !confirm("Leave this quiz? Your answers so far will be lost.")) e.preventDefault();
+  }));
+})();
+</script>
 </body>
 </html>
