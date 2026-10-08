@@ -30,6 +30,19 @@ and keep working without internet once loaded.
 | [Power](https://biba0112.github.io/physics-sims/21-power/) | A.3 Work, energy and power | Who is the most powerful on the stairs? A car up a hill and a lift motor: power is the rate of doing work, P = Fv. | [Word](https://biba0112.github.io/physics-sims/21-power/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/21-power/worksheet.pdf) |
 | [Efficiency and energy density](https://biba0112.github.io/physics-sims/22-efficiency-energy-density/) | A.3 Work, energy and power | Bouncing balls, a motor lifting a load, Sankey diagrams to scale, and how far a car goes on a tank of fuel. | [Word](https://biba0112.github.io/physics-sims/22-efficiency-energy-density/worksheet.docx) · [PDF](https://biba0112.github.io/physics-sims/22-efficiency-energy-density/worksheet.pdf) |
 
+## Topic quizzes
+
+After the simulations and worksheets, students can test themselves: 10 multiple-choice questions per topic with instant feedback, explanations and links back to the simulations.
+
+| Quiz | Topic | Covers | Printable |
+|---|---|---|---|
+| [Projectile motion](https://biba0112.github.io/physics-sims/quiz-projectile-motion/) | A.1 Kinematics | Free fall, horizontal and angled launches, velocity components and air resistance. | [PDF](https://biba0112.github.io/physics-sims/quiz-projectile-motion/quiz.pdf) |
+| [Forces](https://biba0112.github.io/physics-sims/quiz-forces/) | A.2 Forces · Newton's laws | Weight and normal force, friction, ramps, connected bodies, springs, drag and buoyancy. | [PDF](https://biba0112.github.io/physics-sims/quiz-forces/quiz.pdf) |
+| [Circular motion](https://biba0112.github.io/physics-sims/quiz-circular-motion/) | A.2 Circular motion | Speed and period, centripetal acceleration and force, cars on bends, satellites and pendulums. | [PDF](https://biba0112.github.io/physics-sims/quiz-circular-motion/quiz.pdf) |
+| [Momentum and impulse](https://biba0112.github.io/physics-sims/quiz-momentum/) | A.2 Momentum | Momentum, impulse and force–time graphs, collisions, explosions and kinetic energy. | [PDF](https://biba0112.github.io/physics-sims/quiz-momentum/quiz.pdf) |
+| [Work and energy](https://biba0112.github.io/physics-sims/quiz-work-energy/) | A.3 Work and energy | Work done, force–distance graphs, kinetic and potential energy and conservation of energy. | [PDF](https://biba0112.github.io/physics-sims/quiz-work-energy/quiz.pdf) |
+| [Power and efficiency](https://biba0112.github.io/physics-sims/quiz-power-efficiency/) | A.3 Power and efficiency | Power, P = Fv, efficiency, Sankey diagrams and energy density. | [PDF](https://biba0112.github.io/physics-sims/quiz-power-efficiency/quiz.pdf) |
+
 Each simulation has a **Tasks** tab with three parts — *Pre-lab* (predict), *During the lab* (compare with the hands-on
 activity) and *Homework* (data, graphs and calculations) — matching its worksheet.
 
