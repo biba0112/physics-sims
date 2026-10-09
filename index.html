@@ -101,6 +101,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
 .card.video h2{font-size:1.05rem}
 .vmeta{margin:2px 0 0;color:var(--muted);font-size:.88rem}
 a.vbtn{background:#C62828;color:#fff}
+.card.video.lesson{border-left-color:#1F3A5F}.card.video.lesson .tag{color:#1F3A5F}.card.video.lesson a.vbtn{background:#1F3A5F}
 </style>
 </head>
 <body>
@@ -432,8 +433,26 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="quiz-power-efficiency/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <h2 class="group" data-topic="video" id="videos">Watch the experiments — videos</h2>
-  <p class="lead" data-topic="video">Short videos of the demos and labs from our lessons. They open on YouTube in a new tab.</p>
+  <h2 class="group" data-topic="video" id="videos">Videos — lessons and experiments</h2>
+  <p class="lead" data-topic="video">Video lessons from Sirius Revision for each topic, then short videos of the demos and labs from our lessons. They open on YouTube in a new tab.</p>
+  <div class="card video lesson" data-topic="A1">
+    <span class="tag">A.1 Kinematics · video lessons</span>
+    <h2>Sirius Revision — A.1 Kinematics</h2>
+    <p class="vmeta">Motion graphs, equations of motion, projectiles and air resistance. Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=A.1+Kinematics" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-topic="A2">
+    <span class="tag">A.2 Forces and momentum · video lessons</span>
+    <h2>Sirius Revision — A.2 Forces and momentum</h2>
+    <p class="vmeta">Forces and free-body diagrams, Newton's laws, circular motion, momentum and impulse. Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=A.2+Forces+and+momentum" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-topic="A3">
+    <span class="tag">A.3 Work, energy and power · video lessons</span>
+    <h2>Sirius Revision — A.3 Work, energy and power</h2>
+    <p class="vmeta">Work, kinetic and potential energy, conservation of energy, power and efficiency. Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=A.3+Work,+energy+and+power" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
   <div class="card video" data-topic="A1">
     <span class="tag">A.1 Free fall</span>
     <h2>Brian Cox visits the world&#x27;s biggest vacuum chamber (feather and bowling ball)</h2>
@@ -721,6 +740,7 @@ a.vbtn{background:#C62828;color:#fff}
     li.innerHTML = n ? '<a role="menuitem" href="#' + key + '">' + inner + '</a>' : '<span class="soon" role="menuitem" aria-disabled="true">' + inner + '</span>';
   });
   // 3. "Test yourself" and "Videos" sections in each theme menu
+  const sirius = (k, name) => "https://www.youtube.com/@siriusrevision/search?query=" + encodeURIComponent(k[0] + "." + k[1] + " " + name);
   const esc = t => t.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   document.querySelectorAll(".theme").forEach(th => {
     const L = th.querySelector(".L").textContent, ul = th.querySelector(".theme-menu");
@@ -733,8 +753,11 @@ a.vbtn{background:#C62828;color:#fff}
         return '<li class="q"><a role="menuitem" href="' + a.getAttribute("href") + '"><span class="code">' + t[0] + "." + t[1] +
           '</span><span class="nm">' + esc(c.querySelector("h2").textContent) + '<small>10-question quiz</small></span></a></li>'; }).join("")
       : '<li role="presentation"><span class="none">Quizzes coming soon</span></li>';
-    h += '<li class="sec" role="presentation"><span class="ico">▷</span>Videos</li>';
-    const vk = {}; document.querySelectorAll('main .card.video').forEach(c => { const t = c.dataset.topic || "";
+    h += '<li class="sec" role="presentation"><span class="ico">▷</span>Video lessons — Sirius Revision</li>';
+    h += Object.keys(topicName).map(k => '<li class="sr"><a role="menuitem" target="_blank" rel="noopener" href="' + sirius(k, topicName[k]) +
+          '"><span class="code">' + k[0] + "." + k[1] + '</span><span class="nm">' + esc(topicName[k]) + '<small>Sirius Revision on YouTube ↗</small></span></a></li>').join("");
+    h += '<li class="sec" role="presentation"><span class="ico">▷</span>Experiment videos</li>';
+    const vk = {}; document.querySelectorAll('main .card.video:not(.lesson)').forEach(c => { const t = c.dataset.topic || "";
       if (t[0] === L) vk[t] = (vk[t] || 0) + 1; });
     const keys = Object.keys(vk).sort();
     h += keys.length ? keys.map(k => '<li><a role="menuitem" href="#' + k + '-videos"><span class="code">' + k[0] + "." + k[1] +
