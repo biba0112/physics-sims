@@ -57,45 +57,53 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
 .qd-row a.go{background:#E65100;color:#fff}
 .qd-row a.pdf{border:1px solid #DDE6F0;color:#1F3A5F;background:#fff}
 
-/* ---- theme bar A–E (colours of the Oxford IB Physics Course Companion) ---- */
-.theme-bar{max-width:1100px;margin:16px auto 0;padding:0 16px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+/* ---- three rows of theme tabs (Course Companion colours): Simulations · Quizzes · Videos ---- */
+.tabrows{max-width:1100px;margin:14px auto 0;padding:0 16px;display:grid;gap:12px}
+.rowlabel{font-weight:800;color:var(--navy);font-size:1.02rem;margin:0 0 6px 2px;letter-spacing:.01em}
+.tabrow.quiz .rowlabel::before{content:"✔ ";color:#2E7D32}.tabrow.video .rowlabel::before{content:"▶ ";color:#C62828}.tabrow.sim .rowlabel::before{content:"▶ ";color:var(--accent)}
+.theme-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 .theme{position:relative}
-.theme-btn{width:100%;display:flex;align-items:center;gap:10px;background:var(--tc);color:#fff;border:0;border-radius:10px;
-  padding:8px 12px 8px 8px;min-height:56px;font:inherit;text-align:left;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.18)}
-.theme-btn:hover,.theme-btn[aria-expanded="true"]{filter:brightness(1.08);box-shadow:0 0 0 3px #fff,0 0 0 5px var(--tc)}
+.theme-btn{width:100%;display:flex;align-items:center;gap:10px;background:var(--tc);color:#fff;border:2px solid var(--tc);border-radius:10px;
+  padding:6px 12px 6px 6px;min-height:54px;font:inherit;text-align:left;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.tabrow.quiz .theme-btn,.tabrow.video .theme-btn{background:#fff;color:var(--tc);min-height:46px;box-shadow:none}
+.theme-btn:hover,.theme-btn[aria-expanded="true"]{filter:brightness(1.06);box-shadow:0 0 0 3px #fff,0 0 0 5px var(--tc)}
+.tabrow.quiz .theme-btn:hover,.tabrow.video .theme-btn:hover,.tabrow.quiz .theme-btn[aria-expanded="true"],.tabrow.video .theme-btn[aria-expanded="true"]{background:color-mix(in srgb,var(--tc) 9%,#fff)}
 .theme-btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-.theme-btn .L{flex:none;width:40px;height:40px;border-radius:8px;background:#fff;color:var(--tc);display:grid;place-items:center;
-  font-weight:800;font-size:1.45rem}
+.theme-btn .L{flex:none;width:38px;height:38px;border-radius:8px;background:#fff;color:var(--tc);display:grid;place-items:center;font-weight:800;font-size:1.35rem}
+.tabrow.quiz .theme-btn .L,.tabrow.video .theme-btn .L{width:32px;height:32px;background:var(--tc);color:#fff;font-size:1.1rem}
 .theme-btn .tn{flex:1;font-weight:700;font-size:.9rem;line-height:1.2}
 .theme-btn .car{font-size:.9rem;opacity:.9}
-.theme-menu{position:absolute;z-index:20;top:calc(100% + 6px);left:0;min-width:100%;width:max-content;max-width:min(340px,calc(100vw - 32px));
-  margin:0;padding:6px;list-style:none;background:#fff;border:2px solid var(--tc);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.22)}
+.theme-menu{position:absolute;z-index:20;top:calc(100% + 6px);left:0;min-width:100%;width:max-content;max-width:min(360px,calc(100vw - 32px));
+  max-height:min(70vh,620px);overflow:auto;margin:0;padding:6px;list-style:none;background:#fff;border:2px solid var(--tc);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.22)}
 .theme:nth-child(n+4) .theme-menu{left:auto;right:0}
-.theme-menu a,.theme-menu .soon{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:7px;text-decoration:none;color:var(--ink);min-height:44px}
+.theme-menu a,.theme-menu .soon{display:flex;align-items:flex-start;gap:10px;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--ink);min-height:44px}
 .theme-menu a:hover,.theme-menu a:focus-visible{background:color-mix(in srgb,var(--tc) 12%,#fff);outline:none}
-.theme-menu .code{flex:none;min-width:38px;text-align:center;font-weight:800;color:#fff;background:var(--tc);border-radius:5px;padding:2px 6px}
+.theme-menu .code{flex:none;min-width:34px;text-align:center;font-weight:800;color:#fff;background:var(--tc);border-radius:5px;padding:2px 6px}
 .theme-menu .nm{font-weight:600;line-height:1.25}
 .theme-menu small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
-.theme-menu .soon{color:#9AA3AA;cursor:default}
-.theme-menu .soon .code{background:#C9CED3}
+.theme-menu .soon{color:#9AA3AA;cursor:default}.theme-menu .soon .code{background:#C9CED3}
 .theme-menu .hl{display:inline-block;margin-left:6px;font-size:.68rem;font-weight:700;color:var(--tc);border:1px solid var(--tc);border-radius:4px;padding:0 4px;vertical-align:1px}
 .theme-menu .soon .hl{color:#9AA3AA;border-color:#C9CED3}
-.group[data-topic]:not([data-topic="quiz"]){border-bottom-color:var(--tc);display:flex;align-items:center;gap:8px}
-.group[data-topic]:not([data-topic="quiz"])::before{content:"";width:12px;height:22px;border-radius:3px;background:var(--tc);flex:none}
+.theme-menu .sec{margin:8px 4px 2px;padding:6px 6px 2px;border-top:1px solid var(--line);font-size:.78rem;font-weight:800;color:var(--tc)}
+.theme-menu .sec:first-child{border-top:0;margin-top:0}
+.theme-menu .all a{min-height:40px;font-weight:700;color:var(--tc);border-top:1px solid var(--line);border-radius:0;margin-top:4px}
+.theme-menu .none{display:block;padding:8px 10px;color:#9AA3AA;font-size:.9rem}
 .filter-note{max-width:1100px;margin:12px auto 0;padding:0 16px;color:var(--muted);font-size:.95rem}
 .filter-note a{color:var(--accent);font-weight:600;margin-left:6px}
 .is-hidden{display:none!important}
-@media (max-width:900px){.theme-bar{grid-template-columns:repeat(5,minmax(0,1fr))}.theme-btn{flex-direction:column;justify-content:center;padding:8px 4px;gap:4px}
-  .theme-btn .tn,.theme-btn .car{display:none}.theme-menu,.theme:nth-child(n+4) .theme-menu{position:fixed;left:16px;right:16px;top:auto;width:auto;min-width:0;max-width:none}}
-
-/* ---- quizzes and videos inside the theme menus; video cards ---- */
-.theme-menu{max-height:min(72vh,640px);overflow:auto}
-.theme-menu .sec{list-style:none;margin:8px 4px 2px;padding:6px 6px 2px;border-top:1px solid var(--line);font-size:.75rem;font-weight:800;
-  letter-spacing:.05em;text-transform:uppercase;color:var(--tc)}
-.theme-menu .sec:first-child{border-top:0;margin-top:0}
-.theme-menu .sec .ico{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:5px;background:var(--tc);color:#fff;margin-right:6px;font-size:.7rem}
-.theme-menu .q .code{background:#fff;color:var(--tc);border:2px solid var(--tc)}
-.theme-menu .none{display:block;padding:4px 10px 8px;color:#9AA3AA;font-size:.85rem}
+/* main blocks */
+.block{grid-column:1/-1;margin:18px 0 0;padding:10px 14px;background:var(--navy);color:#fff;border-radius:10px;font-size:1.3rem;border-bottom:4px solid var(--accent)}
+.theme-h{grid-column:1/-1;margin:8px 0 0;display:flex;align-items:center;gap:10px;color:var(--tc);font-size:1.15rem}
+.theme-h .L{display:grid;place-items:center;width:30px;height:30px;border-radius:7px;background:var(--tc);color:#fff;font-weight:800}
+.group[data-topic]{border-bottom-color:var(--tc);display:flex;align-items:center;gap:8px}
+.group[data-topic]::before{content:"";width:12px;height:22px;border-radius:3px;background:var(--tc);flex:none}
+.subgroup{grid-column:1/-1;margin:4px 0 -4px;color:var(--tc);font-size:1rem;font-weight:700}
+@media (max-width:900px){.theme-bar{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .theme-btn{flex-direction:column;justify-content:center;padding:6px 2px;gap:2px}.theme-btn .car{display:none}
+  .tabrow.sim .theme-btn .tn{display:none}.tabrow.quiz .theme-btn .tn,.tabrow.video .theme-btn .tn{font-size:0}
+  .tabrow.quiz .theme-btn .tn::after{content:"Quiz";font-size:.72rem}.tabrow.video .theme-btn .tn::after{content:"Videos";font-size:.72rem}
+  .theme-menu,.theme:nth-child(n+4) .theme-menu{position:fixed;left:16px;right:16px;top:auto;width:auto;min-width:0;max-width:none}}
+/* video cards */
 .card.video{border-left:5px solid #C62828}
 .card.video .tag{color:#C62828}
 .card.video h2{font-size:1.05rem}
@@ -108,53 +116,20 @@ a.vbtn{background:#C62828;color:#fff}
 <header>
   <div>
     <h1>Physics Simulations</h1>
-    <p>IBDP Physics SL · Grade 11 · Choose a theme A–E: simulations, quizzes and videos for every topic</p>
+    <p>IBDP Physics SL · Grade 11 · Simulations, quizzes and videos for every theme A–E and topic</p>
   </div>
   <div class="hbar"><button class="qbtn" type="button" id="qbtn" aria-haspopup="dialog">✔ Test yourself — topic quizzes</button>
   <div class="credit">Biljana Taneska · Physics teacher<br><a href="mailto:btaneska@vis.ac.at">btaneska@vis.ac.at</a></div>
   </div>
 </header>
-<nav class="theme-bar" aria-label="Themes of the IB Physics course">
-  <div class="theme" style="--tc:#2055A3">
-    <button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-A" id="tab-A">
-      <span class="L">A</span><span class="tn">Space, time and motion</span><span class="car" aria-hidden="true">▾</span></button>
-    <ul class="theme-menu" id="menu-A" role="menu" aria-labelledby="tab-A" hidden>
-      <li><a role="menuitem" href="#A1"><span class="code">A.1</span><span class="nm">Kinematics<small>6 simulations · 1 quiz</small></span></a></li><li><a role="menuitem" href="#A2"><span class="code">A.2</span><span class="nm">Forces and momentum<small>12 simulations · 3 quizzes</small></span></a></li><li><a role="menuitem" href="#A3"><span class="code">A.3</span><span class="nm">Work, energy and power<small>4 simulations · 2 quizzes</small></span></a></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">A.4</span><span class="nm">Rigid body mechanics<span class="hl">HL</span><small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">A.5</span><span class="nm">Galilean and special relativity<span class="hl">HL</span><small>coming soon</small></span></span></li>
-    </ul>
-  </div>
-  <div class="theme" style="--tc:#1F982E">
-    <button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-B" id="tab-B">
-      <span class="L">B</span><span class="tn">The particulate nature of matter</span><span class="car" aria-hidden="true">▾</span></button>
-    <ul class="theme-menu" id="menu-B" role="menu" aria-labelledby="tab-B" hidden>
-      <li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">B.1</span><span class="nm">Thermal energy transfers<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">B.2</span><span class="nm">Greenhouse effect<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">B.3</span><span class="nm">Gas laws<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">B.4</span><span class="nm">Thermodynamics<span class="hl">HL</span><small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">B.5</span><span class="nm">Current and circuits<small>coming soon</small></span></span></li>
-    </ul>
-  </div>
-  <div class="theme" style="--tc:#62347C">
-    <button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-C" id="tab-C">
-      <span class="L">C</span><span class="tn">Wave behaviour</span><span class="car" aria-hidden="true">▾</span></button>
-    <ul class="theme-menu" id="menu-C" role="menu" aria-labelledby="tab-C" hidden>
-      <li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">C.1</span><span class="nm">Simple harmonic motion<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">C.2</span><span class="nm">Wave model<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">C.3</span><span class="nm">Wave phenomena<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">C.4</span><span class="nm">Standing waves and resonance<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">C.5</span><span class="nm">Doppler effect<small>coming soon</small></span></span></li>
-    </ul>
-  </div>
-  <div class="theme" style="--tc:#DF3528">
-    <button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-D" id="tab-D">
-      <span class="L">D</span><span class="tn">Fields</span><span class="car" aria-hidden="true">▾</span></button>
-    <ul class="theme-menu" id="menu-D" role="menu" aria-labelledby="tab-D" hidden>
-      <li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">D.1</span><span class="nm">Gravitational fields<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">D.2</span><span class="nm">Electric and magnetic fields<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">D.3</span><span class="nm">Motion in electromagnetic fields<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">D.4</span><span class="nm">Induction<span class="hl">HL</span><small>coming soon</small></span></span></li>
-    </ul>
-  </div>
-  <div class="theme" style="--tc:#D72D6C">
-    <button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-E" id="tab-E">
-      <span class="L">E</span><span class="tn">Nuclear and quantum physics</span><span class="car" aria-hidden="true">▾</span></button>
-    <ul class="theme-menu" id="menu-E" role="menu" aria-labelledby="tab-E" hidden>
-      <li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">E.1</span><span class="nm">Structure of the atom<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">E.2</span><span class="nm">Quantum physics<span class="hl">HL</span><small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">E.3</span><span class="nm">Radioactive decay<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">E.4</span><span class="nm">Fission<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">E.5</span><span class="nm">Fusion and stars<small>coming soon</small></span></span></li>
-    </ul>
-  </div>
-</nav>
-<div class="filter-note" id="filter-note" hidden><span id="filter-txt"></span> <a href="#" id="show-all">Show all simulations</a></div>
+<div class="tabrows" id="tabrows"></div>
+<div class="filter-note" id="filter-note" hidden><span id="filter-txt"></span> <a href="#" id="show-all">Show everything</a></div>
 <main>
-  <h2 class="group" data-topic="A1" id="A1" style="--tc:#2055A3">Projectile motion (A.1)</h2>
-  <div class="card" data-topic="A1">
+  <h2 class="block" id="sims" data-block="sim">Simulations</h2>
+  <p class="lead" data-block="sim">Interactive simulations with worksheets (Word and PDF), by theme and topic of the IB course.</p>
+  <h2 class="theme-h" id="s-themeA" data-block="sim" data-theme="A" style="--tc:#2055A3"><span class="L">A</span>Theme A — Space, time and motion</h2>
+  <h3 class="group" id="A1" data-block="sim" data-topic="A1" style="--tc:#2055A3">A.1 Kinematics</h3>
+  <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Free fall</h2>
     <p>Drop or throw a ball straight up or down: strobe images, y–t, v–t and a–t graphs, and g from h against t².</p>
@@ -164,7 +139,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="10-free-fall/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A1">
+  <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Horizontal launch</h2>
     <p>A ball rolls off a bench or cliff: horizontal and vertical motion separately, range and landing velocity.</p>
@@ -174,7 +149,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="11-horizontal-launch/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A1">
+  <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Angled launch</h2>
     <p>Launch at any angle: maximum height, time of flight and range — why 45° goes furthest.</p>
@@ -184,7 +159,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="12-angled-launch/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A1">
+  <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Velocity components</h2>
     <p>Follow the velocity along the path: components, speed, direction and Δv = gΔt.</p>
@@ -194,7 +169,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="13-velocity-components/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A1">
+  <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Hit the target</h2>
     <p>Plan a shot into a cup, a hoop or a window with the equations of motion.</p>
@@ -204,7 +179,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="14-hit-the-target/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A1">
+  <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Air resistance</h2>
     <p>The real path with drag beside the ideal parabola: shorter, lower and steeper on the way down.</p>
@@ -214,8 +189,9 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="15-air-resistance/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <h2 class="group" data-topic="A2" id="A2" style="--tc:#2055A3">Types of forces and Newton's laws (A.2)</h2>
-  <div class="card" data-topic="A2">
+  <h3 class="group" id="A2" data-block="sim" data-topic="A2" style="--tc:#2055A3">A.2 Forces and momentum</h3>
+  <h4 class="subgroup" data-block="sim" data-topic="A2" data-sub="forces" style="--tc:#2055A3">Types of forces and Newton&#x27;s laws</h4>
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
     <h2>Friction block</h2>
     <p>Static and dynamic friction: pull a block with a newton meter, find μs and μd from a graph.</p>
@@ -225,7 +201,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="01-friction-block/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A2">
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
     <h2>Normal force</h2>
     <p>What does a scale really measure? Push and pull, a tilted board, a lift and a stack of blocks.</p>
@@ -235,7 +211,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="02-normal-force/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A2">
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
     <h2>Friction on an incline</h2>
     <p>Tilt a ramp until the block slips (μs = tan θ), then let it slide and find μd.</p>
@@ -245,7 +221,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="03-friction-incline/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A2">
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Forces · Newton's 2nd law</span>
     <h2>Incline with a pulley</h2>
     <p>A block on a ramp tied over a pulley to a hanging mass: tension, friction and acceleration.</p>
@@ -255,7 +231,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="04-incline-pulley/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A2">
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
     <h2>Spring force</h2>
     <p>Hooke's law: hang masses, read the extension, find k ± Δk, and see the elastic limit.</p>
@@ -265,7 +241,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="05-spring-force/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A2">
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces (extension)</span>
     <h2>Springs in series and parallel</h2>
     <p>Combine two springs: how does the effective spring constant change?</p>
@@ -275,7 +251,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="06-springs-series-parallel/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A2">
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
     <h2>Drag and Stokes' law</h2>
     <p>Ball bearings falling through glycerol: terminal velocity and Stokes' law — plus a skydiver.</p>
@@ -285,7 +261,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="07-drag-stokes/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A2">
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
     <h2>Buoyancy</h2>
     <p>Archimedes' principle with a newton meter and a eureka can: sink, float or hover?</p>
@@ -295,7 +271,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="08-buoyancy/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A2">
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Forces · circular motion · energy</span>
     <h2>Pendulum tension</h2>
     <p>Hold a pendulum aside or let it swing: how does the tension in the string change?</p>
@@ -305,8 +281,8 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="09-pendulum-tension/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <h2 class="group" data-topic="A2" style="--tc:#2055A3">Circular motion (A.2)</h2>
-  <div class="card" data-topic="A2">
+  <h4 class="subgroup" data-block="sim" data-topic="A2" data-sub="circular" style="--tc:#2055A3">Circular motion</h4>
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="circular">
     <span class="tag">A.2 Forces · circular motion</span>
     <h2>Circular motion</h2>
     <p>A rotating chair, a satellite, a car on a bend and a playground carousel: what provides the centripetal force?</p>
@@ -316,8 +292,8 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="16-circular-motion/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <h2 class="group" data-topic="A2" style="--tc:#2055A3">Momentum and impulse (A.2)</h2>
-  <div class="card" data-topic="A2">
+  <h4 class="subgroup" data-block="sim" data-topic="A2" data-sub="momentum" style="--tc:#2055A3">Momentum and impulse</h4>
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="momentum">
     <span class="tag">A.2 Momentum · impulse</span>
     <h2>Impulse</h2>
     <p>A cart hits a force sensor, an egg lands in a bedsheet, a racket hits a ball: impulse is the area under the force–time graph.</p>
@@ -327,7 +303,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="17-impulse/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A2">
+  <div class="card" data-kind="sim" data-topic="A2" data-sub="momentum">
     <span class="tag">A.2 Momentum · collisions</span>
     <h2>Collisions and explosions</h2>
     <p>Elastic, inelastic and sticky collisions and explosions from rest: total momentum stays the same — but what happens to kinetic energy?</p>
@@ -337,8 +313,8 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="18-collisions-explosions/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <h2 class="group" data-topic="A3" id="A3" style="--tc:#2055A3">Work, energy and power (A.3)</h2>
-  <div class="card" data-topic="A3">
+  <h3 class="group" id="A3" data-block="sim" data-topic="A3" style="--tc:#2055A3">A.3 Work, energy and power</h3>
+  <div class="card" data-kind="sim" data-topic="A3">
     <span class="tag">A.3 Work</span>
     <h2>Work done</h2>
     <p>Pull a box at an angle, lift or push a load up a ramp, pull a Smart Cart, brake a car: work is force × distance — and the area under the force–distance graph.</p>
@@ -348,7 +324,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="19-work-done/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A3">
+  <div class="card" data-kind="sim" data-topic="A3">
     <span class="tag">A.3 Energy</span>
     <h2>Energy conservation</h2>
     <p>A cart on a ramp, a roller coaster, a pendulum to the nose, a flying spring: energy moves between kinetic, gravitational and elastic stores — the total stays the same.</p>
@@ -358,7 +334,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="20-energy-conservation/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A3">
+  <div class="card" data-kind="sim" data-topic="A3">
     <span class="tag">A.3 Power</span>
     <h2>Power</h2>
     <p>Who is the most powerful on the stairs? A car up a hill and a lift motor: power is the rate of doing work, P = Fv.</p>
@@ -368,7 +344,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="21-power/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card" data-topic="A3">
+  <div class="card" data-kind="sim" data-topic="A3">
     <span class="tag">A.3 Efficiency</span>
     <h2>Efficiency and energy density</h2>
     <p>Bouncing balls, a motor lifting a load, Sankey diagrams to scale, and how far a car goes on a tank of fuel.</p>
@@ -378,9 +354,11 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="22-efficiency-energy-density/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <h2 class="group" data-topic="quiz" id="quizzes">Test yourself — topic quizzes</h2>
-  <p class="lead" data-topic="quiz">Practised the simulations and worksheets? Check what you know: 10 multiple-choice questions per topic, with instant feedback and an explanation for every answer.</p>
-  <div class="card quiz" data-topic="A1">
+  <h2 class="block" id="quizzes" data-block="quiz">Quizzes — test yourself</h2>
+  <p class="lead" data-block="quiz">Practised the simulations and worksheets? 10 multiple-choice questions per quiz, with instant feedback and an explanation for every answer.</p>
+  <h2 class="theme-h" id="q-themeA" data-block="quiz" data-theme="A" style="--tc:#2055A3"><span class="L">A</span>Theme A — Space, time and motion</h2>
+  <h3 class="group" id="q-A1" data-block="quiz" data-topic="A1" style="--tc:#2055A3">A.1 Kinematics</h3>
+  <div class="card quiz" data-kind="quiz" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Projectile motion</h2>
     <p>Free fall, horizontal and angled launches, velocity components and air resistance. 10 questions · after the simulations and worksheets.</p>
@@ -389,7 +367,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="quiz-projectile-motion/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz">
+  <div class="card quiz" data-kind="quiz" data-topic="A1">
     <span class="tag">A.1 Kinematics · graphs</span>
     <h2>Motion graphs</h2>
     <p>s–t, v–t and a–t graphs: gradients and areas, and the equations of motion. 10 questions · after the simulations and worksheets.</p>
@@ -398,7 +376,8 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="quiz-motion-graphs/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz" data-topic="A2">
+  <h3 class="group" id="q-A2" data-block="quiz" data-topic="A2" style="--tc:#2055A3">A.2 Forces and momentum</h3>
+  <div class="card quiz" data-kind="quiz" data-topic="A2">
     <span class="tag">A.2 Forces · Newton's laws</span>
     <h2>Forces</h2>
     <p>Weight and normal force, friction, ramps, connected bodies, springs, drag and buoyancy. 10 questions · after the simulations and worksheets.</p>
@@ -407,7 +386,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="quiz-forces/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz" data-topic="A2">
+  <div class="card quiz" data-kind="quiz" data-topic="A2">
     <span class="tag">A.2 Circular motion</span>
     <h2>Circular motion</h2>
     <p>Speed and period, centripetal acceleration and force, cars on bends, satellites and pendulums. 10 questions · after the simulations and worksheets.</p>
@@ -416,7 +395,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="quiz-circular-motion/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz" data-topic="A2">
+  <div class="card quiz" data-kind="quiz" data-topic="A2">
     <span class="tag">A.2 Momentum</span>
     <h2>Momentum and impulse</h2>
     <p>Momentum, impulse and force–time graphs, collisions, explosions and kinetic energy. 10 questions · after the simulations and worksheets.</p>
@@ -425,7 +404,8 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="quiz-momentum/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz" data-topic="A3">
+  <h3 class="group" id="q-A3" data-block="quiz" data-topic="A3" style="--tc:#2055A3">A.3 Work, energy and power</h3>
+  <div class="card quiz" data-kind="quiz" data-topic="A3">
     <span class="tag">A.3 Work and energy</span>
     <h2>Work and energy</h2>
     <p>Work done, force–distance graphs, kinetic and potential energy and conservation of energy. 10 questions · after the simulations and worksheets.</p>
@@ -434,7 +414,7 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="quiz-work-energy/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz" data-topic="A3">
+  <div class="card quiz" data-kind="quiz" data-topic="A3">
     <span class="tag">A.3 Power and efficiency</span>
     <h2>Power and efficiency</h2>
     <p>Power, P = Fv, efficiency, Sankey diagrams and energy density. 10 questions · after the simulations and worksheets.</p>
@@ -443,260 +423,265 @@ a.vbtn{background:#C62828;color:#fff}
       <a class="btn ghost" href="quiz-power-efficiency/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <h2 class="group" data-topic="video" id="videos">Videos — lessons and experiments</h2>
-  <p class="lead" data-topic="video">Video lessons from Sirius Revision for each topic, then short videos of the demos and labs from our lessons. They open on YouTube in a new tab.</p>
-  <div class="card video lesson" data-topic="A1">
+  <h2 class="block" id="videos" data-block="video">Videos — lessons and experiments</h2>
+  <p class="lead" data-block="video">Video lessons from Sirius Revision for each topic, then short videos of the demos and labs from our lessons. They open on YouTube in a new tab.</p>
+  <h2 class="theme-h" id="v-themeA" data-block="video" data-theme="A" style="--tc:#2055A3"><span class="L">A</span>Theme A — Space, time and motion</h2>
+  <h3 class="group" id="v-A1" data-block="video" data-topic="A1" style="--tc:#2055A3">A.1 Kinematics</h3>
+  <div class="card video lesson" data-kind="video" data-topic="A1">
     <span class="tag">A.1 Kinematics · video lessons</span>
     <h2>Sirius Revision — A.1 Kinematics</h2>
     <p class="vmeta">Motion graphs, equations of motion, projectiles and air resistance. Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
     <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=A.1+Kinematics" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
   </div>
-  <div class="card video lesson" data-topic="A2">
-    <span class="tag">A.2 Forces and momentum · video lessons</span>
-    <h2>Sirius Revision — A.2 Forces and momentum</h2>
-    <p class="vmeta">Forces and free-body diagrams, Newton's laws, circular motion, momentum and impulse. Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
-    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=A.2+Forces+and+momentum" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
-  </div>
-  <div class="card video lesson" data-topic="A3">
-    <span class="tag">A.3 Work, energy and power · video lessons</span>
-    <h2>Sirius Revision — A.3 Work, energy and power</h2>
-    <p class="vmeta">Work, kinetic and potential energy, conservation of energy, power and efficiency. Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
-    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=A.3+Work,+energy+and+power" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
-  </div>
-  <div class="card video" data-topic="A1">
+  <div class="card video" data-kind="video" data-topic="A1">
     <span class="tag">A.1 Free fall</span>
     <h2>Brian Cox visits the world&#x27;s biggest vacuum chamber (feather and bowling ball)</h2>
     <p class="vmeta">BBC Two</p>
     <div class="row"><a class="btn vbtn" href="https://www.youtube.com/watch?v=jItzAMNVE3Y" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A1">
+  <div class="card video" data-kind="video" data-topic="A1">
     <span class="tag">A.1 Horizontal launch</span>
     <h2>Shoot-n-Drop: one ball fired sideways, one dropped</h2>
     <p class="vmeta">YouTube</p>
     <div class="row"><a class="btn vbtn" href="https://www.youtube.com/watch?v=zMF4CD7i3hg" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A1">
+  <div class="card video" data-kind="video" data-topic="A1">
     <span class="tag">A.1 Hit the target</span>
     <h2>Monkey and the hunter classroom demonstration</h2>
     <p class="vmeta">YouTube</p>
     <div class="row"><a class="btn vbtn" href="https://www.youtube.com/watch?v=z8S0_SHqoeY" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A1">
+  <div class="card video" data-kind="video" data-topic="A1">
     <span class="tag">A.1 Angled launch · lab</span>
     <h2>Projectile motion lab: measuring launch velocity and predicting range</h2>
     <p class="vmeta">YouTube</p>
     <div class="row"><a class="btn vbtn" href="https://www.youtube.com/watch?v=Tl1WGspwjOQ" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <h3 class="group" id="v-A2" data-block="video" data-topic="A2" style="--tc:#2055A3">A.2 Forces and momentum</h3>
+  <div class="card video lesson" data-kind="video" data-topic="A2">
+    <span class="tag">A.2 Forces and momentum · video lessons</span>
+    <h2>Sirius Revision — A.2 Forces and momentum</h2>
+    <p class="vmeta">Forces and free-body diagrams, Newton's laws, circular motion, momentum and impulse. Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=A.2+Forces+and+momentum" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Types of forces</span>
     <h2>GCSE Physics — Contact and non-contact forces</h2>
     <p class="vmeta">Cognito · 4:23 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/xdrE0kP8GTM" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Friction · lab</span>
     <h2>Friction lab (PASCO Smart Cart)</h2>
     <p class="vmeta">Jill Macko · 8:58 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/LNLRW0Q4-a4" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Friction</span>
     <h2>Static and kinetic friction</h2>
     <p class="vmeta">Vernier Science Education · 4:59 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/ej1Y4wx0F3g" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Friction</span>
     <h2>Frictional force measured using a spring balance</h2>
     <p class="vmeta">Dr Richard Walding · 0:30 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/8PuQPsWP_mw" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Normal force</span>
     <h2>Bathroom scales on an inclined plane</h2>
     <p class="vmeta">KoonPhysics · 3:03 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/wj3WlN9Sp_E" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Tension</span>
     <h2>Why tension blows up as the rope becomes horizontal</h2>
     <p class="vmeta">RealPhysics · 6:23 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/FfRhOwHYQCg" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Spring force</span>
     <h2>Required practical: stretching a spring</h2>
     <p class="vmeta">Freesciencelessons · 4:19 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/jQAt3e6Bz7U" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Buoyancy</span>
     <h2>Archimedes&#x27; principle demonstration</h2>
     <p class="vmeta">KClassScienceChannel · 2:58 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/ROXYr_SzNW4" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Drag</span>
     <h2>Terminal velocity experiment (PAG 1.2)</h2>
     <p class="vmeta">Cowen Physics · 2:27 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/AcsrBCEJz-Y" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Newton&#x27;s 1st law</span>
     <h2>Newton&#x27;s 1st law of inertia (coin in cup)</h2>
     <p class="vmeta">Theodor Pop · 1:45 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/If83GxyIGTk" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Newton&#x27;s 1st law</span>
     <h2>Pull a tablecloth using inertia and physics</h2>
     <p class="vmeta">TAMU Physics &amp; Astronomy · 1:18 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/dmBVm3Lh4UU" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Newton&#x27;s 1st law</span>
     <h2>Will the top or bottom string break first?</h2>
     <p class="vmeta">Rhett Allain · 7:23 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/dNgJuHJAmnA" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Newton&#x27;s 1st law</span>
     <h2>Egg drop inertia challenge</h2>
     <p class="vmeta">SpanglerScienceTV · 1:32 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/hREhgeNXc_s" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Newton&#x27;s 2nd law</span>
     <h2>Newton&#x27;s second law</h2>
     <p class="vmeta">PASCO scientific · 6:56 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/FOFvcNH6IR0" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Newton&#x27;s 3rd law</span>
     <h2>Newton&#x27;s 3rd law using force sensors</h2>
     <p class="vmeta">James Harris · 3:27 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/sd13F-MXBUc" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Newton&#x27;s 3rd law</span>
     <h2>Basic MagLev including Newton&#x27;s third law</h2>
     <p class="vmeta">C. Stephen Murray · 1:20 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/2JAvMIg6UYg" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Circular motion</span>
     <h2>Circular motion in a cup: swirling marble</h2>
     <p class="vmeta">Mr. Woodward · 2:41 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/Tsm_Cg8QZmo" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Circular motion</span>
     <h2>Why water stays in a bucket revolving in a vertical circle</h2>
     <p class="vmeta">Flipping Physics · 3:58 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/Zulw5bQ18Kk" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Circular motion · lab</span>
     <h2>The bung whirling experiment</h2>
     <p class="vmeta">Physics with Simon Poliakoff · 6:16 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/RkKOx87daRI" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Circular motion</span>
     <h2>Smartphone experiment: centrifugal acceleration</h2>
     <p class="vmeta">phyphox · 4:20 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/lLCf05Hc83Y" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Impulse</span>
     <h2>Throwing an egg into a bedsheet</h2>
     <p class="vmeta">MillerSTEM · 0:50 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/7RSUjxiZnME" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Impulse · lab</span>
     <h2>Smart Cart with force sensor: soft and sharp collisions</h2>
     <p class="vmeta">Data Harvest · 5:10 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/sXTKaPmsL84" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Collisions</span>
     <h2>Collisions demo: Newton&#x27;s cradle</h2>
     <p class="vmeta">Physics Demos (Utah State) · 1:33 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/ofgeRSCLyXc" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Collisions · lab</span>
     <h2>Collisions demo: two carts</h2>
     <p class="vmeta">Physics Demos (Utah State) · 3:05 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/jRliH0jVilM" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A2">
+  <div class="card video" data-kind="video" data-topic="A2">
     <span class="tag">A.2 Explosions · lab</span>
     <h2>Momentum: exploding carts lab</h2>
     <p class="vmeta">NJCTL · 2:11 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/ynvVDM4lpT8" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A3">
+  <h3 class="group" id="v-A3" data-block="video" data-topic="A3" style="--tc:#2055A3">A.3 Work, energy and power</h3>
+  <div class="card video lesson" data-kind="video" data-topic="A3">
+    <span class="tag">A.3 Work, energy and power · video lessons</span>
+    <h2>Sirius Revision — A.3 Work, energy and power</h2>
+    <p class="vmeta">Work, kinetic and potential energy, conservation of energy, power and efficiency. Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=A.3+Work,+energy+and+power" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video" data-kind="video" data-topic="A3">
     <span class="tag">A.3 Work done</span>
     <h2>The work to pull a block at an angle</h2>
     <p class="vmeta">INTEGRAL PHYSICS · 4:10 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/Pq7y14aWc38" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A3">
+  <div class="card video" data-kind="video" data-topic="A3">
     <span class="tag">A.3 Work done</span>
     <h2>Work done against gravity (ramps)</h2>
     <p class="vmeta">Chris Gozzard · 2:20 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/5oYJnhkfwpY" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A3">
+  <div class="card video" data-kind="video" data-topic="A3">
     <span class="tag">A.3 Elastic energy</span>
     <h2>How does the stretch of a rubber band affect the distance a car travels?</h2>
     <p class="vmeta">South7thScience · 0:55 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/Qo1B7laGpbk" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A3">
+  <div class="card video" data-kind="video" data-topic="A3">
     <span class="tag">A.3 Work and KE · lab</span>
     <h2>Work and kinetic energy lab (PASCO Smart Cart)</h2>
     <p class="vmeta">Jill Macko · 4:45 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/vHQ1_JXe8b8" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A3">
+  <div class="card video" data-kind="video" data-topic="A3">
     <span class="tag">A.3 Energy conservation</span>
     <h2>Bowling ball pendulum: nose basher</h2>
     <p class="vmeta">UCIPHO · 0:48 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/fR-Y9cx0XSM" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A3">
+  <div class="card video" data-kind="video" data-topic="A3">
     <span class="tag">A.3 Energy conservation</span>
     <h2>Spring-plunger carts</h2>
     <p class="vmeta">PhysicsandAstronomy UKY · 1:32 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/ytXmBG-Q3M4" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A3">
+  <div class="card video" data-kind="video" data-topic="A3">
     <span class="tag">A.3 Energy conservation · lab</span>
     <h2>Conservation of energy lab (PASCO Smart Cart)</h2>
     <p class="vmeta">Jill Macko · 10:40 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/cjoS5E807rY" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A3">
+  <div class="card video" data-kind="video" data-topic="A3">
     <span class="tag">A.3 Power · lab</span>
     <h2>Stair lab</h2>
     <p class="vmeta">ZornScience · 6:24 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/vAMZ2fOo4dE" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A3">
+  <div class="card video" data-kind="video" data-topic="A3">
     <span class="tag">A.3 Efficiency</span>
     <h2>The physics of bouncing a ball</h2>
     <p class="vmeta">Science Buddies · 3:16 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/kzJ480muh4U" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
-  <div class="card video" data-topic="A3">
+  <div class="card video" data-kind="video" data-topic="A3">
     <span class="tag">A.3 Efficiency</span>
     <h2>Heat emitted from incandescent and energy-saving bulbs</h2>
     <p class="vmeta">Sbírka fyzikálních pokusů · 0:49 min</p>
     <div class="row"><a class="btn vbtn" href="https://youtu.be/CKo7gVjp_8s" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
+
   <p class="note">Works in any modern browser on laptops, Chromebooks and tablets. Once opened, the simulation keeps
     working without internet.</p>
 </main>
@@ -719,64 +704,66 @@ a.vbtn{background:#C62828;color:#fff}
 </script>
 <script>
 (function(){
-  // 1. tag headings and cards with their topic from the "A.2 …" text, so new cards need no extra markup
-  const colour = {}; document.querySelectorAll(".theme").forEach(t => { colour[t.querySelector(".L").textContent] = t.style.getPropertyValue("--tc"); });
-  const firstOf = {};
-  document.querySelectorAll("main h2.group, main .card").forEach(el => {
-    if (!el.dataset.topic){
-      const src = el.classList.contains("card") ? ((el.querySelector(".tag") || {}).textContent || "") : el.textContent;
-      const m = src.match(/\b([A-E])\.(\d)\b/); if (m) el.dataset.topic = m[1] + m[2];
-    }
-    const t = el.dataset.topic;
-    if (el.matches("h2.group") && /^[A-E]\d$/.test(t)){
-      el.style.setProperty("--tc", colour[t[0]]);
-      if (!firstOf[t]){ firstOf[t] = el; if (!el.id) el.id = t; }
-    }
+  const THEMES = [["A", "Space, time and motion", "#2055A3", [["A1", "Kinematics", 0], ["A2", "Forces and momentum", 0], ["A3", "Work, energy and power", 0], ["A4", "Rigid body mechanics", 1], ["A5", "Galilean and special relativity", 1]]], ["B", "The particulate nature of matter", "#1F982E", [["B1", "Thermal energy transfers", 0], ["B2", "Greenhouse effect", 0], ["B3", "Gas laws", 0], ["B4", "Thermodynamics", 1], ["B5", "Current and circuits", 0]]], ["C", "Wave behaviour", "#62347C", [["C1", "Simple harmonic motion", 0], ["C2", "Wave model", 0], ["C3", "Wave phenomena", 0], ["C4", "Standing waves and resonance", 0], ["C5", "Doppler effect", 0]]], ["D", "Fields", "#DF3528", [["D1", "Gravitational fields", 0], ["D2", "Electric and magnetic fields", 0], ["D3", "Motion in electromagnetic fields", 0], ["D4", "Induction", 1]]], ["E", "Nuclear and quantum physics", "#D72D6C", [["E1", "Structure of the atom", 0], ["E2", "Quantum physics", 1], ["E3", "Radioactive decay", 0], ["E4", "Fission", 0], ["E5", "Fusion and stars", 0]]]];
+  const SIRIUS = (code, name) => "https://www.youtube.com/@siriusrevision/search?query=" + encodeURIComponent(code[0] + "." + code[1] + " " + name);
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const code = k => k[0] + "." + k[1];
+  // cards: kind (sim/quiz/video) and topic from the markup or the tag text, so new cards need no extra attributes
+  const cards = [...document.querySelectorAll("main .card")];
+  cards.forEach(c => {
+    if (!c.dataset.kind) c.dataset.kind = c.classList.contains("video") ? "video" : c.classList.contains("quiz") ? "quiz" : "sim";
+    if (!c.dataset.topic){ const m = ((c.querySelector(".tag") || {}).textContent || "").match(/\b([A-E])\.(\d)\b/); if (m) c.dataset.topic = m[1] + m[2]; }
   });
-  // 2. menus: a link with counts for every topic that has simulations, "coming soon" for the rest
-  document.querySelectorAll(".theme-menu li").forEach(li => {
-    const code = li.querySelector(".code").textContent, key = code.replace(".", "");
-    const nm = li.querySelector(".nm"), name = nm.childNodes[0].textContent, hl = nm.querySelector(".hl") ? '<span class="hl">HL</span>' : "";
-    const n = document.querySelectorAll('main .card:not(.quiz):not(.video)[data-topic="' + key + '"]').length;
-    const q = document.querySelectorAll('main .card.quiz[data-topic="' + key + '"]').length;
-    const inner = '<span class="code">' + code + '</span><span class="nm">' + name + hl + '<small>' +
-      (n ? n + " simulation" + (n > 1 ? "s" : "") + (q ? " · " + q + " quiz" + (q > 1 ? "zes" : "") : "") : "coming soon") + '</small></span>';
-    li.innerHTML = n ? '<a role="menuitem" href="#' + key + '">' + inner + '</a>' : '<span class="soon" role="menuitem" aria-disabled="true">' + inner + '</span>';
+  const of = (kind, topic, extra) => cards.filter(c => c.dataset.kind === kind && c.dataset.topic === topic && (!extra || extra(c)));
+
+  // ---------- the three rows ----------
+  const ROWS = [["sim", "Simulations", ""], ["quiz", "Quizzes", "Quiz · "], ["video", "Videos", "Videos · "]];
+  let h = "";
+  ROWS.forEach(([kind, label, pre]) => {
+    h += '<div class="tabrow ' + kind + '"><div class="rowlabel">' + label + '</div><nav class="theme-bar" aria-label="' + label + ' by theme">';
+    THEMES.forEach(([L, tname, col, topics]) => {
+      let items = "";
+      if (kind === "sim"){
+        topics.forEach(([k, name, hl]) => {
+          const n = of("sim", k).length, q = of("quiz", k).length, b = hl ? '<span class="hl">HL</span>' : "";
+          const inner = '<span class="code">' + code(k) + '</span><span class="nm">' + esc(name) + b + '<small>' +
+            (n ? n + " simulation" + (n > 1 ? "s" : "") : "coming soon") + '</small></span>';
+          items += n ? '<li><a role="menuitem" href="#' + k + '">' + inner + '</a></li>' : '<li><span class="soon" role="menuitem" aria-disabled="true">' + inner + '</span></li>';
+        });
+      } else if (kind === "quiz"){
+        let any = 0;
+        topics.forEach(([k, name, hl]) => { const qs = of("quiz", k); if (!qs.length) return; any += qs.length;
+          items += '<li class="sec" role="presentation">' + code(k) + " " + esc(name) + '</li>';
+          qs.forEach(c => { items += '<li><a role="menuitem" href="' + c.querySelector("a.primary").getAttribute("href") + '"><span class="code">✔</span><span class="nm">' +
+            esc(c.querySelector("h2").textContent) + '<small>10-question quiz</small></span></a></li>'; }); });
+        items += any ? '<li class="all"><a role="menuitem" href="#quiz-' + L + '">All Topic ' + L + ' quizzes on this page ↓</a></li>'
+                     : '<li role="presentation"><span class="none">Quizzes coming soon</span></li>';
+      } else {
+        let any = 0;
+        topics.forEach(([k, name, hl]) => { const n = of("video", k, c => !c.classList.contains("lesson")).length; any += n;
+          items += '<li class="sec" role="presentation">' + code(k) + " " + esc(name) + (hl ? ' <span class="hl">HL</span>' : "") + '</li>';
+          items += '<li><a role="menuitem" target="_blank" rel="noopener" href="' + SIRIUS(k, name) + '"><span class="code">▶</span><span class="nm">Video lessons — Sirius Revision<small>YouTube, opens in a new tab ↗</small></span></a></li>';
+          if (n) items += '<li><a role="menuitem" href="#' + k + '-videos"><span class="code">' + n + '</span><span class="nm">Experiment videos<small>demos and labs from our lessons</small></span></a></li>'; });
+        if (any) items += '<li class="all"><a role="menuitem" href="#video-' + L + '">All Topic ' + L + ' videos on this page ↓</a></li>';
+      }
+      const id = kind + "-" + L;
+      h += '<div class="theme" style="--tc:' + col + '"><button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-' + id +
+        '" id="tab-' + id + '"><span class="L">' + L + '</span><span class="tn">' + (pre ? pre + "Topic " + L : esc(tname)) + '</span><span class="car" aria-hidden="true">▾</span></button>' +
+        '<ul class="theme-menu" id="menu-' + id + '" role="menu" aria-labelledby="tab-' + id + '" hidden>' + items + '</ul></div>';
+    });
+    h += '</nav></div>';
   });
-  // 3. "Test yourself" and "Videos" sections in each theme menu
-  const sirius = (k, name) => "https://www.youtube.com/@siriusrevision/search?query=" + encodeURIComponent(k[0] + "." + k[1] + " " + name);
-  const esc = t => t.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  document.querySelectorAll(".theme").forEach(th => {
-    const L = th.querySelector(".L").textContent, ul = th.querySelector(".theme-menu");
-    const topicName = {}; ul.querySelectorAll("li").forEach(li => { const c = li.querySelector(".code");
-      if (c) topicName[c.textContent.replace(".", "")] = li.querySelector(".nm").childNodes[0].textContent; });
-    ul.insertAdjacentHTML("afterbegin", '<li class="sec" role="presentation"><span class="ico">▶</span>Simulations</li>');
-    let h = '<li class="sec" role="presentation"><span class="ico">✔</span>Test yourself — quizzes</li>';
-    const qs = [...document.querySelectorAll('main .card.quiz')].filter(c => (c.dataset.topic || "")[0] === L);
-    h += qs.length ? qs.map(c => { const t = c.dataset.topic, a = c.querySelector("a.primary");
-        return '<li class="q"><a role="menuitem" href="' + a.getAttribute("href") + '"><span class="code">' + t[0] + "." + t[1] +
-          '</span><span class="nm">' + esc(c.querySelector("h2").textContent) + '<small>10-question quiz</small></span></a></li>'; }).join("")
-      : '<li role="presentation"><span class="none">Quizzes coming soon</span></li>';
-    h += '<li class="sec" role="presentation"><span class="ico">▷</span>Video lessons — Sirius Revision</li>';
-    h += Object.keys(topicName).map(k => '<li class="sr"><a role="menuitem" target="_blank" rel="noopener" href="' + sirius(k, topicName[k]) +
-          '"><span class="code">' + k[0] + "." + k[1] + '</span><span class="nm">' + esc(topicName[k]) + '<small>Sirius Revision on YouTube ↗</small></span></a></li>').join("");
-    h += '<li class="sec" role="presentation"><span class="ico">▷</span>Experiment videos</li>';
-    const vk = {}; document.querySelectorAll('main .card.video:not(.lesson)').forEach(c => { const t = c.dataset.topic || "";
-      if (t[0] === L) vk[t] = (vk[t] || 0) + 1; });
-    const keys = Object.keys(vk).sort();
-    h += keys.length ? keys.map(k => '<li><a role="menuitem" href="#' + k + '-videos"><span class="code">' + k[0] + "." + k[1] +
-          '</span><span class="nm">' + esc(topicName[k] || "") + '<small>' + vk[k] + " video" + (vk[k] > 1 ? "s" : "") + '</small></span></a></li>').join("")
-      : '<li role="presentation"><span class="none">Videos coming soon</span></li>';
-    ul.insertAdjacentHTML("beforeend", h);
-  });
-  const themes = [...document.querySelectorAll(".theme")];
+  document.getElementById("tabrows").innerHTML = h;
+
+  // ---------- menu behaviour ----------
+  const themes = [...document.querySelectorAll(".tabrows .theme")];
   function closeAll(except){ themes.forEach(t => { if (t === except) return;
-    t.querySelector(".theme-menu").hidden = true; t.querySelector(".theme-btn").setAttribute("aria-expanded","false"); }); }
+    t.querySelector(".theme-menu").hidden = true; t.querySelector(".theme-btn").setAttribute("aria-expanded", "false"); }); }
   themes.forEach(t => {
     const b = t.querySelector(".theme-btn"), m = t.querySelector(".theme-menu");
     b.addEventListener("click", e => { e.stopPropagation(); const open = m.hidden; closeAll(t); m.hidden = !open;
       b.setAttribute("aria-expanded", String(open));
-      if (open && window.innerWidth <= 900){ m.style.top = (b.getBoundingClientRect().bottom + 6) + "px"; }
+      if (open && window.innerWidth <= 900) m.style.top = (b.getBoundingClientRect().bottom + 6) + "px";
       if (open){ const f = m.querySelector("a"); if (f) f.focus(); } });
     m.addEventListener("keydown", e => {
       const items = [...m.querySelectorAll("a")], i = items.indexOf(document.activeElement);
@@ -785,28 +772,36 @@ a.vbtn{background:#C62828;color:#fff}
       if (e.key === "Escape"){ closeAll(); b.focus(); } });
     m.querySelectorAll("a").forEach(a => a.addEventListener("click", () => closeAll()));
   });
-  document.addEventListener("click", e => { if (!e.target.closest(".theme")) closeAll(); });
+  document.addEventListener("click", e => { if (!e.target.closest(".tabrows .theme")) closeAll(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });
-  window.addEventListener("scroll", () => { if (window.innerWidth <= 900) closeAll(); }, {passive:true});
+  window.addEventListener("scroll", () => { if (window.innerWidth <= 900) closeAll(); }, {passive: true});
 
-  const names = {}; document.querySelectorAll('.theme-menu a[href^="#"]:not([href$="-videos"])').forEach(a => {
-    names[a.getAttribute("href").slice(1)] = a.querySelector(".code").textContent + " " + a.querySelector(".nm").childNodes[0].textContent; });
+  // ---------- filtering: #A2 · #A2-quizzes · #A2-videos · #quiz-A · #video-A ----------
+  const TN = {}; THEMES.forEach(([L, tname, col, topics]) => topics.forEach(([k, name]) => TN[k] = name));
   const note = document.getElementById("filter-note"), txt = document.getElementById("filter-txt");
+  const heads = [...document.querySelectorAll("main [data-block]")];
   function apply(){
-    const raw = decodeURIComponent(location.hash.slice(1)), key = raw.replace(/-videos$/, "");
-    const on = /^[A-E][1-5]$/.test(key) && names[key];
-    document.querySelectorAll("main [data-topic]").forEach(el => {
-      const t = el.dataset.topic;
-      const kindShown = (t === "quiz" || t === "video") && document.querySelector('.card.' + t + '[data-topic="' + key + '"]');
-      el.classList.toggle("is-hidden", !!on && t !== key && !kindShown);
+    const raw = decodeURIComponent(location.hash.slice(1));
+    let m, test = null, label = "";
+    if ((m = raw.match(/^([A-E]\d)(?:-(quizzes|videos))?$/)) && TN[m[1]]){
+      const k = m[1], kind = m[2] === "quizzes" ? "quiz" : m[2] === "videos" ? "video" : "sim";
+      test = c => c.dataset.topic === k && c.dataset.kind === kind;
+      label = code(k) + " " + TN[k] + (kind === "sim" ? " simulations" : kind === "quiz" ? " quizzes" : " videos");
+    } else if ((m = raw.match(/^(quiz|video)-([A-E])$/))){
+      const kind = m[1], L = m[2]; test = c => c.dataset.kind === kind && (c.dataset.topic || "")[0] === L;
+      label = "Topic " + L + (kind === "quiz" ? " quizzes" : " videos");
+    }
+    cards.forEach(c => c.classList.toggle("is-hidden", !!test && !test(c)));
+    heads.forEach(el => {   // a heading or lead stays if any visible card belongs to it
+      const d = el.dataset, vis = cards.some(c => !c.classList.contains("is-hidden") && c.dataset.kind === d.block &&
+        (!d.theme || (c.dataset.topic || "")[0] === d.theme) && (!d.topic || c.dataset.topic === d.topic) && (!d.sub || c.dataset.sub === d.sub));
+      el.classList.toggle("is-hidden", !vis);
     });
-    note.hidden = !on;
-    if (on){ txt.textContent = "Showing " + names[key] + " only."; 
-      const target = raw.endsWith("-videos") ? document.getElementById("videos") : note;
-      target.scrollIntoView({behavior:"smooth", block:"start"}); }
+    note.hidden = !test;
+    if (test){ txt.textContent = "Showing " + label + " only."; note.scrollIntoView({behavior: "smooth", block: "start"}); }
   }
   document.getElementById("show-all").addEventListener("click", e => { e.preventDefault();
-    history.pushState("", document.title, location.pathname + location.search); apply(); window.scrollTo({top:0, behavior:"smooth"}); });
+    history.pushState("", document.title, location.pathname + location.search); apply(); window.scrollTo({top: 0, behavior: "smooth"}); });
   window.addEventListener("hashchange", apply); apply();
   window.addEventListener("load", () => { if (location.hash) setTimeout(apply, 50); });
 })();
