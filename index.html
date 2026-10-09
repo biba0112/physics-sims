@@ -89,6 +89,8 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
 .theme-menu .all a{min-height:40px;font-weight:700;color:var(--tc);border-top:1px solid var(--line);border-radius:0;margin-top:4px}
 .theme-menu .none{display:block;padding:8px 10px;color:#9AA3AA;font-size:.9rem}
 .filter-note{max-width:1100px;margin:12px auto 0;padding:0 16px;color:var(--muted);font-size:.95rem}
+.start-hint{max-width:1100px;margin:18px auto 0;padding:0 16px;color:var(--muted);font-size:1rem;text-align:center}
+.start-hint[hidden]{display:none}
 .filter-note a{color:var(--accent);font-weight:600;margin-left:6px}
 .is-hidden{display:none!important}
 /* main blocks */
@@ -123,7 +125,8 @@ a.vbtn{background:#C62828;color:#fff}
   </div>
 </header>
 <div class="tabrows" id="tabrows"></div>
-<div class="filter-note" id="filter-note" hidden><span id="filter-txt"></span> <a href="#" id="show-all">Show everything</a></div>
+<p class="start-hint" id="start-hint">Choose a theme and a topic above: simulations, quizzes or videos.</p>
+<div class="filter-note" id="filter-note" hidden><span id="filter-txt"></span> <a href="#" id="show-all">✕ Close</a></div>
 <main>
   <h2 class="block" id="sims" data-block="sim">Simulations</h2>
   <p class="lead" data-block="sim">Interactive simulations with worksheets (Word and PDF), by theme and topic of the IB course.</p>
@@ -791,14 +794,15 @@ a.vbtn{background:#C62828;color:#fff}
       const kind = m[1], L = m[2]; test = c => c.dataset.kind === kind && (c.dataset.topic || "")[0] === L;
       label = "Topic " + L + (kind === "quiz" ? " quizzes" : " videos");
     }
-    cards.forEach(c => c.classList.toggle("is-hidden", !!test && !test(c)));
+    if (!test) test = () => false;   // start screen: only the tab rows
+    cards.forEach(c => c.classList.toggle("is-hidden", !test(c)));
     heads.forEach(el => {   // a heading or lead stays if any visible card belongs to it
       const d = el.dataset, vis = cards.some(c => !c.classList.contains("is-hidden") && c.dataset.kind === d.block &&
         (!d.theme || (c.dataset.topic || "")[0] === d.theme) && (!d.topic || c.dataset.topic === d.topic) && (!d.sub || c.dataset.sub === d.sub));
       el.classList.toggle("is-hidden", !vis);
     });
-    note.hidden = !test;
-    if (test){ txt.textContent = "Showing " + label + " only."; note.scrollIntoView({behavior: "smooth", block: "start"}); }
+    const on = !!label; note.hidden = !on; document.getElementById("start-hint").hidden = on;
+    if (on){ txt.textContent = "Showing " + label + "."; note.scrollIntoView({behavior: "smooth", block: "start"}); }
   }
   document.getElementById("show-all").addEventListener("click", e => { e.preventDefault();
     history.pushState("", document.title, location.pathname + location.search); apply(); window.scrollTo({top: 0, behavior: "smooth"}); });
