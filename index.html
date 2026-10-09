@@ -80,6 +80,16 @@ a.ghost{border:1px solid var(--line);color:var(--navy);background:#fff}
   .tabrow.sim .theme-btn .tn{display:none}.tabrow.quiz .theme-btn .tn,.tabrow.video .theme-btn .tn{font-size:0}
   .tabrow.quiz .theme-btn .tn::after{content:"Quiz";font-size:.72rem}.tabrow.video .theme-btn .tn::after{content:"Videos";font-size:.72rem}
   .theme-menu,.theme:nth-child(n+4) .theme-menu{position:fixed;left:16px;right:16px;top:auto;width:auto;min-width:0;max-width:none}}
+.tabrow.exercise .rowlabel::before{content:"✎ ";color:#E65100}
+.tabrow.exercise .theme-btn{background:#fff;color:var(--tc);min-height:46px;box-shadow:none;border-style:dashed}
+.tabrow.exercise .theme-btn:hover,.tabrow.exercise .theme-btn[aria-expanded="true"]{background:color-mix(in srgb,var(--tc) 9%,#fff)}
+.tabrow.exercise .theme-btn .L{width:32px;height:32px;background:var(--tc);color:#fff;font-size:1.1rem}
+.card.exercise{border-left:5px solid #E65100}
+.card.exercise .tag{color:#E65100}
+.card.exercise .lv{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.card.exercise .lv a{font-size:.85rem;font-weight:600;color:#1F3A5F;border:1px solid #DDE6F0;border-radius:14px;padding:3px 10px;text-decoration:none}
+.card.exercise .lv a:hover{border-color:#1F3A5F}
+@media (max-width:900px){.tabrow.exercise .theme-btn .tn{font-size:0}.tabrow.exercise .theme-btn .tn::after{content:"Exercises";font-size:.72rem}}
 /* video cards */
 .card.video{border-left:5px solid #C62828}
 .card.video .tag{color:#C62828}
@@ -93,13 +103,13 @@ a.vbtn{background:#C62828;color:#fff}
 <header>
   <div>
     <h1>Physics Simulations</h1>
-    <p>IBDP Physics SL · Grade 11 · Simulations, quizzes and videos for every theme A–E and topic</p>
+    <p>IBDP Physics SL · Grade 11 · Simulations, quizzes, videos and exercises for every theme A–E and topic</p>
   </div>
   <div class="hbar"><div class="credit">Biljana Taneska · Physics teacher<br><a href="mailto:btaneska@vis.ac.at">btaneska@vis.ac.at</a></div>
   </div>
 </header>
 <div class="tabrows" id="tabrows"></div>
-<p class="start-hint" id="start-hint">Choose a theme and a topic above: simulations, quizzes or videos.</p>
+<p class="start-hint" id="start-hint">Choose a theme and a topic above: simulations, quizzes, videos or exercises.</p>
 <div class="filter-note" id="filter-note" hidden><span id="filter-txt"></span> <a href="#" id="show-all">✕ Close</a></div>
 <main>
   <h2 class="block" id="sims" data-block="sim">Simulations</h2>
@@ -661,6 +671,42 @@ a.vbtn{background:#C62828;color:#fff}
 
   <p class="note">Works in any modern browser on laptops, Chromebooks and tablets. Once opened, the simulation keeps
     working without internet.</p>
+  <h2 class="block" id="exercises" data-block="exercise">Exercises — practise the calculations</h2>
+  <p class="lead" data-block="exercise">24 calculation exercises per topic in three IB levels: Level 1 (Paper 1 style, one step), Level 2 (multi-step) and Level 3 (Paper 2 structured, with marks). Type your answer for instant marking, hints and worked solutions; ↻ New numbers lets you practise again.</p>
+  <h2 class="theme-h" id="e-themeA" data-block="exercise" data-theme="A" style="--tc:#2055A3"><span class="L">A</span>Theme A — Space, time and motion</h2>
+  <h3 class="group" id="e-A1" data-block="exercise" data-topic="A1" style="--tc:#2055A3">A.1 Kinematics</h3>
+  <div class="card exercise" data-kind="exercise" data-topic="A1">
+    <span class="tag">A.1 Kinematics</span>
+    <h2>Kinematics</h2>
+    <p>Equations of motion, motion graphs, free fall and projectiles. 24 exercises · 8 per level.</p>
+    <div class="lv"><a href="ex-kinematics/#L1">Level 1 · Paper 1</a><a href="ex-kinematics/#L2">Level 2 · Multi-step</a><a href="ex-kinematics/#L3">Level 3 · Paper 2</a></div>
+    <div class="row">
+      <a class="btn primary" href="ex-kinematics/">✎ Start the exercises</a>
+      <a class="btn ghost" href="ex-kinematics/exercises.pdf">Printable (PDF)</a>
+    </div>
+  </div>
+  <h3 class="group" id="e-A2" data-block="exercise" data-topic="A2" style="--tc:#2055A3">A.2 Forces and momentum</h3>
+  <div class="card exercise" data-kind="exercise" data-topic="A2">
+    <span class="tag">A.2 Forces and momentum</span>
+    <h2>Forces and momentum</h2>
+    <p>Free-body diagrams, Newton's laws, ramps and pulleys, springs and fluids, circular motion, momentum and impulse. 24 exercises · 8 per level.</p>
+    <div class="lv"><a href="ex-forces-momentum/#L1">Level 1 · Paper 1</a><a href="ex-forces-momentum/#L2">Level 2 · Multi-step</a><a href="ex-forces-momentum/#L3">Level 3 · Paper 2</a></div>
+    <div class="row">
+      <a class="btn primary" href="ex-forces-momentum/">✎ Start the exercises</a>
+      <a class="btn ghost" href="ex-forces-momentum/exercises.pdf">Printable (PDF)</a>
+    </div>
+  </div>
+  <h3 class="group" id="e-A3" data-block="exercise" data-topic="A3" style="--tc:#2055A3">A.3 Work, energy and power</h3>
+  <div class="card exercise" data-kind="exercise" data-topic="A3">
+    <span class="tag">A.3 Work, energy and power</span>
+    <h2>Work, energy and power</h2>
+    <p>Work, kinetic, gravitational and elastic energy, energy conservation, power, efficiency and Sankey diagrams. 24 exercises · 8 per level.</p>
+    <div class="lv"><a href="ex-work-energy-power/#L1">Level 1 · Paper 1</a><a href="ex-work-energy-power/#L2">Level 2 · Multi-step</a><a href="ex-work-energy-power/#L3">Level 3 · Paper 2</a></div>
+    <div class="row">
+      <a class="btn primary" href="ex-work-energy-power/">✎ Start the exercises</a>
+      <a class="btn ghost" href="ex-work-energy-power/exercises.pdf">Printable (PDF)</a>
+    </div>
+  </div>
 </main>
 <script>
 (function(){
@@ -671,13 +717,13 @@ a.vbtn{background:#C62828;color:#fff}
   // cards: kind (sim/quiz/video) and topic from the markup or the tag text, so new cards need no extra attributes
   const cards = [...document.querySelectorAll("main .card")];
   cards.forEach(c => {
-    if (!c.dataset.kind) c.dataset.kind = c.classList.contains("video") ? "video" : c.classList.contains("quiz") ? "quiz" : "sim";
+    if (!c.dataset.kind) c.dataset.kind = c.classList.contains("video") ? "video" : c.classList.contains("quiz") ? "quiz" : c.classList.contains("exercise") ? "exercise" : "sim";
     if (!c.dataset.topic){ const m = ((c.querySelector(".tag") || {}).textContent || "").match(/\b([A-E])\.(\d)\b/); if (m) c.dataset.topic = m[1] + m[2]; }
   });
   const of = (kind, topic, extra) => cards.filter(c => c.dataset.kind === kind && c.dataset.topic === topic && (!extra || extra(c)));
 
   // ---------- the three rows ----------
-  const ROWS = [["sim", "Simulations", ""], ["quiz", "Quizzes", "Quiz · "], ["video", "Videos", "Videos · "]];
+  const ROWS = [["sim", "Simulations", ""], ["quiz", "Quizzes", "Quiz · "], ["video", "Videos", "Videos · "], ["exercise", "Exercises", "Exercises · "]];
   let h = "";
   ROWS.forEach(([kind, label, pre]) => {
     h += '<div class="tabrow ' + kind + '"><div class="rowlabel">' + label + '</div><nav class="theme-bar" aria-label="' + label + ' by theme">';
@@ -698,6 +744,17 @@ a.vbtn{background:#C62828;color:#fff}
             esc(c.querySelector("h2").textContent) + '<small>10-question quiz</small></span></a></li>'; }); });
         items += any ? '<li class="all"><a role="menuitem" href="#quiz-' + L + '">All Topic ' + L + ' quizzes on this page ↓</a></li>'
                      : '<li role="presentation"><span class="none">Quizzes coming soon</span></li>';
+      } else if (kind === "exercise"){
+        let any = 0;
+        topics.forEach(([k, name, hl]) => { const es = of("exercise", k); if (!es.length) return; any += es.length;
+          items += '<li class="sec" role="presentation">' + code(k) + " " + esc(name) + '</li>';
+          es.forEach(c => { const href = c.querySelector("a.primary").getAttribute("href");
+            items += '<li><a role="menuitem" href="' + href + '"><span class="code">✎</span><span class="nm">All levels<small>24 exercises with worked solutions</small></span></a></li>';
+            [["1", "Paper 1 style · one step"], ["2", "Multi-step"], ["3", "Paper 2 structured"]].forEach(([n, t]) => {
+              items += '<li><a role="menuitem" href="' + href + '#L' + n + '"><span class="code">L' + n + '</span><span class="nm">Level ' + n + '<small>' + t + '</small></span></a></li>'; });
+            items += '<li><a role="menuitem" href="' + c.querySelector("a.ghost").getAttribute("href") + '"><span class="code">⎙</span><span class="nm">Printable (PDF)<small>to do on paper</small></span></a></li>'; }); });
+        items += any ? '<li class="all"><a role="menuitem" href="#exercise-' + L + '">All Topic ' + L + ' exercises on this page ↓</a></li>'
+                     : '<li role="presentation"><span class="none">Exercises coming soon</span></li>';
       } else {
         let any = 0;
         topics.forEach(([k, name, hl]) => { const n = of("video", k, c => !c.classList.contains("lesson")).length; any += n;
@@ -736,20 +793,20 @@ a.vbtn{background:#C62828;color:#fff}
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });
   window.addEventListener("scroll", () => { if (window.innerWidth <= 900) closeAll(); }, {passive: true});
 
-  // ---------- filtering: #A2 · #A2-quizzes · #A2-videos · #quiz-A · #video-A ----------
+  // ---------- filtering: #A2 · #A2-quizzes · #A2-videos · #A2-exercises · #quiz-A · #video-A · #exercise-A ----------
   const TN = {}; THEMES.forEach(([L, tname, col, topics]) => topics.forEach(([k, name]) => TN[k] = name));
   const note = document.getElementById("filter-note"), txt = document.getElementById("filter-txt");
   const heads = [...document.querySelectorAll("main [data-block]")];
   function apply(){
     const raw = decodeURIComponent(location.hash.slice(1));
     let m, test = null, label = "";
-    if ((m = raw.match(/^([A-E]\d)(?:-(quizzes|videos))?$/)) && TN[m[1]]){
-      const k = m[1], kind = m[2] === "quizzes" ? "quiz" : m[2] === "videos" ? "video" : "sim";
+    if ((m = raw.match(/^([A-E]\d)(?:-(quizzes|videos|exercises))?$/)) && TN[m[1]]){
+      const k = m[1], kind = m[2] === "quizzes" ? "quiz" : m[2] === "videos" ? "video" : m[2] === "exercises" ? "exercise" : "sim";
       test = c => c.dataset.topic === k && c.dataset.kind === kind;
-      label = code(k) + " " + TN[k] + (kind === "sim" ? " simulations" : kind === "quiz" ? " quizzes" : " videos");
-    } else if ((m = raw.match(/^(quiz|video)-([A-E])$/))){
+      label = code(k) + " " + TN[k] + (kind === "sim" ? " simulations" : kind === "quiz" ? " quizzes" : kind === "exercise" ? " exercises" : " videos");
+    } else if ((m = raw.match(/^(quiz|video|exercise)-([A-E])$/))){
       const kind = m[1], L = m[2]; test = c => c.dataset.kind === kind && (c.dataset.topic || "")[0] === L;
-      label = "Topic " + L + (kind === "quiz" ? " quizzes" : " videos");
+      label = "Topic " + L + (kind === "quiz" ? " quizzes" : kind === "exercise" ? " exercises" : " videos");
     }
     if (!test) test = () => false;   // start screen: only the tab rows
     cards.forEach(c => c.classList.toggle("is-hidden", !test(c)));
