@@ -393,12 +393,12 @@ const presetById = id => PRESETS.find(p => p.id === id);
 const f1 = x => (Math.round(x * 10) / 10).toFixed(1);
 const f2 = x => (Math.round(x * 100) / 100).toFixed(2);
 const f3 = x => (Math.round(x * 1000) / 1000).toFixed(3);
-const sig = (x, n = 3) => String(+Number(x).toPrecision(n));          // 3 s.f., never in e-notation for normal sizes
+const sig = (x, n = 3) => { const a = Math.abs(x); return a >= 1e6 || (a > 0 && a < 1e-4) ? sci(x, n) : String(+Number(x).toPrecision(n)); };   // very big/small typed values in × 10ⁿ form
 const SUP = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻"};
 const sup = n => String(n).split("").map(c => SUP[c] ?? c).join("");
-function sci(x, n = 3){ if (!x) return "0"; const e = Math.floor(Math.log10(Math.abs(x)));
+function sci(x, n = 3){ if (!x) return "0"; let e = Math.floor(Math.log10(Math.abs(x)));
   if (e >= -2 && e <= 4) return sig(x, n);
-  let m = x / Math.pow(10, e); if (Math.abs(+m.toFixed(n - 1)) >= 10) return sci(x * (1 + 1e-12), n);
+  let m = x / Math.pow(10, e); if (Math.abs(+m.toFixed(n - 1)) >= 10){ e += 1; m = x / Math.pow(10, e); }   // 9.999… rounds up to 1.00 × 10^(e+1)
   return `${m.toFixed(n - 1)} × 10${sup(e)}`; }
 const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -649,14 +649,18 @@ function niceUp(x){ const p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p
   return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
 function niceStep(range, n){ return niceUp(range / n); }
 function niceCeil(x, n = 5){ const st = niceUp(x / n); return Math.ceil(x / st - 1e-9) * st; }
+// axis numbers: enough decimals for small steps, × 10ⁿ form for very big values (typed values can be far outside the sliders)
+const tickTxt = (v, st, d0) => { if (Math.abs(v) >= 1e6){ const e = Math.floor(Math.log10(Math.abs(v)) + 1e-9);
+    return `${+(v / 10 ** e).toPrecision(3)}×10${[...String(e)].map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c]).join("")}`; }
+  return String(+v.toFixed(Math.min(12, Math.max(d0, Math.ceil(-Math.log10(st)) + 1)))); };
 function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
   const {x, y, w, h} = box, X = v => x + w * (v - x0) / (x1 - x0), Y = v => y + h - h * (v - y0) / (y1 - y0);
   ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted; ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
   const xs = niceStep(x1 - x0, 8), ys = niceStep(y1 - y0, 6);
   ctx.textAlign = "center"; ctx.textBaseline = "top";
-  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + 1e-9; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(+v.toFixed(3), X(v), y + h + 4); }
+  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + xs * 1e-6; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(tickTxt(v, xs, 3), X(v), y + h + 4); }
   ctx.textAlign = "right"; ctx.textBaseline = "middle";
-  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + 1e-9; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(+v.toFixed(3), x - 5, Y(v)); }
+  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + ys * 1e-6; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(tickTxt(v, ys, 3), x - 5, Y(v)); }
   ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath();
   const zx = x0 <= 0 && x1 >= 0 ? X(0) : x, zy = y0 <= 0 && y1 >= 0 ? Y(0) : y + h;
   ctx.moveTo(zx, y); ctx.lineTo(zx, y + h); ctx.moveTo(x, zy); ctx.lineTo(x + w, zy); ctx.stroke();
@@ -966,12 +970,12 @@ const notEx = () => set.sc !== "ex";
 const CTL = [
   {id:"pre", kind:"select", lab:"Example", opts:PRESETS.map(p => [p.id, p.name])},
   {id:"look", kind:"select", lab:"Draw as", opts:LOOKS},
-  {id:"mA", kind:"range", log:true, lab:'Mass of A <i>m</i><sub>A</sub>', unit:"kg", min:0.05, max:1000},
-  {id:"mB", kind:"range", log:true, lab:'Mass of B <i>m</i><sub>B</sub>', unit:"kg", min:0.05, max:1000},
-  {id:"uA", kind:"range", lab:'Velocity of A <i>u</i><sub>A</sub>', unit:"m s⁻¹", min:-20, max:20, step:0.01, show:notEx},
-  {id:"uB", kind:"range", lab:'Velocity of B <i>u</i><sub>B</sub>', unit:"m s⁻¹", min:-20, max:20, step:0.01, show:notEx},
+  {id:"mA", kind:"range", log:true, lab:'Mass of A <i>m</i><sub>A</sub>', unit:"kg", min:0.05, max:1000, tmin:0.001, tmax:1e+06},
+  {id:"mB", kind:"range", log:true, lab:'Mass of B <i>m</i><sub>B</sub>', unit:"kg", min:0.05, max:1000, tmin:0.001, tmax:1e+06},
+  {id:"uA", kind:"range", lab:'Velocity of A <i>u</i><sub>A</sub>', unit:"m s⁻¹", min:-20, max:20, tmin:-1000, tmax:1000, step:0.01, show:notEx},
+  {id:"uB", kind:"range", lab:'Velocity of B <i>u</i><sub>B</sub>', unit:"m s⁻¹", min:-20, max:20, tmin:-1000, tmax:1000, step:0.01, show:notEx},
   {id:"e", kind:"range", lab:'Bounciness (0 stick · 1 elastic)', unit:"", min:0.05, max:0.95, step:0.01, show:() => set.sc === "in"},
-  {id:"vBx", kind:"range", log:true, lab:'B moves off at <i>v</i><sub>B</sub>', unit:"m s⁻¹", min:0.01, max:200, show:() => set.sc === "ex"},
+  {id:"vBx", kind:"range", log:true, lab:'B moves off at <i>v</i><sub>B</sub>', unit:"m s⁻¹", min:0.01, max:200, tmin:0.001, tmax:2000, show:() => set.sc === "ex"},
 ];
 const getV = id => set[id];
 function putV(id, v){ set[id] = v; }
@@ -984,7 +988,7 @@ function buildControls(){
       const mn = c.log ? Math.log10(c.min) : c.min, mx = c.log ? Math.log10(c.max) : c.max, st = c.log ? 0.001 : c.step;
       return `<div class="ctl" data-sc="${c.sc}" id="${c.id}C">${lab}<div class="rn">
         <input type="range" id="${c.id}" min="${mn}" max="${mx}" step="${st}" aria-labelledby="${c.id}Lab">
-        <input class="nb" type="text" inputmode="decimal" id="${c.id}N" aria-label="type a value" title="Type a value (${fmtBox(c.min)}–${fmtBox(c.max)} ${c.unit}) and press Enter">
+        <input class="nb" type="text" inputmode="decimal" id="${c.id}N" aria-label="type a value" title="Type a value (${fmtBox(c.tmin ?? c.min)}–${fmtBox(c.tmax ?? c.max)} ${c.unit}) and press Enter">
         <span class="u">${c.unit}</span></div></div>`;
     }
     if (c.kind === "seg") return `<div class="ctl" data-sc="${c.sc}" id="${c.id}C">${lab}<div class="seg" id="${c.id}">${c.opts.map(o => `<button data-v="${o[0]}">${o[1]}</button>`).join("")}</div></div>`;
@@ -999,11 +1003,13 @@ function buildControls(){
       const nb = $(c.id + "N");
       const commit = () => { const raw = nb.value.trim().replace(",", "."), v = Number(raw);
         if (!raw || !isFinite(v)){ nb.value = fmtBox(getV(c.id)); return; }
-        const cv = clamp(v, c.min, c.max); nb.classList.toggle("clamped", cv !== v);
-        if (cv !== v){ flash(`Allowed range: ${fmtBox(c.min)} to ${fmtBox(c.max)} ${c.unit}. Set to ${fmtBox(cv)}.`); setTimeout(() => nb.classList.remove("clamped"), 1800); }
+        const cv = clamp(v, c.tmin ?? c.min, c.tmax ?? c.max); nb.classList.toggle("clamped", cv !== v);   // typed range (tmin/tmax) can be wider than the slider
+        if (cv !== v){ flash(`Allowed range: ${fmtBox(c.tmin ?? c.min)} to ${fmtBox(c.tmax ?? c.max)} ${c.unit}. Set to ${fmtBox(cv)}.`); setTimeout(() => nb.classList.remove("clamped"), 1800); }
         changed(c, cv); };
-      nb.addEventListener("change", commit);
-      nb.addEventListener("keydown", e => { if (e.key === "Enter"){ commit(); nb.select(); } });
+      nb.addEventListener("input", () => { clearTimeout(nb._tm); nb._tm = setTimeout(() => {   // apply by itself once typing pauses (no Enter needed)
+        const raw = nb.value.trim().replace(",", "."); if (raw && isFinite(Number(raw)) && !/[.eE+-]$/.test(raw)){ nb._auto = raw; commit(); } }, 600); });
+      nb.addEventListener("change", () => { clearTimeout(nb._tm); if (nb.value.trim().replace(",", ".") !== nb._auto) commit(); nb._auto = null; });
+      nb.addEventListener("keydown", e => { if (e.key === "Enter"){ clearTimeout(nb._tm); commit(); nb._auto = null; nb.select(); } });
     } else if (c.kind === "seg") el.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
       changed(c, typeof c.opts[0][0] === "number" ? +b.dataset.v : b.dataset.v); });
     else if (c.kind === "select") el.addEventListener("change", () => changed(c, el.value));
@@ -1051,7 +1057,7 @@ let lastRO = "";
 const row = (a, b, c = "", d = "", col1 = "", col2 = "") => `<tr><td>${a}</td><td class="v"${col1 ? ` style="color:${col1}"` : ""}>${b}</td><td class="gap"></td><td>${c}</td><td class="v"${col2 ? ` style="color:${col2}"` : ""}>${d}</td></tr>`;
 function pill(ok, yes, no){ return `<span class="pill ${ok ? "rest" : "slide"}">${ok ? yes : no}</span>`; }
 const mn = x => String(x).replace(/^-/, "−");
-const sv = x => `${x >= 0 ? "+" : "−"}${Math.abs(x) < 1e3 ? Number(Math.abs(x)).toPrecision(3) : Math.round(Math.abs(x))}`;
+const sv = x => { const a = Math.abs(x); return `${x >= 0 ? "+" : "−"}${a >= 1e6 || (a > 0 && a < 1e-4) ? sci(a) : a < 1e3 ? Number(a).toPrecision(3) : Math.round(a)}`; };
 function updateReadouts(){
   const T = totals(C), r = (who, m, u, v, col) => `<tr><td><b style="color:${col}">${who}</b> <span class="hint">${sig(m)} kg</span></td><td class="v" style="color:${COL.v}">${sv(u)}</td><td class="v" style="color:${COL.v}">${sv(v)}</td><td class="v">${sv(m * u)}</td><td class="v">${sv(m * v)}</td></tr>`;
   let html = `<table class="ab"><tr><th></th><th><i>u</i> before</th><th><i>v</i> after</th><th><i>p</i> before</th><th><i>p</i> after</th></tr>

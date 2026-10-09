@@ -411,12 +411,12 @@ const f0 = x => String(Math.round(x));
 const f1 = x => (Math.round(x * 10) / 10).toFixed(1);
 const f2 = x => (Math.round(x * 100) / 100).toFixed(2);
 const f3 = x => (Math.round(x * 1000) / 1000).toFixed(3);
-const sig = (x, n = 3) => String(+Number(x).toPrecision(n));          // 3 s.f., never in e-notation for normal sizes
+const sig = (x, n = 3) => { const a = Math.abs(x); return a >= 1e6 || (a > 0 && a < 1e-4) ? sci(x, n) : String(+Number(x).toPrecision(n)); };   // very big/small typed values in × 10ⁿ form
 const SUP = {"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","-":"⁻"};
 const sup = n => String(n).split("").map(c => SUP[c] ?? c).join("");
-function sci(x, n = 3){ if (!x) return "0"; const e = Math.floor(Math.log10(Math.abs(x)));
+function sci(x, n = 3){ if (!x) return "0"; let e = Math.floor(Math.log10(Math.abs(x)));
   if (e >= -2 && e <= 4) return sig(x, n);
-  let m = x / Math.pow(10, e); if (Math.abs(+m.toFixed(n - 1)) >= 10) return sci(x * (1 + 1e-12), n);
+  let m = x / Math.pow(10, e); if (Math.abs(+m.toFixed(n - 1)) >= 10){ e += 1; m = x / Math.pow(10, e); }   // 9.999… rounds up to 1.00 × 10^(e+1)
   return `${m.toFixed(n - 1)} × 10${sup(e)}`; }
 const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -856,14 +856,18 @@ function niceUp(x){ const p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p
   return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
 function niceStep(range, n){ return niceUp(range / n); }
 function niceCeil(x, n = 5){ const st = niceUp(x / n); return Math.ceil(x / st - 1e-9) * st; }
+// axis numbers: enough decimals for small steps, × 10ⁿ form for very big values (typed values can be far outside the sliders)
+const tickTxt = (v, st, d0) => { if (Math.abs(v) >= 1e6){ const e = Math.floor(Math.log10(Math.abs(v)) + 1e-9);
+    return `${+(v / 10 ** e).toPrecision(3)}×10${[...String(e)].map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c]).join("")}`; }
+  return String(+v.toFixed(Math.min(12, Math.max(d0, Math.ceil(-Math.log10(st)) + 1)))); };
 function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
   const {x, y, w, h} = box, X = v => x + w * (v - x0) / (x1 - x0), Y = v => y + h - h * (v - y0) / (y1 - y0);
   ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted; ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
   const xs = niceStep(x1 - x0, 8), ys = niceStep(y1 - y0, 6);
   ctx.textAlign = "center"; ctx.textBaseline = "top";
-  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + 1e-9; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(+v.toFixed(3), X(v), y + h + 4); }
+  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + xs * 1e-6; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(tickTxt(v, xs, 3), X(v), y + h + 4); }
   ctx.textAlign = "right"; ctx.textBaseline = "middle";
-  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + 1e-9; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(+v.toFixed(3), x - 5, Y(v)); }
+  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + ys * 1e-6; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(tickTxt(v, ys, 3), x - 5, Y(v)); }
   ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath();
   const zx = x0 <= 0 && x1 >= 0 ? X(0) : x, zy = y0 <= 0 && y1 >= 0 ? Y(0) : y + h;
   ctx.moveTo(zx, y); ctx.lineTo(zx, y + h); ctx.moveTo(x, zy); ctx.lineTo(x + w, zy); ctx.stroke();
@@ -1214,24 +1218,24 @@ function taskChange(e){
 /* ============================ 11 UI ============================ */
 const CTL = [
   {id:"pre", kind:"select", lab:"Example", opts:() => PRESETS.filter(p => p.id === "custom" || p.sc === set.sc).map(p => [p.id, p.name]), keepPre:true},
-  {id:"m", sc:["pull"], kind:"range", log:true, lab:"Mass <i>m</i>", unit:"kg", min:0.2, max:50},
-  {id:"F", sc:["pull"], kind:"range", log:true, lab:"Pull <i>F</i>", unit:"N", min:0.5, max:500},
-  {id:"th", sc:["pull"], kind:"range", lab:"Angle <i>θ</i>", unit:"°", min:0, max:85, step:1},
-  {id:"mu", sc:["pull"], kind:"range", lab:"Friction <i>μ</i>", unit:"", min:0, max:0.8, step:0.01},
-  {id:"s", sc:["pull"], kind:"range", lab:"Distance <i>s</i>", unit:"m", min:0.2, max:20, step:0.1},
+  {id:"m", sc:["pull"], kind:"range", log:true, lab:"Mass <i>m</i>", unit:"kg", min:0.2, max:50, tmin:0.01, tmax:5000},
+  {id:"F", sc:["pull"], kind:"range", log:true, lab:"Pull <i>F</i>", unit:"N", min:0.5, max:500, tmin:0.01, tmax:100000},
+  {id:"th", sc:["pull"], kind:"range", lab:"Angle <i>θ</i>", unit:"°", min:0, max:85, tmin:0, tmax:90, step:1},
+  {id:"mu", sc:["pull"], kind:"range", lab:"Friction <i>μ</i>", unit:"", min:0, max:0.8, tmin:0, tmax:2, step:0.01},
+  {id:"s", sc:["pull"], kind:"range", lab:"Distance <i>s</i>", unit:"m", min:0.2, max:20, tmin:0.01, tmax:1000, step:0.1},
   {id:"meth", sc:["ramp"], kind:"seg", lab:"Method", opts:METH},
-  {id:"mr", sc:["ramp"], kind:"range", log:true, lab:"Mass <i>m</i>", unit:"kg", min:0.1, max:200},
-  {id:"h", sc:["ramp"], kind:"range", lab:"Height <i>h</i>", unit:"m", min:0.1, max:3, step:0.01},
-  {id:"L", sc:["ramp"], kind:"range", lab:"Ramp length <i>L</i>", unit:"m", min:0.2, max:10, step:0.1},
-  {id:"mur", sc:["ramp"], kind:"range", lab:"Friction <i>μ</i>", unit:"", min:0, max:0.6, step:0.01},
-  {id:"mc", sc:["cart"], kind:"range", lab:"Cart mass <i>m</i>", unit:"kg", min:0.25, max:3, step:0.005},
+  {id:"mr", sc:["ramp"], kind:"range", log:true, lab:"Mass <i>m</i>", unit:"kg", min:0.1, max:200, tmin:0.01, tmax:5000},
+  {id:"h", sc:["ramp"], kind:"range", lab:"Height <i>h</i>", unit:"m", min:0.1, max:3, tmin:0.01, tmax:100, step:0.01},
+  {id:"L", sc:["ramp"], kind:"range", lab:"Ramp length <i>L</i>", unit:"m", min:0.2, max:10, tmin:0.02, tmax:1000, step:0.1},
+  {id:"mur", sc:["ramp"], kind:"range", lab:"Friction <i>μ</i>", unit:"", min:0, max:0.6, tmin:0, tmax:2, step:0.01},
+  {id:"mc", sc:["cart"], kind:"range", lab:"Cart mass <i>m</i>", unit:"kg", min:0.25, max:3, tmin:0.05, tmax:50, step:0.005},
   {id:"prof", sc:["cart"], kind:"select", lab:"Pull shape", opts:PROF},
-  {id:"Fpk", sc:["cart"], kind:"range", log:true, lab:"Peak force", unit:"N", min:0.2, max:20},
-  {id:"d", sc:["cart"], kind:"range", lab:"Pull over", unit:"m", min:0.2, max:1.2, step:0.01},
-  {id:"fr", sc:["cart"], kind:"range", lab:"Rolling friction", unit:"N", min:0, max:0.3, step:0.005},
-  {id:"mb", sc:["brake"], kind:"range", log:true, lab:"Mass <i>m</i>", unit:"kg", min:500, max:5000},
-  {id:"u", sc:["brake"], kind:"range", lab:"Speed <i>u</i>", unit:"m s⁻¹", min:2, max:45, step:0.5},
-  {id:"Fb", sc:["brake"], kind:"range", log:true, lab:"Braking force <i>F</i><sub>b</sub>", unit:"N", min:500, max:30000},
+  {id:"Fpk", sc:["cart"], kind:"range", log:true, lab:"Peak force", unit:"N", min:0.2, max:20, tmin:0.01, tmax:500},
+  {id:"d", sc:["cart"], kind:"range", lab:"Pull over", unit:"m", min:0.2, max:1.2, tmin:0.05, tmax:10, step:0.01},
+  {id:"fr", sc:["cart"], kind:"range", lab:"Rolling friction", unit:"N", min:0, max:0.3, tmin:0, tmax:10, step:0.005},
+  {id:"mb", sc:["brake"], kind:"range", log:true, lab:"Mass <i>m</i>", unit:"kg", min:500, max:5000, tmin:100, tmax:100000},
+  {id:"u", sc:["brake"], kind:"range", lab:"Speed <i>u</i>", unit:"m s⁻¹", min:2, max:45, tmin:0.5, tmax:200, step:0.5},
+  {id:"Fb", sc:["brake"], kind:"range", log:true, lab:"Braking force <i>F</i><sub>b</sub>", unit:"N", min:500, max:30000, tmin:10, tmax:1e+06},
 ];
 function onChanged(c, v){
   if (c.id === "h" && set.L < set.h * 1.02) set.L = +(set.h * 1.2).toFixed(2);
@@ -1293,7 +1297,7 @@ function buildControls(){
       const mn = c.log ? Math.log10(c.min) : c.min, mx = c.log ? Math.log10(c.max) : c.max, st = c.log ? 0.001 : c.step;
       return `<div class="ctl" id="${c.id}C">${lab}<div class="rn">
         <input type="range" id="${c.id}" min="${mn}" max="${mx}" step="${st}" aria-labelledby="${c.id}Lab">
-        <input class="nb" type="text" inputmode="decimal" id="${c.id}N" aria-label="type a value" title="Type a value (${fmtBox(c.min)}–${fmtBox(c.max)} ${c.unit}) and press Enter">
+        <input class="nb" type="text" inputmode="decimal" id="${c.id}N" aria-label="type a value" title="Type a value (${fmtBox(c.tmin ?? c.min)}–${fmtBox(c.tmax ?? c.max)} ${c.unit}) and press Enter">
         <span class="u">${c.unit}</span></div></div>`;
     }
     if (c.kind === "seg") return `<div class="ctl" id="${c.id}C">${lab}<div class="seg" id="${c.id}">${c.opts.map(o => `<button data-v="${o[0]}">${o[1]}</button>`).join("")}</div></div>`;
@@ -1307,11 +1311,13 @@ function buildControls(){
       const nb = $(c.id + "N");
       const commit = () => { const raw = nb.value.trim().replace(",", "."), v = Number(raw);
         if (!raw || !isFinite(v)){ nb.value = fmtBox(getV(c.id)); return; }
-        const cv = clamp(v, c.min, c.max); nb.classList.toggle("clamped", cv !== v);
-        if (cv !== v){ flash(`Allowed range: ${fmtBox(c.min)} to ${fmtBox(c.max)} ${c.unit}. Set to ${fmtBox(cv)}.`); setTimeout(() => nb.classList.remove("clamped"), 1800); }
+        const cv = clamp(v, c.tmin ?? c.min, c.tmax ?? c.max); nb.classList.toggle("clamped", cv !== v);   // typed range (tmin/tmax) can be wider than the slider
+        if (cv !== v){ flash(`Allowed range: ${fmtBox(c.tmin ?? c.min)} to ${fmtBox(c.tmax ?? c.max)} ${c.unit}. Set to ${fmtBox(cv)}.`); setTimeout(() => nb.classList.remove("clamped"), 1800); }
         changed(c, cv); };
-      nb.addEventListener("change", commit);
-      nb.addEventListener("keydown", e => { if (e.key === "Enter"){ commit(); nb.select(); } });
+      nb.addEventListener("input", () => { clearTimeout(nb._tm); nb._tm = setTimeout(() => {   // apply by itself once typing pauses (no Enter needed)
+        const raw = nb.value.trim().replace(",", "."); if (raw && isFinite(Number(raw)) && !/[.eE+-]$/.test(raw)){ nb._auto = raw; commit(); } }, 600); });
+      nb.addEventListener("change", () => { clearTimeout(nb._tm); if (nb.value.trim().replace(",", ".") !== nb._auto) commit(); nb._auto = null; });
+      nb.addEventListener("keydown", e => { if (e.key === "Enter"){ clearTimeout(nb._tm); commit(); nb._auto = null; nb.select(); } });
     } else if (c.kind === "seg") el.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
       changed(c, typeof c.opts[0][0] === "number" ? +b.dataset.v : b.dataset.v); });
     else if (c.kind === "select") el.addEventListener("change", () => changed(c, el.value));

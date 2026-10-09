@@ -494,7 +494,8 @@ function drawScene(){
   const V = view(w, h), L = R.L, lx = V.X(0), ly = V.Y(set.h);
   ctx.fillStyle = "#9CCC65"; ctx.fillRect(0, V.floorY, w, 5); ctx.fillStyle = "#D7CCC8"; ctx.fillRect(0, V.floorY + 5, w, h);
   if (set.h > 0){ ctx.fillStyle = "#A1887F"; ctx.fillRect(0, ly, lx + 4, V.floorY - ly); }
-  const sx = niceStep(V.x1, 7); ctx.strokeStyle = "#5D4037";
+  // fewer axis labels when the scene is narrow
+  const sx = niceStep(V.x1, Math.max(1, Math.min(7, (V.X(V.x1) - V.X(0)) / 48))); ctx.strokeStyle = "#5D4037";
   for (let s = 0; s <= V.x1 + 1e-9; s += sx){ const X = V.X(s); ctx.beginPath(); ctx.moveTo(X, V.floorY + 5); ctx.lineTo(X, V.floorY + 12); ctx.stroke();
     if (X < w - 40) label(ctx, `${+s.toFixed(2)}`, X, V.floorY + 20, COL.ink, "center", 10.5); }
   // full path (faint) and travelled part
@@ -568,14 +569,18 @@ function niceUp(x){ const p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p
   return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
 function niceStep(range, n){ return niceUp(range / n); }
 function niceCeil(x, n = 5){ const st = niceUp(x / n); return Math.ceil(x / st - 1e-9) * st; }
+// axis numbers: enough decimals for small steps, × 10ⁿ form for very big values (typed values can be far outside the sliders)
+const tickTxt = (v, st, d0) => { if (Math.abs(v) >= 1e6){ const e = Math.floor(Math.log10(Math.abs(v)) + 1e-9);
+    return `${+(v / 10 ** e).toPrecision(3)}×10${[...String(e)].map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c]).join("")}`; }
+  return String(+v.toFixed(Math.min(12, Math.max(d0, Math.ceil(-Math.log10(st)) + 1)))); };
 function axesR(ctx, box, x0, x1, y0, y1, xLab, yLab, noX = false){
   const {x, y, w, h} = box, X = v => x + w * (v - x0) / (x1 - x0), Y = v => y + h - h * (v - y0) / (y1 - y0);
   ctx.save(); ctx.font = `13px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = COL.muted; ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
   const xs = niceStep(x1 - x0, 8), ys = niceStep(y1 - y0, 6);
   ctx.textAlign = "center"; ctx.textBaseline = "top";
-  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + 1e-9; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(+v.toFixed(2), X(v), y + h + 4); }
+  if (!noX) for (let v = Math.ceil(x0 / xs - 1e-9) * xs; v <= x1 + xs * 1e-6; v += xs){ ctx.beginPath(); ctx.moveTo(X(v), y); ctx.lineTo(X(v), y + h); ctx.stroke(); ctx.fillText(tickTxt(v, xs, 2), X(v), y + h + 4); }
   ctx.textAlign = "right"; ctx.textBaseline = "middle";
-  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + 1e-9; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(+v.toFixed(2), x - 5, Y(v)); }
+  for (let v = Math.ceil(y0 / ys - 1e-9) * ys; v <= y1 + ys * 1e-6; v += ys){ ctx.beginPath(); ctx.moveTo(x, Y(v)); ctx.lineTo(x + w, Y(v)); ctx.stroke(); ctx.fillText(tickTxt(v, ys, 2), x - 5, Y(v)); }
   ctx.strokeStyle = COL.ink; ctx.lineWidth = 1.5; ctx.beginPath();
   const zx = x0 <= 0 && x1 >= 0 ? X(0) : x, zy = y0 <= 0 && y1 >= 0 ? Y(0) : y + h;
   ctx.moveTo(zx, y); ctx.lineTo(zx, y + h); ctx.moveTo(x, zy); ctx.lineTo(x + w, zy); ctx.stroke();
@@ -940,7 +945,7 @@ function numBoxes(list){
     nb.inputMode = "decimal"; nb.setAttribute("aria-label", "type a value");
     const u = document.createElement("span"); u.className = "u"; rn.append(nb, u);
     const unit = () => typeof c.unit === "function" ? c.unit() : c.unit;
-    const lim = () => c.lim ? c.lim() : c.list ? [c.list[0], c.list[c.list.length - 1]] : [+sl.min, +sl.max];
+    const lim = () => c.lim ? c.lim() : c.type ? c.type : c.list ? [c.list[0], c.list[c.list.length - 1]] : [+sl.min, +sl.max];   // type: typed range, wider than the slider
     let last = null;
     const commit = () => {
       const raw = nb.value.trim().replace(",", "."), v = Number(raw);
@@ -950,12 +955,15 @@ function numBoxes(list){
       nb.classList.toggle("clamped", cv !== v);
       if (cv !== v){ nbToast(`Allowed range: ${nbFmt(mn)} to ${nbFmt(mx)} ${unit()}. Set to ${nbFmt(cv)}.`); setTimeout(() => nb.classList.remove("clamped"), 1800); }
       if (c.put) c.put(cv);
-      else { const st = sl.getAttribute("step"); sl.step = "any"; sl.value = cv;      // pass the exact value to the slider's own handler
-        sl.dispatchEvent(new Event("input", {bubbles:true})); sl.setAttribute("step", st); }
+      else { const st = sl.getAttribute("step"), s0 = sl.min, s1 = sl.max;      // pass the exact value to the slider's own handler,
+        sl.step = "any"; sl.min = Math.min(+s0, cv); sl.max = Math.max(+s1, cv); sl.value = cv;   // even outside the slider's range
+        sl.dispatchEvent(new Event("input", {bubbles:true})); sl.setAttribute("step", st); sl.min = s0; sl.max = s1; }
     };
     nb.addEventListener("focus", () => { last = null; });
-    nb.addEventListener("change", commit);
-    nb.addEventListener("keydown", e => { if (e.key === "Enter"){ commit(); nb.select(); } });
+    nb.addEventListener("input", () => { clearTimeout(nb._tm); nb._tm = setTimeout(() => {   // apply by itself once typing pauses (no Enter needed)
+      const raw = nb.value.trim().replace(",", "."); if (raw && isFinite(Number(raw)) && !/[.eE+-]$/.test(raw)){ nb._auto = raw; commit(); } }, 600); });
+    nb.addEventListener("change", () => { clearTimeout(nb._tm); commit(); });
+    nb.addEventListener("keydown", e => { if (e.key === "Enter"){ clearTimeout(nb._tm); commit(); nb._auto = null; nb.select(); } });
     c.show = () => { const t = unit(); if (u.textContent !== t) u.textContent = t; nb.disabled = sl.disabled || (c.off ? c.off() : false);
       const [mn, mx] = lim(); nb.title = `Type a value (${nbFmt(mn)}–${nbFmt(mx)} ${t}) and press Enter`;
       if (document.activeElement !== nb){ const s = nbFmt(c.get()); if (nb.value !== s) nb.value = s; } };
@@ -963,7 +971,7 @@ function numBoxes(list){
   const tick = () => { for (const c of list) c.show(); requestAnimationFrame(tick); };
   tick();
 }
-numBoxes([{id:"u", unit:"m s⁻¹", get:() => set.u}, {id:"ang", unit:"°", get:() => set.th}, {id:"h", unit:"m", get:() => set.h, list:HEIGHTS, put:v => { set.h = v; syncControls(); reset(); }}, {id:"tp", unit:"s", get:() => +R.t.toFixed(3), lim:() => [0, +R.L.T.toFixed(3)], put:v => { R.playing = false; R.t = v; syncProbe(); updateButtons(); }}]);
+numBoxes([{id:"u", unit:"m s⁻¹", get:() => set.u, type:[0.5, 1000]}, {id:"ang", unit:"°", get:() => set.th, type:[-90, 90]}, {id:"h", unit:"m", get:() => set.h, list:HEIGHTS, type:[0, 10000], put:v => { set.h = v; syncControls(); reset(); }}, {id:"tp", unit:"s", get:() => +R.t.toFixed(3), lim:() => [0, +R.L.T.toFixed(3)], put:v => { R.playing = false; R.t = v; syncProbe(); updateButtons(); }}]);
 requestAnimationFrame(frame);
 </script>
 </body>
