@@ -87,13 +87,27 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
 .is-hidden{display:none!important}
 @media (max-width:900px){.theme-bar{grid-template-columns:repeat(5,minmax(0,1fr))}.theme-btn{flex-direction:column;justify-content:center;padding:8px 4px;gap:4px}
   .theme-btn .tn,.theme-btn .car{display:none}.theme-menu,.theme:nth-child(n+4) .theme-menu{position:fixed;left:16px;right:16px;top:auto;width:auto;min-width:0;max-width:none}}
+
+/* ---- quizzes and videos inside the theme menus; video cards ---- */
+.theme-menu{max-height:min(72vh,640px);overflow:auto}
+.theme-menu .sec{list-style:none;margin:8px 4px 2px;padding:6px 6px 2px;border-top:1px solid var(--line);font-size:.75rem;font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--tc)}
+.theme-menu .sec:first-child{border-top:0;margin-top:0}
+.theme-menu .sec .ico{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:5px;background:var(--tc);color:#fff;margin-right:6px;font-size:.7rem}
+.theme-menu .q .code{background:#fff;color:var(--tc);border:2px solid var(--tc)}
+.theme-menu .none{display:block;padding:4px 10px 8px;color:#9AA3AA;font-size:.85rem}
+.card.video{border-left:5px solid #C62828}
+.card.video .tag{color:#C62828}
+.card.video h2{font-size:1.05rem}
+.vmeta{margin:2px 0 0;color:var(--muted);font-size:.88rem}
+a.vbtn{background:#C62828;color:#fff}
 </style>
 </head>
 <body>
 <header>
   <div>
     <h1>Physics Simulations</h1>
-    <p>IBDP Physics SL · Grade 11 · Choose a theme A–E, then a topic · topic quizzes</p>
+    <p>IBDP Physics SL · Grade 11 · Choose a theme A–E: simulations, quizzes and videos for every topic</p>
   </div>
   <div class="hbar"><button class="qbtn" type="button" id="qbtn" aria-haspopup="dialog">✔ Test yourself — topic quizzes</button>
   <div class="credit">Biljana Taneska · Physics teacher<br><a href="mailto:btaneska@vis.ac.at">btaneska@vis.ac.at</a></div>
@@ -418,6 +432,248 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="quiz-power-efficiency/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
+  <h2 class="group" data-topic="video" id="videos">Watch the experiments — videos</h2>
+  <p class="lead" data-topic="video">Short videos of the demos and labs from our lessons. They open on YouTube in a new tab.</p>
+  <div class="card video" data-topic="A1">
+    <span class="tag">A.1 Free fall</span>
+    <h2>Brian Cox visits the world&#x27;s biggest vacuum chamber (feather and bowling ball)</h2>
+    <p class="vmeta">BBC Two</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/watch?v=jItzAMNVE3Y" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A1">
+    <span class="tag">A.1 Free fall · lab</span>
+    <h2>Determination of g by freefall method — A-level required practical</h2>
+    <p class="vmeta">YouTube</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/watch?v=ri8YdBuNpsE" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A1">
+    <span class="tag">A.1 Horizontal launch</span>
+    <h2>Shoot-n-Drop: one ball fired sideways, one dropped</h2>
+    <p class="vmeta">YouTube</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/watch?v=zMF4CD7i3hg" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A1">
+    <span class="tag">A.1 Hit the target</span>
+    <h2>Monkey and the hunter classroom demonstration</h2>
+    <p class="vmeta">YouTube</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/watch?v=z8S0_SHqoeY" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A1">
+    <span class="tag">A.1 Angled launch · lab</span>
+    <h2>Projectile motion lab: measuring launch velocity and predicting range</h2>
+    <p class="vmeta">YouTube</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/watch?v=Tl1WGspwjOQ" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Types of forces</span>
+    <h2>GCSE Physics — Contact and non-contact forces</h2>
+    <p class="vmeta">Cognito · 4:23 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/xdrE0kP8GTM" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Friction · lab</span>
+    <h2>Friction lab (PASCO Smart Cart)</h2>
+    <p class="vmeta">Jill Macko · 8:58 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/LNLRW0Q4-a4" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Friction</span>
+    <h2>Static and kinetic friction</h2>
+    <p class="vmeta">Vernier Science Education · 4:59 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/ej1Y4wx0F3g" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Friction</span>
+    <h2>Frictional force measured using a spring balance</h2>
+    <p class="vmeta">Dr Richard Walding · 0:30 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/8PuQPsWP_mw" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Normal force</span>
+    <h2>Bathroom scales on an inclined plane</h2>
+    <p class="vmeta">KoonPhysics · 3:03 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/wj3WlN9Sp_E" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Tension</span>
+    <h2>Why tension blows up as the rope becomes horizontal</h2>
+    <p class="vmeta">RealPhysics · 6:23 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/FfRhOwHYQCg" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Spring force</span>
+    <h2>Required practical: stretching a spring</h2>
+    <p class="vmeta">Freesciencelessons · 4:19 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/jQAt3e6Bz7U" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Buoyancy</span>
+    <h2>Archimedes&#x27; principle demonstration</h2>
+    <p class="vmeta">KClassScienceChannel · 2:58 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/ROXYr_SzNW4" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Drag</span>
+    <h2>Terminal velocity experiment (PAG 1.2)</h2>
+    <p class="vmeta">Cowen Physics · 2:27 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/AcsrBCEJz-Y" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Newton&#x27;s 1st law</span>
+    <h2>Newton&#x27;s 1st law of inertia (coin in cup)</h2>
+    <p class="vmeta">Theodor Pop · 1:45 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/If83GxyIGTk" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Newton&#x27;s 1st law</span>
+    <h2>Pull a tablecloth using inertia and physics</h2>
+    <p class="vmeta">TAMU Physics &amp; Astronomy · 1:18 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/dmBVm3Lh4UU" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Newton&#x27;s 1st law</span>
+    <h2>Will the top or bottom string break first?</h2>
+    <p class="vmeta">Rhett Allain · 7:23 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/dNgJuHJAmnA" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Newton&#x27;s 1st law</span>
+    <h2>Egg drop inertia challenge</h2>
+    <p class="vmeta">SpanglerScienceTV · 1:32 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/hREhgeNXc_s" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Newton&#x27;s 2nd law</span>
+    <h2>Newton&#x27;s second law</h2>
+    <p class="vmeta">PASCO scientific · 6:56 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/FOFvcNH6IR0" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Newton&#x27;s 3rd law</span>
+    <h2>Newton&#x27;s 3rd law using force sensors</h2>
+    <p class="vmeta">James Harris · 3:27 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/sd13F-MXBUc" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Newton&#x27;s 3rd law</span>
+    <h2>Basic MagLev including Newton&#x27;s third law</h2>
+    <p class="vmeta">C. Stephen Murray · 1:20 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/2JAvMIg6UYg" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Circular motion</span>
+    <h2>Circular motion in a cup: swirling marble</h2>
+    <p class="vmeta">Mr. Woodward · 2:41 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/Tsm_Cg8QZmo" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Circular motion</span>
+    <h2>Why water stays in a bucket revolving in a vertical circle</h2>
+    <p class="vmeta">Flipping Physics · 3:58 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/Zulw5bQ18Kk" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Circular motion · lab</span>
+    <h2>The bung whirling experiment</h2>
+    <p class="vmeta">Physics with Simon Poliakoff · 6:16 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/RkKOx87daRI" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Circular motion</span>
+    <h2>Smartphone experiment: centrifugal acceleration</h2>
+    <p class="vmeta">phyphox · 4:20 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/lLCf05Hc83Y" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Impulse</span>
+    <h2>Throwing an egg into a bedsheet</h2>
+    <p class="vmeta">MillerSTEM · 0:50 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/7RSUjxiZnME" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Impulse · lab</span>
+    <h2>Smart Cart with force sensor: soft and sharp collisions</h2>
+    <p class="vmeta">Data Harvest · 5:10 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/sXTKaPmsL84" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Collisions</span>
+    <h2>Collisions demo: Newton&#x27;s cradle</h2>
+    <p class="vmeta">Physics Demos (Utah State) · 1:33 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/ofgeRSCLyXc" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Collisions · lab</span>
+    <h2>Collisions demo: two carts</h2>
+    <p class="vmeta">Physics Demos (Utah State) · 3:05 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/jRliH0jVilM" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A2">
+    <span class="tag">A.2 Explosions · lab</span>
+    <h2>Momentum: exploding carts lab</h2>
+    <p class="vmeta">NJCTL · 2:11 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/ynvVDM4lpT8" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A3">
+    <span class="tag">A.3 Work done</span>
+    <h2>The work to pull a block at an angle</h2>
+    <p class="vmeta">INTEGRAL PHYSICS · 4:10 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/Pq7y14aWc38" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A3">
+    <span class="tag">A.3 Work done</span>
+    <h2>Work done against gravity (ramps)</h2>
+    <p class="vmeta">Chris Gozzard · 2:20 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/5oYJnhkfwpY" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A3">
+    <span class="tag">A.3 Elastic energy</span>
+    <h2>How does the stretch of a rubber band affect the distance a car travels?</h2>
+    <p class="vmeta">South7thScience · 0:55 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/Qo1B7laGpbk" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A3">
+    <span class="tag">A.3 Work and KE · lab</span>
+    <h2>Work and kinetic energy lab (PASCO Smart Cart)</h2>
+    <p class="vmeta">Jill Macko · 4:45 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/vHQ1_JXe8b8" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A3">
+    <span class="tag">A.3 Energy conservation</span>
+    <h2>Bowling ball pendulum: nose basher</h2>
+    <p class="vmeta">UCIPHO · 0:48 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/fR-Y9cx0XSM" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A3">
+    <span class="tag">A.3 Energy conservation</span>
+    <h2>Spring-plunger carts</h2>
+    <p class="vmeta">PhysicsandAstronomy UKY · 1:32 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/ytXmBG-Q3M4" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A3">
+    <span class="tag">A.3 Energy conservation · lab</span>
+    <h2>Conservation of energy lab (PASCO Smart Cart)</h2>
+    <p class="vmeta">Jill Macko · 10:40 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/cjoS5E807rY" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A3">
+    <span class="tag">A.3 Power · lab</span>
+    <h2>Stair lab</h2>
+    <p class="vmeta">ZornScience · 6:24 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/vAMZ2fOo4dE" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A3">
+    <span class="tag">A.3 Efficiency</span>
+    <h2>The physics of bouncing a ball</h2>
+    <p class="vmeta">Science Buddies · 3:16 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/kzJ480muh4U" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
+  <div class="card video" data-topic="A3">
+    <span class="tag">A.3 Efficiency</span>
+    <h2>Heat emitted from incandescent and energy-saving bulbs</h2>
+    <p class="vmeta">Sbírka fyzikálních pokusů · 0:49 min</p>
+    <div class="row"><a class="btn vbtn" href="https://youtu.be/CKo7gVjp_8s" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
+  </div>
   <p class="note">Works in any modern browser on laptops, Chromebooks and tablets. Once opened, the simulation keeps
     working without internet.</p>
 </main>
@@ -458,11 +714,33 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
   document.querySelectorAll(".theme-menu li").forEach(li => {
     const code = li.querySelector(".code").textContent, key = code.replace(".", "");
     const nm = li.querySelector(".nm"), name = nm.childNodes[0].textContent, hl = nm.querySelector(".hl") ? '<span class="hl">HL</span>' : "";
-    const n = document.querySelectorAll('main .card:not(.quiz)[data-topic="' + key + '"]').length;
+    const n = document.querySelectorAll('main .card:not(.quiz):not(.video)[data-topic="' + key + '"]').length;
     const q = document.querySelectorAll('main .card.quiz[data-topic="' + key + '"]').length;
     const inner = '<span class="code">' + code + '</span><span class="nm">' + name + hl + '<small>' +
       (n ? n + " simulation" + (n > 1 ? "s" : "") + (q ? " · " + q + " quiz" + (q > 1 ? "zes" : "") : "") : "coming soon") + '</small></span>';
     li.innerHTML = n ? '<a role="menuitem" href="#' + key + '">' + inner + '</a>' : '<span class="soon" role="menuitem" aria-disabled="true">' + inner + '</span>';
+  });
+  // 3. "Test yourself" and "Videos" sections in each theme menu
+  const esc = t => t.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  document.querySelectorAll(".theme").forEach(th => {
+    const L = th.querySelector(".L").textContent, ul = th.querySelector(".theme-menu");
+    const topicName = {}; ul.querySelectorAll("li").forEach(li => { const c = li.querySelector(".code");
+      if (c) topicName[c.textContent.replace(".", "")] = li.querySelector(".nm").childNodes[0].textContent; });
+    ul.insertAdjacentHTML("afterbegin", '<li class="sec" role="presentation"><span class="ico">▶</span>Simulations</li>');
+    let h = '<li class="sec" role="presentation"><span class="ico">✔</span>Test yourself — quizzes</li>';
+    const qs = [...document.querySelectorAll('main .card.quiz')].filter(c => (c.dataset.topic || "")[0] === L);
+    h += qs.length ? qs.map(c => { const t = c.dataset.topic, a = c.querySelector("a.primary");
+        return '<li class="q"><a role="menuitem" href="' + a.getAttribute("href") + '"><span class="code">' + t[0] + "." + t[1] +
+          '</span><span class="nm">' + esc(c.querySelector("h2").textContent) + '<small>10-question quiz</small></span></a></li>'; }).join("")
+      : '<li role="presentation"><span class="none">Quizzes coming soon</span></li>';
+    h += '<li class="sec" role="presentation"><span class="ico">▷</span>Videos</li>';
+    const vk = {}; document.querySelectorAll('main .card.video').forEach(c => { const t = c.dataset.topic || "";
+      if (t[0] === L) vk[t] = (vk[t] || 0) + 1; });
+    const keys = Object.keys(vk).sort();
+    h += keys.length ? keys.map(k => '<li><a role="menuitem" href="#' + k + '-videos"><span class="code">' + k[0] + "." + k[1] +
+          '</span><span class="nm">' + esc(topicName[k] || "") + '<small>' + vk[k] + " video" + (vk[k] > 1 ? "s" : "") + '</small></span></a></li>').join("")
+      : '<li role="presentation"><span class="none">Videos coming soon</span></li>';
+    ul.insertAdjacentHTML("beforeend", h);
   });
   const themes = [...document.querySelectorAll(".theme")];
   function closeAll(except){ themes.forEach(t => { if (t === except) return;
@@ -484,19 +762,21 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });
   window.addEventListener("scroll", () => { if (window.innerWidth <= 900) closeAll(); }, {passive:true});
 
-  const names = {}; document.querySelectorAll(".theme-menu a").forEach(a => {
+  const names = {}; document.querySelectorAll('.theme-menu a[href^="#"]:not([href$="-videos"])').forEach(a => {
     names[a.getAttribute("href").slice(1)] = a.querySelector(".code").textContent + " " + a.querySelector(".nm").childNodes[0].textContent; });
   const note = document.getElementById("filter-note"), txt = document.getElementById("filter-txt");
   function apply(){
-    const key = decodeURIComponent(location.hash.slice(1));
+    const raw = decodeURIComponent(location.hash.slice(1)), key = raw.replace(/-videos$/, "");
     const on = /^[A-E][1-5]$/.test(key) && names[key];
     document.querySelectorAll("main [data-topic]").forEach(el => {
       const t = el.dataset.topic;
-      el.classList.toggle("is-hidden", !!on && t !== key && !(t === "quiz" && document.querySelector('.card.quiz[data-topic="' + key + '"]')));
+      const kindShown = (t === "quiz" || t === "video") && document.querySelector('.card.' + t + '[data-topic="' + key + '"]');
+      el.classList.toggle("is-hidden", !!on && t !== key && !kindShown);
     });
     note.hidden = !on;
     if (on){ txt.textContent = "Showing " + names[key] + " only."; 
-      note.scrollIntoView({behavior:"smooth", block:"start"}); }
+      const target = raw.endsWith("-videos") ? document.getElementById("videos") : note;
+      target.scrollIntoView({behavior:"smooth", block:"start"}); }
   }
   document.getElementById("show-all").addEventListener("click", e => { e.preventDefault();
     history.pushState("", document.title, location.pathname + location.search); apply(); window.scrollTo({top:0, behavior:"smooth"}); });
