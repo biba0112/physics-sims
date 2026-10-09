@@ -440,6 +440,30 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
 </script>
 <script>
 (function(){
+  // 1. tag headings and cards with their topic from the "A.2 …" text, so new cards need no extra markup
+  const colour = {}; document.querySelectorAll(".theme").forEach(t => { colour[t.querySelector(".L").textContent] = t.style.getPropertyValue("--tc"); });
+  const firstOf = {};
+  document.querySelectorAll("main h2.group, main .card").forEach(el => {
+    if (!el.dataset.topic){
+      const src = el.classList.contains("card") ? ((el.querySelector(".tag") || {}).textContent || "") : el.textContent;
+      const m = src.match(/\b([A-E])\.(\d)\b/); if (m) el.dataset.topic = m[1] + m[2];
+    }
+    const t = el.dataset.topic;
+    if (el.matches("h2.group") && /^[A-E]\d$/.test(t)){
+      el.style.setProperty("--tc", colour[t[0]]);
+      if (!firstOf[t]){ firstOf[t] = el; if (!el.id) el.id = t; }
+    }
+  });
+  // 2. menus: a link with counts for every topic that has simulations, "coming soon" for the rest
+  document.querySelectorAll(".theme-menu li").forEach(li => {
+    const code = li.querySelector(".code").textContent, key = code.replace(".", "");
+    const nm = li.querySelector(".nm"), name = nm.childNodes[0].textContent, hl = nm.querySelector(".hl") ? '<span class="hl">HL</span>' : "";
+    const n = document.querySelectorAll('main .card:not(.quiz)[data-topic="' + key + '"]').length;
+    const q = document.querySelectorAll('main .card.quiz[data-topic="' + key + '"]').length;
+    const inner = '<span class="code">' + code + '</span><span class="nm">' + name + hl + '<small>' +
+      (n ? n + " simulation" + (n > 1 ? "s" : "") + (q ? " · " + q + " quiz" + (q > 1 ? "zes" : "") : "") : "coming soon") + '</small></span>';
+    li.innerHTML = n ? '<a role="menuitem" href="#' + key + '">' + inner + '</a>' : '<span class="soon" role="menuitem" aria-disabled="true">' + inner + '</span>';
+  });
   const themes = [...document.querySelectorAll(".theme")];
   function closeAll(except){ themes.forEach(t => { if (t === except) return;
     t.querySelector(".theme-menu").hidden = true; t.querySelector(".theme-btn").setAttribute("aria-expanded","false"); }); }
