@@ -56,21 +56,90 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
 .qd-row a{display:inline-flex;align-items:center;border-radius:8px;padding:8px 14px;min-height:42px;text-decoration:none;font-weight:600}
 .qd-row a.go{background:#E65100;color:#fff}
 .qd-row a.pdf{border:1px solid #DDE6F0;color:#1F3A5F;background:#fff}
+
+/* ---- theme bar A–E (colours of the Oxford IB Physics Course Companion) ---- */
+.theme-bar{max-width:1100px;margin:16px auto 0;padding:0 16px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.theme{position:relative}
+.theme-btn{width:100%;display:flex;align-items:center;gap:10px;background:var(--tc);color:#fff;border:0;border-radius:10px;
+  padding:8px 12px 8px 8px;min-height:56px;font:inherit;text-align:left;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.theme-btn:hover,.theme-btn[aria-expanded="true"]{filter:brightness(1.08);box-shadow:0 0 0 3px #fff,0 0 0 5px var(--tc)}
+.theme-btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.theme-btn .L{flex:none;width:40px;height:40px;border-radius:8px;background:#fff;color:var(--tc);display:grid;place-items:center;
+  font-weight:800;font-size:1.45rem}
+.theme-btn .tn{flex:1;font-weight:700;font-size:.9rem;line-height:1.2}
+.theme-btn .car{font-size:.9rem;opacity:.9}
+.theme-menu{position:absolute;z-index:20;top:calc(100% + 6px);left:0;min-width:100%;width:max-content;max-width:min(340px,calc(100vw - 32px));
+  margin:0;padding:6px;list-style:none;background:#fff;border:2px solid var(--tc);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.22)}
+.theme:nth-child(n+4) .theme-menu{left:auto;right:0}
+.theme-menu a,.theme-menu .soon{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:7px;text-decoration:none;color:var(--ink);min-height:44px}
+.theme-menu a:hover,.theme-menu a:focus-visible{background:color-mix(in srgb,var(--tc) 12%,#fff);outline:none}
+.theme-menu .code{flex:none;min-width:38px;text-align:center;font-weight:800;color:#fff;background:var(--tc);border-radius:5px;padding:2px 6px}
+.theme-menu .nm{font-weight:600;line-height:1.25}
+.theme-menu small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+.theme-menu .soon{color:#9AA3AA;cursor:default}
+.theme-menu .soon .code{background:#C9CED3}
+.theme-menu .hl{display:inline-block;margin-left:6px;font-size:.68rem;font-weight:700;color:var(--tc);border:1px solid var(--tc);border-radius:4px;padding:0 4px;vertical-align:1px}
+.theme-menu .soon .hl{color:#9AA3AA;border-color:#C9CED3}
+.group[data-topic]:not([data-topic="quiz"]){border-bottom-color:var(--tc);display:flex;align-items:center;gap:8px}
+.group[data-topic]:not([data-topic="quiz"])::before{content:"";width:12px;height:22px;border-radius:3px;background:var(--tc);flex:none}
+.filter-note{max-width:1100px;margin:12px auto 0;padding:0 16px;color:var(--muted);font-size:.95rem}
+.filter-note a{color:var(--accent);font-weight:600;margin-left:6px}
+.is-hidden{display:none!important}
+@media (max-width:900px){.theme-bar{grid-template-columns:repeat(5,minmax(0,1fr))}.theme-btn{flex-direction:column;justify-content:center;padding:8px 4px;gap:4px}
+  .theme-btn .tn,.theme-btn .car{display:none}.theme-menu,.theme:nth-child(n+4) .theme-menu{position:fixed;left:16px;right:16px;top:auto;width:auto;min-width:0;max-width:none}}
 </style>
 </head>
 <body>
 <header>
   <div>
     <h1>Physics Simulations</h1>
-    <p>IBDP Physics SL · Grade 11 · Projectile motion (A.1), forces and momentum (A.2), work, energy and power (A.3) · topic quizzes</p>
+    <p>IBDP Physics SL · Grade 11 · Choose a theme A–E, then a topic · topic quizzes</p>
   </div>
   <div class="hbar"><button class="qbtn" type="button" id="qbtn" aria-haspopup="dialog">✔ Test yourself — topic quizzes</button>
   <div class="credit">Biljana Taneska · Physics teacher<br><a href="mailto:btaneska@vis.ac.at">btaneska@vis.ac.at</a></div>
   </div>
 </header>
+<nav class="theme-bar" aria-label="Themes of the IB Physics course">
+  <div class="theme" style="--tc:#2055A3">
+    <button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-A" id="tab-A">
+      <span class="L">A</span><span class="tn">Space, time and motion</span><span class="car" aria-hidden="true">▾</span></button>
+    <ul class="theme-menu" id="menu-A" role="menu" aria-labelledby="tab-A" hidden>
+      <li><a role="menuitem" href="#A1"><span class="code">A.1</span><span class="nm">Kinematics<small>6 simulations · 1 quiz</small></span></a></li><li><a role="menuitem" href="#A2"><span class="code">A.2</span><span class="nm">Forces and momentum<small>12 simulations · 3 quizzes</small></span></a></li><li><a role="menuitem" href="#A3"><span class="code">A.3</span><span class="nm">Work, energy and power<small>4 simulations · 2 quizzes</small></span></a></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">A.4</span><span class="nm">Rigid body mechanics<span class="hl">HL</span><small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">A.5</span><span class="nm">Galilean and special relativity<span class="hl">HL</span><small>coming soon</small></span></span></li>
+    </ul>
+  </div>
+  <div class="theme" style="--tc:#1F982E">
+    <button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-B" id="tab-B">
+      <span class="L">B</span><span class="tn">The particulate nature of matter</span><span class="car" aria-hidden="true">▾</span></button>
+    <ul class="theme-menu" id="menu-B" role="menu" aria-labelledby="tab-B" hidden>
+      <li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">B.1</span><span class="nm">Thermal energy transfers<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">B.2</span><span class="nm">Greenhouse effect<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">B.3</span><span class="nm">Gas laws<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">B.4</span><span class="nm">Thermodynamics<span class="hl">HL</span><small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">B.5</span><span class="nm">Current and circuits<small>coming soon</small></span></span></li>
+    </ul>
+  </div>
+  <div class="theme" style="--tc:#62347C">
+    <button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-C" id="tab-C">
+      <span class="L">C</span><span class="tn">Wave behaviour</span><span class="car" aria-hidden="true">▾</span></button>
+    <ul class="theme-menu" id="menu-C" role="menu" aria-labelledby="tab-C" hidden>
+      <li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">C.1</span><span class="nm">Simple harmonic motion<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">C.2</span><span class="nm">Wave model<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">C.3</span><span class="nm">Wave phenomena<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">C.4</span><span class="nm">Standing waves and resonance<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">C.5</span><span class="nm">Doppler effect<small>coming soon</small></span></span></li>
+    </ul>
+  </div>
+  <div class="theme" style="--tc:#DF3528">
+    <button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-D" id="tab-D">
+      <span class="L">D</span><span class="tn">Fields</span><span class="car" aria-hidden="true">▾</span></button>
+    <ul class="theme-menu" id="menu-D" role="menu" aria-labelledby="tab-D" hidden>
+      <li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">D.1</span><span class="nm">Gravitational fields<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">D.2</span><span class="nm">Electric and magnetic fields<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">D.3</span><span class="nm">Motion in electromagnetic fields<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">D.4</span><span class="nm">Induction<span class="hl">HL</span><small>coming soon</small></span></span></li>
+    </ul>
+  </div>
+  <div class="theme" style="--tc:#D72D6C">
+    <button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-E" id="tab-E">
+      <span class="L">E</span><span class="tn">Nuclear and quantum physics</span><span class="car" aria-hidden="true">▾</span></button>
+    <ul class="theme-menu" id="menu-E" role="menu" aria-labelledby="tab-E" hidden>
+      <li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">E.1</span><span class="nm">Structure of the atom<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">E.2</span><span class="nm">Quantum physics<span class="hl">HL</span><small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">E.3</span><span class="nm">Radioactive decay<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">E.4</span><span class="nm">Fission<small>coming soon</small></span></span></li><li><span class="soon" role="menuitem" aria-disabled="true"><span class="code">E.5</span><span class="nm">Fusion and stars<small>coming soon</small></span></span></li>
+    </ul>
+  </div>
+</nav>
+<div class="filter-note" id="filter-note" hidden><span id="filter-txt"></span> <a href="#" id="show-all">Show all simulations</a></div>
 <main>
-  <h2 class="group">Projectile motion (A.1)</h2>
-  <div class="card">
+  <h2 class="group" data-topic="A1" id="A1" style="--tc:#2055A3">Projectile motion (A.1)</h2>
+  <div class="card" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Free fall</h2>
     <p>Drop or throw a ball straight up or down: strobe images, y–t, v–t and a–t graphs, and g from h against t².</p>
@@ -80,7 +149,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="10-free-fall/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Horizontal launch</h2>
     <p>A ball rolls off a bench or cliff: horizontal and vertical motion separately, range and landing velocity.</p>
@@ -90,7 +159,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="11-horizontal-launch/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Angled launch</h2>
     <p>Launch at any angle: maximum height, time of flight and range — why 45° goes furthest.</p>
@@ -100,7 +169,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="12-angled-launch/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Velocity components</h2>
     <p>Follow the velocity along the path: components, speed, direction and Δv = gΔt.</p>
@@ -110,7 +179,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="13-velocity-components/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Hit the target</h2>
     <p>Plan a shot into a cup, a hoop or a window with the equations of motion.</p>
@@ -120,7 +189,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="14-hit-the-target/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Air resistance</h2>
     <p>The real path with drag beside the ideal parabola: shorter, lower and steeper on the way down.</p>
@@ -130,8 +199,8 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="15-air-resistance/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <h2 class="group">Forces (A.2)</h2>
-  <div class="card">
+  <h2 class="group" data-topic="A2" id="A2" style="--tc:#2055A3">Forces (A.2)</h2>
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Types of forces</span>
     <h2>Friction block</h2>
     <p>Static and dynamic friction: pull a block with a newton meter, find μs and μd from a graph.</p>
@@ -141,7 +210,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="01-friction-block/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Types of forces</span>
     <h2>Normal force</h2>
     <p>What does a scale really measure? Push and pull, a tilted board, a lift and a stack of blocks.</p>
@@ -151,7 +220,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="02-normal-force/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Types of forces</span>
     <h2>Friction on an incline</h2>
     <p>Tilt a ramp until the block slips (μs = tan θ), then let it slide and find μd.</p>
@@ -161,7 +230,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="03-friction-incline/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Forces · Newton's 2nd law</span>
     <h2>Incline with a pulley</h2>
     <p>A block on a ramp tied over a pulley to a hanging mass: tension, friction and acceleration.</p>
@@ -171,7 +240,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="04-incline-pulley/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Types of forces</span>
     <h2>Spring force</h2>
     <p>Hooke's law: hang masses, read the extension, find k ± Δk, and see the elastic limit.</p>
@@ -181,7 +250,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="05-spring-force/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Types of forces (extension)</span>
     <h2>Springs in series and parallel</h2>
     <p>Combine two springs: how does the effective spring constant change?</p>
@@ -191,7 +260,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="06-springs-series-parallel/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Types of forces</span>
     <h2>Drag and Stokes' law</h2>
     <p>Ball bearings falling through glycerol: terminal velocity and Stokes' law — plus a skydiver.</p>
@@ -201,7 +270,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="07-drag-stokes/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Types of forces</span>
     <h2>Buoyancy</h2>
     <p>Archimedes' principle with a newton meter and a eureka can: sink, float or hover?</p>
@@ -211,7 +280,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="08-buoyancy/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Forces · circular motion · energy</span>
     <h2>Pendulum tension</h2>
     <p>Hold a pendulum aside or let it swing: how does the tension in the string change?</p>
@@ -221,7 +290,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="09-pendulum-tension/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Forces · circular motion</span>
     <h2>Circular motion</h2>
     <p>A rotating chair, a satellite, a car on a bend and a playground carousel: what provides the centripetal force?</p>
@@ -231,8 +300,8 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="16-circular-motion/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <h2 class="group">Momentum (A.2)</h2>
-  <div class="card">
+  <h2 class="group" data-topic="A2" style="--tc:#2055A3">Momentum (A.2)</h2>
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Momentum · impulse</span>
     <h2>Impulse</h2>
     <p>A cart hits a force sensor, an egg lands in a bedsheet, a racket hits a ball: impulse is the area under the force–time graph.</p>
@@ -242,7 +311,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="17-impulse/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A2">
     <span class="tag">A.2 Momentum · collisions</span>
     <h2>Collisions and explosions</h2>
     <p>Elastic, inelastic and sticky collisions and explosions from rest: total momentum stays the same — but what happens to kinetic energy?</p>
@@ -252,8 +321,8 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="18-collisions-explosions/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <h2 class="group">Work, energy and power (A.3)</h2>
-  <div class="card">
+  <h2 class="group" data-topic="A3" id="A3" style="--tc:#2055A3">Work, energy and power (A.3)</h2>
+  <div class="card" data-topic="A3">
     <span class="tag">A.3 Work</span>
     <h2>Work done</h2>
     <p>Pull a box at an angle, lift or push a load up a ramp, pull a Smart Cart, brake a car: work is force × distance — and the area under the force–distance graph.</p>
@@ -263,7 +332,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="19-work-done/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A3">
     <span class="tag">A.3 Energy</span>
     <h2>Energy conservation</h2>
     <p>A cart on a ramp, a roller coaster, a pendulum to the nose, a flying spring: energy moves between kinetic, gravitational and elastic stores — the total stays the same.</p>
@@ -273,7 +342,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="20-energy-conservation/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A3">
     <span class="tag">A.3 Power</span>
     <h2>Power</h2>
     <p>Who is the most powerful on the stairs? A car up a hill and a lift motor: power is the rate of doing work, P = Fv.</p>
@@ -283,7 +352,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="21-power/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <div class="card">
+  <div class="card" data-topic="A3">
     <span class="tag">A.3 Efficiency</span>
     <h2>Efficiency and energy density</h2>
     <p>Bouncing balls, a motor lifting a load, Sankey diagrams to scale, and how far a car goes on a tank of fuel.</p>
@@ -293,9 +362,9 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="22-efficiency-energy-density/worksheet.pdf">Worksheet (PDF)</a>
     </div>
   </div>
-  <h2 class="group">Test yourself — topic quizzes</h2>
-  <p class="lead">Practised the simulations and worksheets? Check what you know: 10 multiple-choice questions per topic, with instant feedback and an explanation for every answer.</p>
-  <div class="card quiz">
+  <h2 class="group" data-topic="quiz" id="quizzes">Test yourself — topic quizzes</h2>
+  <p class="lead" data-topic="quiz">Practised the simulations and worksheets? Check what you know: 10 multiple-choice questions per topic, with instant feedback and an explanation for every answer.</p>
+  <div class="card quiz" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
     <h2>Projectile motion</h2>
     <p>Free fall, horizontal and angled launches, velocity components and air resistance. 10 questions · after the simulations and worksheets.</p>
@@ -304,7 +373,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="quiz-projectile-motion/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz">
+  <div class="card quiz" data-topic="A2">
     <span class="tag">A.2 Forces · Newton's laws</span>
     <h2>Forces</h2>
     <p>Weight and normal force, friction, ramps, connected bodies, springs, drag and buoyancy. 10 questions · after the simulations and worksheets.</p>
@@ -313,7 +382,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="quiz-forces/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz">
+  <div class="card quiz" data-topic="A2">
     <span class="tag">A.2 Circular motion</span>
     <h2>Circular motion</h2>
     <p>Speed and period, centripetal acceleration and force, cars on bends, satellites and pendulums. 10 questions · after the simulations and worksheets.</p>
@@ -322,7 +391,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="quiz-circular-motion/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz">
+  <div class="card quiz" data-topic="A2">
     <span class="tag">A.2 Momentum</span>
     <h2>Momentum and impulse</h2>
     <p>Momentum, impulse and force–time graphs, collisions, explosions and kinetic energy. 10 questions · after the simulations and worksheets.</p>
@@ -331,7 +400,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="quiz-momentum/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz">
+  <div class="card quiz" data-topic="A3">
     <span class="tag">A.3 Work and energy</span>
     <h2>Work and energy</h2>
     <p>Work done, force–distance graphs, kinetic and potential energy and conservation of energy. 10 questions · after the simulations and worksheets.</p>
@@ -340,7 +409,7 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
       <a class="btn ghost" href="quiz-work-energy/quiz.pdf">Printable (PDF)</a>
     </div>
   </div>
-  <div class="card quiz">
+  <div class="card quiz" data-topic="A3">
     <span class="tag">A.3 Power and efficiency</span>
     <h2>Power and efficiency</h2>
     <p>Power, P = Fv, efficiency, Sankey diagrams and energy density. 10 questions · after the simulations and worksheets.</p>
@@ -367,6 +436,48 @@ dialog.qd::backdrop{background:rgba(15,30,50,.55)}
     if (typeof window.quizInProgress === "function" && window.quizInProgress() &&
         !confirm("Leave this quiz? Your answers so far will be lost.")) e.preventDefault();
   }));
+})();
+</script>
+<script>
+(function(){
+  const themes = [...document.querySelectorAll(".theme")];
+  function closeAll(except){ themes.forEach(t => { if (t === except) return;
+    t.querySelector(".theme-menu").hidden = true; t.querySelector(".theme-btn").setAttribute("aria-expanded","false"); }); }
+  themes.forEach(t => {
+    const b = t.querySelector(".theme-btn"), m = t.querySelector(".theme-menu");
+    b.addEventListener("click", e => { e.stopPropagation(); const open = m.hidden; closeAll(t); m.hidden = !open;
+      b.setAttribute("aria-expanded", String(open));
+      if (open && window.innerWidth <= 900){ m.style.top = (b.getBoundingClientRect().bottom + 6) + "px"; }
+      if (open){ const f = m.querySelector("a"); if (f) f.focus(); } });
+    m.addEventListener("keydown", e => {
+      const items = [...m.querySelectorAll("a")], i = items.indexOf(document.activeElement);
+      if (e.key === "ArrowDown" && items.length){ e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      if (e.key === "ArrowUp" && items.length){ e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+      if (e.key === "Escape"){ closeAll(); b.focus(); } });
+    m.querySelectorAll("a").forEach(a => a.addEventListener("click", () => closeAll()));
+  });
+  document.addEventListener("click", e => { if (!e.target.closest(".theme")) closeAll(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });
+  window.addEventListener("scroll", () => { if (window.innerWidth <= 900) closeAll(); }, {passive:true});
+
+  const names = {}; document.querySelectorAll(".theme-menu a").forEach(a => {
+    names[a.getAttribute("href").slice(1)] = a.querySelector(".code").textContent + " " + a.querySelector(".nm").childNodes[0].textContent; });
+  const note = document.getElementById("filter-note"), txt = document.getElementById("filter-txt");
+  function apply(){
+    const key = decodeURIComponent(location.hash.slice(1));
+    const on = /^[A-E][1-5]$/.test(key) && names[key];
+    document.querySelectorAll("main [data-topic]").forEach(el => {
+      const t = el.dataset.topic;
+      el.classList.toggle("is-hidden", !!on && t !== key && !(t === "quiz" && document.querySelector('.card.quiz[data-topic="' + key + '"]')));
+    });
+    note.hidden = !on;
+    if (on){ txt.textContent = "Showing " + names[key] + " only."; 
+      note.scrollIntoView({behavior:"smooth", block:"start"}); }
+  }
+  document.getElementById("show-all").addEventListener("click", e => { e.preventDefault();
+    history.pushState("", document.title, location.pathname + location.search); apply(); window.scrollTo({top:0, behavior:"smooth"}); });
+  window.addEventListener("hashchange", apply); apply();
+  window.addEventListener("load", () => { if (location.hash) setTimeout(apply, 50); });
 })();
 </script>
 </body>
