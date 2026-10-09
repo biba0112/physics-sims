@@ -164,7 +164,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
   #pGraph .hint{display:none}
   #controls{gap:8px 12px;padding:8px 12px}
   input[type=range]{width:118px}
-  header .sub{display:none}
+  header .sub{font-size:0;opacity:1;line-height:1.2}header .sub a.home{font-size:.75rem}
 }
 /* phone / narrow portrait: one scrolling column */
 @media (max-width:759px){
@@ -243,6 +243,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 @media (max-width:1300px){ #controls .rn input[type=range]{width:80px} #controls .nb{width:62px} #controls select{max-width:128px} }
 .plusTag{display:inline-block;font-weight:700;color:var(--navy);background:var(--soft-blue);border-radius:6px;padding:0 6px}
 .a3{display:inline-block;font-size:.7rem;font-weight:700;color:#fff;background:#00838F;border-radius:99px;padding:0 7px;vertical-align:1px}
+.sub a.home{color:#fff;font-weight:700;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.55);white-space:nowrap}.sub a.home:hover{border-bottom-color:#fff}
 </style>
 </head>
 <body>
@@ -250,7 +251,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 <header>
   <div>
     <h1>Collisions<span class="lg"> and explosions</span></h1>
-    <div class="sub">IBDP Physics SL · A.2 Forces and momentum · Σ<i>p</i><sub>before</sub> = Σ<i>p</i><sub>after</sub></div>
+    <div class="sub"><a class="home" href="https://biba0112.github.io/physics-sims/#A2" title="Back to all A.2 simulations">← All simulations</a> · IBDP Physics SL · A.2 Forces and momentum · Σ<i>p</i><sub>before</sub> = Σ<i>p</i><sub>after</sub></div>
   </div>
   <div class="grow"></div>
   <div class="scen" id="scen" role="group" aria-label="Type of collision">

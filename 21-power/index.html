@@ -161,7 +161,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
   #pGraph .hint{display:none}
   #controls{gap:8px 12px;padding:8px 12px}
   input[type=range]{width:118px}
-  header .sub{display:none}
+  header .sub{font-size:0;opacity:1;line-height:1.2}header .sub a.home{font-size:.75rem}
 }
 /* phone / narrow portrait: one scrolling column */
 @media (max-width:759px){
@@ -247,6 +247,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 #gsel{flex-wrap:wrap}
 .readouts td.k{color:var(--muted)}
 .big{font-size:1.05rem}
+.sub a.home{color:#fff;font-weight:700;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.55);white-space:nowrap}.sub a.home:hover{border-bottom-color:#fff}
 </style>
 </head>
 <body>
@@ -254,7 +255,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 <header>
   <div>
     <h1>Power</h1>
-    <div class="sub">IBDP Physics SL · A.3 Work, energy and power</div>
+    <div class="sub"><a class="home" href="https://biba0112.github.io/physics-sims/#A3" title="Back to all A.3 simulations">← All simulations</a> · IBDP Physics SL · A.3 Work, energy and power</div>
   </div>
   <div class="grow"></div>
   <div class="scen" id="scen" role="group" aria-label="Example">

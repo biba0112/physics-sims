@@ -160,7 +160,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
   #pGraph .hint{display:none}
   #controls{gap:8px 12px;padding:8px 12px}
   input[type=range]{width:118px}
-  header .sub{display:none}
+  header .sub{font-size:0;opacity:1;line-height:1.2}header .sub a.home{font-size:.75rem}
 }
 /* phone / narrow portrait: one scrolling column */
 @media (max-width:759px){
@@ -216,6 +216,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 .dup{display:none}
 @media (max-width:1300px){ .rn input[type=range]{width:100px} .nb{width:70px} }
 @media (max-width:1099px){ .rn input[type=range]{width:84px} .nb{width:64px} }
+.sub a.home{color:#fff;font-weight:700;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.55);white-space:nowrap}.sub a.home:hover{border-bottom-color:#fff}
 </style>
 </head>
 <body>
@@ -223,7 +224,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 <header>
   <div>
     <h1>Velocity components — how the velocity changes along the path</h1>
-    <div class="sub">IBDP Physics SL · A.1 Kinematics · g = 9.81 m s⁻² · up and right are positive</div>
+    <div class="sub"><a class="home" href="https://biba0112.github.io/physics-sims/#A1" title="Back to all A.1 simulations">← All simulations</a> · IBDP Physics SL · A.1 Kinematics · g = 9.81 m s⁻² · up and right are positive</div>
   </div>
   <div class="grow"></div>
   <button class="btn" id="helpBtn" aria-label="How to use">? How to use</button>
