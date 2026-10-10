@@ -64,6 +64,17 @@ ol.parts{list-style:none;margin:6px 0 0;padding:0}
 [hidden]{display:none!important}
 @media (max-width:759px){.lvbar{position:static}}
 @media (max-width:600px){.credit{text-align:left}header h1{font-size:1.2rem}.card{padding:12px 14px}.lvbtn{min-width:100%}}
+/* ==== PHONE CSS START: compact header on phones (10 Oct 2026); wider screens unchanged ==== */
+@media (max-width:759px){
+  header{padding:10px 14px;gap:8px}
+  header h1{font-size:1.15rem}
+  header p{font-size:.85rem}
+  .hl{gap:8px;width:100%}
+  a.home,.qbtn{min-height:40px;padding:6px 10px;font-size:.88rem}
+  .credit{flex-basis:100%;text-align:left;font-size:.75rem}
+  .credit br{display:none} .credit a{margin-left:6px}
+}
+/* ==== PHONE CSS END ==== */
 </style>
 </head>
 <body>
@@ -72,7 +83,7 @@ ol.parts{list-style:none;margin:6px 0 0;padding:0}
     <h1>Exercises: Work, energy and power</h1>
     <p>IBDP Physics SL · Grade 11 · A.3 Work, energy and power · 24 calculation exercises in three IB levels</p>
   </div>
-  <div class="hl"><a class="home" href="https://biba0112.github.io/physics-sims/">← All topics</a><div class="credit">Biljana Taneska · Physics teacher<br><a href="mailto:btaneska@vis.ac.at">btaneska@vis.ac.at</a></div></div>
+  <div class="hl"><a class="home" href="https://physics.taneski.com/">← All topics</a><div class="credit">Biljana Taneska · Physics teacher<br><a href="mailto:btaneska@vis.ac.at">btaneska@vis.ac.at</a></div></div>
 </header>
 <main>
   <section class="card intro">
@@ -81,7 +92,7 @@ ol.parts{list-style:none;margin:6px 0 0;padding:0}
       Answers within 2 % count, and so do answers rounded to 2 significant figures. You get two tries; then a <b>worked solution</b> appears in the IB 5-part layout
       (Given → Physics → Equation → Working → Answer, with ✔ [1] mark points). <b>↻ New numbers</b> gives you the same exercise again with different data.
       Use g = 9.81 m s⁻². Your best score stays on this device only.</p>
-    <p>Practise with the simulations first: </p><ul><li><a href="https://biba0112.github.io/physics-sims/19-work-done/" target="_blank" rel="noopener">Work done</a></li><li><a href="https://biba0112.github.io/physics-sims/20-energy-conservation/" target="_blank" rel="noopener">Energy conservation</a></li><li><a href="https://biba0112.github.io/physics-sims/21-power/" target="_blank" rel="noopener">Power</a></li><li><a href="https://biba0112.github.io/physics-sims/22-efficiency-energy-density/" target="_blank" rel="noopener">Efficiency and energy density</a></li></ul>
+    <p>Practise with the simulations first: </p><ul><li><a href="https://physics.taneski.com/19-work-done/" target="_blank" rel="noopener">Work done</a></li><li><a href="https://physics.taneski.com/20-energy-conservation/" target="_blank" rel="noopener">Energy conservation</a></li><li><a href="https://physics.taneski.com/21-power/" target="_blank" rel="noopener">Power</a></li><li><a href="https://physics.taneski.com/22-efficiency-energy-density/" target="_blank" rel="noopener">Efficiency and energy density</a></li></ul>
     <p><a href="exercises.pdf" data-goatcounter-click="download/ex-work-energy-power/exercises.pdf">Printable version (PDF)</a> — the same exercises to do on paper.</p>
   </section>
   <nav class="levels" role="tablist" aria-label="Levels">
