@@ -242,6 +242,35 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 .stp.rs:hover:not(:disabled){background:#EEF2F6;border-color:transparent}
 @media (max-width:1300px){ .stp{min-width:30px;padding:0 4px} .fld .nb{width:58px!important} }
 /* ==== SHARED-UI CSS END ==== */
+/* ==== PHONE CSS START: phone layout (10 Oct 2026) — only phones (narrow, or held sideways with a touch screen); laptops and tablets unchanged ==== */
+@media (max-width:759px), (max-height:500px) and (pointer:coarse){
+  html,body{height:auto}
+  main{display:flex!important;flex-direction:column;min-height:0!important;gap:10px;padding:8px 8px 16px}
+  .left{display:contents}                                  /* scene and readouts become separate steps of the column */
+  .scenecard{order:1;flex:none!important;min-height:0}
+  #controls{order:2}
+  .readouts{order:3;flex:none}
+  .fbdcol{order:4;flex:none}
+  .right{order:5;flex:none;height:auto!important}
+  #sceneWrap{flex:none!important;height:min(58vh,340px)!important;min-height:200px}
+  #fbdWrap{flex:none!important;height:300px!important}
+  .scenecard .cardhead{position:sticky;top:0;z-index:2}    /* run buttons stay at hand while the scene is on screen */
+  .cardhead .btn{min-height:40px;padding:4px 10px}
+  .panel{overflow:visible}
+  .panel.on{flex:none}
+  #graphWrap,#ffnWrap{flex:none!important;height:300px!important;min-height:0}
+  #taskList{overflow:visible;flex:none}
+  .tableBox{max-height:220px}
+  canvas{touch-action:pan-y!important}                     /* a finger on a graph or diagram still scrolls the page */
+  canvas.drag{touch-action:none!important}                 /* except where the scene has things to drag (pulleys) */
+  #controls{gap:10px 12px;padding:10px}
+  #controls .ctl{max-width:100%}
+  #controls select{max-width:100%}
+  .tabs{overflow-x:auto;scrollbar-width:none}
+  .tab{white-space:nowrap}
+  #help .box{max-height:85dvh;padding:14px 16px}
+}
+/* ==== PHONE CSS END ==== */
 </style>
 </head>
 <body>
@@ -686,6 +715,7 @@ const PROBE = (() => {
     cv.addEventListener("pointermove", e => { if (e.pointerType === "touch" && !s.touch) return; at(e); });
     cv.addEventListener("pointerdown", e => { s.touch = e.pointerType === "touch"; at(e); });
     cv.addEventListener("pointerup", e => { if (e.pointerType === "touch") s.touch = false; });
+    cv.addEventListener("pointercancel", () => { s.touch = false; });   // a finger that scrolls the page lets go of the probe
     cv.addEventListener("pointerleave", e => { if (e.pointerType !== "touch") s.on = false; });
     document.addEventListener("pointerdown", e => { if (e.target !== cv) s.on = false; });
   }
