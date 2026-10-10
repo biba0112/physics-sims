@@ -180,6 +180,30 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 @media (max-width:1300px){ .rn input[type=range]{width:100px} .nb{width:70px} }
 @media (max-width:1099px){ .rn input[type=range]{width:84px} .nb{width:64px} }
 .sub a.home{color:#fff;font-weight:700;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.55);white-space:nowrap}.sub a.home:hover{border-bottom-color:#fff}
+/* ==== SHARED-UI CSS START: ▼ [box] ▲ steppers (10 Oct 2026) — the sliders are hidden, the number box is the control ==== */
+.rn input[type=range]{display:none!important}
+#controls{align-items:flex-start!important}   /* all controls top-aligned, notes below a box hang underneath */
+#controls .ctl sub,#controls .ctl sup{line-height:0}   /* subscripts in a label (m_A) do not push its box down */
+.rn{gap:4px!important}
+.fld{display:inline-flex;align-items:center;border:1px solid #B0BEC5;border-radius:8px;background:#fff;min-height:44px;padding-right:6px;box-sizing:border-box}
+.fld .nb{border:0!important;background:transparent!important;min-height:42px;padding-right:2px;width:66px!important}
+.fld .u{margin-left:3px}
+.fld .nb:focus{outline:none}
+.fld:focus-within{outline:2px solid var(--navy);outline-offset:1px}
+.fld:has(.nb.clamped){border-color:var(--accent);background:var(--soft)}
+.fld:has(.nb:disabled){opacity:.5}
+.fld .bw{display:none;color:#B26A00;font-size:.9rem;margin-left:3px}
+.fld.beyond{border-color:#F0A202;background:#FFF8E1;box-shadow:inset 0 0 0 1px #F0A202}
+.fld.beyond .bw{display:inline}
+.stp{font:inherit;font-size:.78rem;line-height:1;min-width:34px;min-height:44px;padding:0 6px;border:1px solid #B0BEC5;border-radius:8px;background:#F3F6FA;
+  color:var(--navy);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.stp:hover:not(:disabled){border-color:var(--navy);background:#E6EDF5}
+.stp:active:not(:disabled){background:#D3DEEB}
+.stp:disabled{opacity:.35;cursor:default}
+.stp.rs{min-width:26px;padding:0 2px;border-color:transparent;background:transparent;font-size:1.05rem;color:var(--muted)}
+.stp.rs:hover:not(:disabled){background:#EEF2F6;border-color:transparent}
+@media (max-width:1300px){ .stp{min-width:30px;padding:0 4px} .fld .nb{width:58px!important} }
+/* ==== SHARED-UI CSS END ==== */
 </style>
 </head>
 <body>
@@ -269,10 +293,11 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
     <h3 id="helpTitle">How to use this simulation</h3>
     <ol>
       <li>Choose the <b>surfaces</b> and the <b>mass</b> of the block.</li>
-      <li>Set the values with the <b>sliders</b>, or <b>type a value</b> in the box next to a slider and press <b>Enter</b>. A value outside the allowed range is set to the nearest allowed value.</li>
+      <li>Set each value with <b>▼</b> and <b>▲</b> (hold to go faster; the <b>↑ ↓</b> keys or the mouse wheel in the box also work, Shift = ×10), or <b>type a value</b> in the box. <b>↺</b> puts it back to its start value. Outside the classroom range the box turns <b>amber ⚠</b>: fine to explore, but the lab can't do this.</li>
+      <li>Move the pointer over any <b>graph</b> (or tap it): a dashed line shows the values where it cuts each curve, or the values of the nearest data point.</li>
       <li><b>▲ Tilt</b> raises the ramp from the angle shown until the block slips — like lifting the board by hand.
         The slip angle θ<sub>slip</sub> is shown.</li>
-      <li><b>▶ Release</b> puts the block at the top of the ramp at the angle on the slider and lets go. If the angle is
+      <li><b>▶ Release</b> puts the block at the top of the ramp at the angle in the box and lets go. If the angle is
         steep enough, the block slides down and the v–t graph gives its acceleration.</li>
       <li>Press <b>● Record</b> after a run. The <b>Data &amp; analysis</b> tab plots <i>a</i>/cos θ against tan θ.</li>
       <li>Work through the <b>Tasks</b> tab and write explanations on your worksheet.</li>
@@ -292,6 +317,298 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 
 <script>
 "use strict";
+/* ==== SHARED-UI START: ▼ [box] ▲ steppers + chart probe (10 Oct 2026, the same block in every simulation) ==== */
+// Steppers: every number box gets ▼ and ▲ (hold to repeat), ↑/↓ keys and the mouse wheel in the box (Shift = ×10) and ↺ (start value).
+// Inside the classroom range (the old slider range) a step is the old slider step (or the next value of its list; log quantities move
+// by one unit in the 2nd significant figure). Beyond it the value may go on up to the physical limits in 1-2-5 steps; the box turns amber.
+const STEPPER = (() => {
+  const all = [], r10 = v => +Number(v).toPrecision(10), fmt = v => String(+Number(v).toPrecision(6));
+  const epsOf = (lo, hi) => 1e-9 * Math.max(1, Math.abs(lo), Math.abs(hi));
+  function s125(v, dir){                                  // next value of …, 0.1, 0.2, 0.5, 1, 2, 5, 10, … beyond v (signed)
+    const a = Math.abs(v); if (a < 1e-15) return null;
+    const s = Math.sign(v), e = Math.floor(Math.log10(a)), c = [];
+    for (let k = e - 1; k <= e + 2; k++) for (const m of [1, 2, 5]) c.push(r10(m * Math.pow(10, k)));
+    if (dir === s) return s * Math.min(...c.filter(x => x > a * (1 + 1e-9)));
+    const d = c.filter(x => x < a * (1 - 1e-9)); return d.length ? s * Math.max(...d) : 0;
+  }
+  function grid(o, v, dir, lo, hi){                       // one step inside the classroom range, snapped to the grid
+    const eps = epsOf(lo, hi);
+    if (o.list){ const L = o.list(); const n = dir > 0 ? L.find(x => x > v + eps) : [...L].reverse().find(x => x < v - eps); return n === undefined ? (dir > 0 ? hi : lo) : n; }
+    const st = o.step ? +o.step() : NaN;
+    if (o.log && lo > 0 && hi / lo > 1e5){ const n = s125(v, dir); return n === null ? lo : n; }   // very wide ranges (satellite mass): 1-2-5
+    if (o.log || !(st > 0)){ if (!(v > 0)) return dir > 0 ? lo : lo;
+      const s = Math.pow(10, Math.floor(Math.log10(dir > 0 ? v : v * (1 - 1e-9))) - 1), k = v / s;
+      return r10((dir > 0 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1) * s); }
+    const b = o.base ? +o.base() : lo, k = (v - b) / st;
+    return r10(b + (dir > 0 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1) * st);
+  }
+  function next(o, v, dir){
+    const [lo, hi] = o.room(), eps = epsOf(lo, hi), st = o.step ? +o.step() : NaN;
+    let n;
+    if ((dir > 0 && v >= hi - eps) || (dir < 0 && v <= lo + eps)){            // leaving the classroom range (or already beyond it)
+      n = s125(v, dir); if (n === null) n = v + dir * (st > 0 ? st : (hi - lo) / 100);
+      if (dir > 0 && v < lo - eps && n > lo) n = lo; if (dir < 0 && v > hi + eps && n < hi) n = hi;
+    } else if (v > hi + eps || v < lo - eps){                                   // coming back: 1-2-5 until the range edge
+      n = s125(v, dir); if (n === null) n = dir > 0 ? lo : hi;
+      if (dir < 0 && n <= hi) n = hi; if (dir > 0 && n >= lo) n = lo;
+    } else n = Math.min(hi, Math.max(lo, grid(o, v, dir, lo, hi)));
+    const [mn, mx] = o.hard(); return Math.min(mx, Math.max(mn, r10(n)));
+  }
+  function go(o, dir, times = 1){
+    if (o.nb.disabled) return false;
+    const v0 = +o.get(); if (!isFinite(v0)) return false;
+    let v = v0; for (let i = 0; i < times; i++) v = next(o, v, dir);
+    if (Math.abs(v - v0) <= 1e-12 * Math.max(1, Math.abs(v0))) return false;
+    o.apply(v); if (document.activeElement === o.nb) o.nb.value = fmt(o.get());
+    check(o, true); return true;
+  }
+  function beyond(o){ const v = +o.get(), [lo, hi] = o.room(), eps = epsOf(lo, hi); return v < lo - eps || v > hi + eps; }
+  function check(o, user){                                 // amber box + ⚠ outside the classroom range; a message once on crossing
+    const b = beyond(o), [lo, hi] = o.room(), u = o.unit();
+    if (b && !o.was && user) o.toast(`Beyond the classroom range (${fmt(lo)}–${fmt(hi)}${u ? " " + u : ""}): fine to explore, but the lab can't do this.`);
+    o.was = b; o.fld.classList.toggle("beyond", b);
+    o.warn.title = `Outside the classroom range ${fmt(lo)}–${fmt(hi)}${u ? " " + u : ""}`;
+  }
+  function holdBtn(btn, o, dir){
+    let tm = null, t0 = 0;
+    const stop = () => { clearTimeout(tm); tm = null; };
+    const rep = () => { if (!go(o, dir)) return stop(); tm = setTimeout(rep, performance.now() - t0 > 1400 ? 45 : 110); };
+    btn.addEventListener("pointerdown", e => { if (e.button) return; e.preventDefault(); stop(); go(o, dir, e.shiftKey ? 10 : 1); t0 = performance.now(); tm = setTimeout(rep, 420); });
+    ["pointerup", "pointerleave", "pointercancel", "blur"].forEach(k => btn.addEventListener(k, stop));
+    btn.addEventListener("click", e => { if (e.detail === 0) go(o, dir, e.shiftKey ? 10 : 1); });   // keyboard (Enter/Space)
+    btn.addEventListener("contextmenu", e => e.preventDefault());
+  }
+  const mk = (cls, txt, lab) => { const b = document.createElement("button"); b.type = "button"; b.className = "stp " + cls; b.textContent = txt;
+    b.tabIndex = -1; b.setAttribute("aria-label", lab); return b; };
+  // o: {nb, get, apply(v), room() → classroom [lo, hi], hard() → physical [min, max], step() | list() | log, base(), def() | null, unit(), toast(msg)}
+  function attach(nb, o){
+    o.nb = nb; const u = nb.nextElementSibling && nb.nextElementSibling.classList.contains("u") ? nb.nextElementSibling : null;
+    const fld = document.createElement("span"); fld.className = "fld"; nb.before(fld); fld.appendChild(nb); if (u) fld.appendChild(u);
+    const warn = document.createElement("span"); warn.className = "bw"; warn.textContent = "⚠"; fld.appendChild(warn);
+    const dn = mk("dn", "▼", "decrease"), up = mk("up", "▲", "increase"), rs = mk("rs", "↺", "back to the start value");
+    dn.title = "Decrease · hold to repeat · Shift = ×10"; up.title = "Increase · hold to repeat · Shift = ×10";
+    fld.before(dn); fld.after(up); up.after(rs);
+    if (!o.def) rs.style.visibility = "hidden";
+    Object.assign(o, {fld, warn, dn, up, rs, was:false});
+    holdBtn(dn, o, -1); holdBtn(up, o, 1);
+    rs.addEventListener("click", () => { const d = o.def ? o.def() : null; if (d === null || d === undefined || nb.disabled) return; o.apply(d); check(o, true); });
+    // clicking into the box selects the whole value, so typing replaces it (a 2nd click places the cursor as usual)
+    nb.addEventListener("focus", () => { nb.select(); nb._sel = true; });
+    nb.addEventListener("mouseup", e => { if (nb._sel){ e.preventDefault(); nb._sel = false; } });
+    nb.addEventListener("touchend", e => { if (nb._sel){ nb._sel = false; setTimeout(() => nb.select(), 0); } });
+    nb.addEventListener("blur", () => { nb._sel = false; });
+    nb.addEventListener("keydown", e => { if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return; e.preventDefault();
+      clearTimeout(nb._tm); go(o, e.key === "ArrowUp" ? 1 : -1, e.shiftKey ? 10 : 1); nb.select(); });
+    nb.addEventListener("wheel", e => { if (document.activeElement !== nb || !e.deltaY) return; e.preventDefault();
+      clearTimeout(nb._tm); go(o, e.deltaY < 0 ? 1 : -1, e.shiftKey ? 10 : 1); }, {passive:false});
+    nb._st = o; all.push(o); return o;
+  }
+  function tick(){
+    for (const o of all){
+      if (!o.nb.isConnected) continue;
+      const off = o.nb.disabled, v = +o.get(), [mn, mx] = o.hard(), d = o.def ? o.def() : null;
+      o.dn.disabled = off || !(v > mn + 1e-12 * Math.max(1, Math.abs(mn))); o.up.disabled = off || !(v < mx - 1e-12 * Math.max(1, Math.abs(mx)));
+      o.rs.disabled = off || d === null || d === undefined || Math.abs(v - d) <= 1e-9 * Math.max(1, Math.abs(d));
+      if (o.def && d !== null && d !== undefined) o.rs.title = `Back to the start value (${fmt(d)}${o.unit() ? " " + o.unit() : ""})`;
+      check(o, false);
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  return {attach, check, fmt, all};
+})();
+
+// Chart probe: move the pointer over any graph (or tap it) → a dashed vertical line, a dot where it cuts each curve and the x and y
+// values (as on the Free fall graphs). It reads what each graph draws after its axes (axes/axesR), so every graph gets it.
+// On graphs with only data points the line snaps to the nearest point; near a point its exact values are shown too.
+const PROBE = (() => {
+  const S = new Map();                                   // canvas → {frames, px, py, on, touch, ov}
+  const st = cv => { let s = S.get(cv); if (!s){ s = {frames:[], on:false}; S.set(cv, s); } return s; };
+  let pause = 0;
+  const P = CanvasRenderingContext2D.prototype, orig = {};
+  const rec = ctx => ctx.__pf && !pause;
+  ["beginPath", "moveTo", "lineTo", "closePath", "arc", "quadraticCurveTo", "bezierCurveTo", "stroke", "fill", "clearRect"].forEach(k => orig[k] = P[k]);
+  P.beginPath = function(){ if (rec(this)) this.__pp = {subs:[], arcs:[], cur:null}; return orig.beginPath.apply(this, arguments); };
+  const pp = ctx => ctx.__pp || (ctx.__pp = {subs:[], arcs:[], cur:null});
+  P.moveTo = function(x, y){ if (rec(this)){ const p = pp(this); p.cur = [[x, y]]; p.subs.push(p.cur); } return orig.moveTo.apply(this, arguments); };
+  P.lineTo = function(x, y){ if (rec(this)){ const p = pp(this); if (!p.cur){ p.cur = [[x, y]]; p.subs.push(p.cur); } else p.cur.push([x, y]); } return orig.lineTo.apply(this, arguments); };
+  P.quadraticCurveTo = function(a, b, x, y){ if (rec(this)){ const p = pp(this); if (p.cur) p.cur.push([x, y]); } return orig.quadraticCurveTo.apply(this, arguments); };
+  P.bezierCurveTo = function(a, b, c, d, x, y){ if (rec(this)){ const p = pp(this); if (p.cur) p.cur.push([x, y]); } return orig.bezierCurveTo.apply(this, arguments); };
+  P.closePath = function(){ if (rec(this)){ const p = pp(this); if (p.cur) p.cur.closed = true; p.cur = null; } return orig.closePath.apply(this, arguments); };
+  P.arc = function(x, y, r){ if (rec(this)) pp(this).arcs.push([x, y, r]); return orig.arc.apply(this, arguments); };
+  function toFrame(ctx, f, pts){                         // path points → the frame's coordinates (if the transform has changed)
+    const m = ctx.getTransform(), g = f.m;
+    if (m.a === g.a && m.b === g.b && m.c === g.c && m.d === g.d && m.e === g.e && m.f === g.f) return pts;
+    const gi = g.inverse(); return pts.map(([x, y]) => { const X = m.a * x + m.c * y + m.e, Y = m.b * x + m.d * y + m.f;
+      return [gi.a * X + gi.c * Y + gi.e, gi.b * X + gi.d * Y + gi.f]; });
+  }
+  function commit(ctx, stroke){
+    const f = ctx.__pf, p = ctx.__pp; if (!f || !p) return;
+    const col = stroke ? ctx.strokeStyle : ctx.fillStyle, c = typeof col === "string" ? col : null;
+    for (const [x, y, r] of p.arcs) if (r <= 9 && r >= 1.5 && c){ const [[X, Y]] = toFrame(ctx, f, [[x, y]]);
+      if (X >= f.box.x - 2 && X <= f.box.x + f.box.w + 2 && Y >= f.box.y - 2 && Y <= f.box.y + f.box.h + 2) f.pts.push({x:X, y:Y, col:c}); }
+    if (stroke && c && ctx.globalAlpha > 0.3) for (const s of p.subs) if (!s.closed && s.length >= 2) f.raw.push({pts:toFrame(ctx, f, s), col:c, dash:ctx.getLineDash().length > 0});
+  }
+  P.stroke = function(){ if (rec(this) && !arguments.length) commit(this, true); return orig.stroke.apply(this, arguments); };
+  P.fill = function(){ if (rec(this) && !(arguments[0] instanceof Path2D)) commit(this, false); return orig.fill.apply(this, arguments); };
+  P.clearRect = function(x, y, w, h){ if (x <= 0 && y <= 0 && w * 1.01 >= this.canvas.clientWidth && h * 1.01 >= this.canvas.clientHeight){ st(this.canvas).frames = []; this.__pf = null; }
+    return orig.clearRect.apply(this, arguments); };
+  // the text helpers, arrows, tangents and shaded areas on a graph are not curves
+  const quiet = fn => function(){ pause++; try { return fn.apply(this, arguments); } finally { pause--; } };
+  function newFrame(ctx, box, x0, x1, y0, y1, xl, yl, noX){
+    const cv = ctx.canvas, s = st(cv), f = {box:{...box}, x0, x1, y0, y1, xl, yl, m:ctx.getTransform(), raw:[], pts:[], skip:!!noX || !(x1 > x0) || !(y1 > y0)};
+    s.frames.push(f); if (s.frames.length > 8) s.frames.shift(); bind(cv); return f;
+  }
+  function wrapAxes(fn, ranged){
+    return function(ctx, box){
+      ctx.__pf = null; const r = fn.apply(this, arguments), a = arguments;
+      ctx.__pf = ranged ? newFrame(ctx, box, a[2], a[3], a[4], a[5], a[6], a[7], a[8]) : newFrame(ctx, box, 0, a[2], 0, a[3], a[4], a[5], false);
+      ctx.__pp = null; return r;
+    };
+  }
+  // ---- labels: "time t / s" → symbol t, unit s
+  function split(parts){
+    if (typeof parts === "string") parts = [[parts, "n"]];
+    if (!Array.isArray(parts)) return {sym:[["x", "i"]], unit:""};
+    const flat = parts.map(p => [String(p[0]), p[1] || "n"]), txt = flat.map(p => p[0]).join(""), k = txt.lastIndexOf(" / ");
+    const left = [], unit = [];
+    let pos = 0;
+    for (const [t, sty] of flat){ const a = pos, b = pos + t.length; pos = b;
+      if (k < 0 || b <= k) left.push([t, sty]); else if (a >= k + 3) unit.push([t, sty]);
+      else { if (k > a) left.push([t.slice(0, k - a), sty]); if (b > k + 3) unit.push([t.slice(Math.max(0, k + 3 - a)), sty]); } }
+    // drop a describing word or two in front of the symbol ("time t", "drop height h"), keep "cos θ", "1 − cos θ"
+    let first = left.findIndex(p => p[1] !== "n" && p[0].trim());
+    if (first > 0){ const pre = left.slice(0, first).map(p => p[0]).join(""); if (!/^([A-Za-z]{4,}\s+)+$/.test(pre)) first = 0; }
+    let sym = first < 0 ? [[left.map(p => p[0]).join("").trim(), "n"]] : left.slice(first).map(p => [p[0], p[1]]);
+    let cut = false; sym = sym.filter(p => { if (cut) return false; const i = p[0].indexOf(" = "); if (i >= 0){ p[0] = p[0].slice(0, i); cut = true; } return true; });
+    if (sym.length) sym[sym.length - 1][0] = sym[sym.length - 1][0].replace(/\s+$/, "");
+    if (sym.length && sym[0][0]) sym[0][0] = sym[0][0].replace(/^\s+/, "");
+    let un = unit.map(p => p[1] === "s" ? toSub(p[0]) : p[0]).join("").replace(/\s*\(.*$/, "").trim(); if (un === "1") un = "";
+    return {sym:sym.filter(p => p[0]), unit:un};
+  }
+  const SUBS = {"0":"₀", "1":"₁", "2":"₂", "3":"₃", "4":"₄", "5":"₅", "6":"₆", "7":"₇", "8":"₈", "9":"₉"};
+  const toSub = t => t.replace(/[0-9]/g, d => SUBS[d]);
+  const SUP = {"0":"⁰", "1":"¹", "2":"²", "3":"³", "4":"⁴", "5":"⁵", "6":"⁶", "7":"⁷", "8":"⁸", "9":"⁹", "-":"⁻"};
+  function num(v, span){                                   // enough decimals for the axis, × 10ⁿ for very big or small values
+    if (!isFinite(v)) return "–";
+    const a = Math.abs(v);
+    if (a >= 1e5 || (a > 0 && a < 1e-3 && span < 1e-2)){ const e = Math.floor(Math.log10(a)), m = v / Math.pow(10, e);
+      return `${m.toFixed(2).replace("-", "−")} × 10${String(e).replace(/[0-9-]/g, c => SUP[c])}`; }
+    const d = Math.max(0, Math.min(6, Math.ceil(-Math.log10(span / 400))));
+    let s = v.toFixed(d); if (/^-0\.?0*$/.test(s)) s = s.slice(1); return s.replace("-", "−");
+  }
+  // ---- curves of a frame: join touching pieces of the same colour, drop vertical lines and short legend strokes
+  function curves(f){
+    if (f.lines && f.nraw === f.raw.length) return f.lines;
+    const L = [];
+    for (const r of f.raw){ const last = L[L.length - 1];
+      if (last && last.col === r.col && Math.hypot(last.pts[last.pts.length - 1][0] - r.pts[0][0], last.pts[last.pts.length - 1][1] - r.pts[0][1]) < 0.6) last.pts = last.pts.concat(r.pts.slice(1));
+      else L.push({pts:r.pts.slice(), col:r.col, dash:r.dash}); }
+    f.lines = L.filter(l => { let lo = Infinity, hi = -Infinity; for (const [x] of l.pts){ lo = Math.min(lo, x); hi = Math.max(hi, x); }
+      const span = hi - lo; return span >= 1.5 && !(l.pts.length <= 3 && span < 0.08 * f.box.w) && hi >= f.box.x - 1 && lo <= f.box.x + f.box.w + 1; });
+    f.nraw = f.raw.length; return f.lines;
+  }
+  function cut(l, x){ const out = [];
+    for (let i = 1; i < l.pts.length; i++){ const [xa, ya] = l.pts[i - 1], [xb, yb] = l.pts[i];
+      if (Math.abs(xb - xa) < 1e-6 || (x - xa) * (x - xb) > 0) continue;
+      const y = ya + (yb - ya) * (x - xa) / (xb - xa); if (!out.some(q => Math.abs(q - y) < 2)) out.push(y); }
+    return out; }
+  // ---- drawing on a transparent canvas laid over the graph
+  function overlay(cv, s){
+    if (!s.ov){ const o = document.createElement("canvas"); o.className = "probeOv"; o.setAttribute("aria-hidden", "true");
+      o.style.cssText = "position:absolute;pointer-events:none;z-index:2"; cv.after(o); s.ov = o;
+      const par = cv.parentNode; if (getComputedStyle(par).position === "static") par.style.position = "relative"; }
+    const o = s.ov; o.style.left = cv.offsetLeft + "px"; o.style.top = cv.offsetTop + "px";
+    o.style.width = cv.offsetWidth + "px"; o.style.height = cv.offsetHeight + "px";
+    if (o.width !== cv.width || o.height !== cv.height){ o.width = cv.width; o.height = cv.height; }
+    return o;
+  }
+  const FONT = (sty, z) => sty === "i" ? `italic 600 ${z}px "Segoe UI",Calibri,Arial,sans-serif` : sty === "s" ? `600 ${Math.round(z * .72)}px "Segoe UI",Calibri,Arial,sans-serif` : `600 ${z}px "Segoe UI",Calibri,Arial,sans-serif`;
+  const runW = (ctx, run, z) => run.reduce((w, [t, sty]) => { ctx.font = FONT(sty, z); return w + ctx.measureText(t).width; }, 0);
+  function runDraw(ctx, run, x, y, col, z){ for (const [t, sty] of run){ ctx.font = FONT(sty, z); ctx.fillStyle = col;
+    ctx.fillText(t, x, sty === "s" ? y + z * .3 : y); x += ctx.measureText(t).width; } return x; }
+  function draw(cv, s){
+    const o = overlay(cv, s), ctx = o.getContext("2d");
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, o.width, o.height);
+    if (!s.on || !cv.offsetParent) return;
+    const dpr = cv.width / Math.max(1, cv.getBoundingClientRect().width), dx = s.px * dpr, dy = s.py * dpr;
+    let f = null, lx = 0, ly = 0;
+    for (const g of s.frames){ if (g.skip) continue; const gi = g.m.inverse(), X = gi.a * dx + gi.c * dy + gi.e, Y = gi.b * dx + gi.d * dy + gi.f;
+      if (X >= g.box.x && X <= g.box.x + g.box.w && Y >= g.box.y - 4 && Y <= g.box.y + g.box.h + 4){ f = g; lx = X; ly = Y; break; } }
+    if (!f) return;
+    const b = f.box, xv = px => f.x0 + (px - b.x) / b.w * (f.x1 - f.x0), yv = py => f.y0 + (b.y + b.h - py) / b.h * (f.y1 - f.y0);
+    const lines = curves(f), pts = f.pts.filter(p => p.x >= b.x - 1 && p.x <= b.x + b.w + 1);
+    let hits = [], near = null, x = lx;
+    for (const l of lines) for (const y of cut(l, x)) if (y >= b.y - 1 && y <= b.y + b.h + 1) hits.push({y, col:l.col, dash:l.dash ? 1 : 0});
+    if (pts.length){ const n = pts.reduce((m, p) => { const d = Math.hypot(p.x - lx, p.y - ly); return d < m.d ? {p, d} : m; }, {p:null, d:Infinity});
+      if (n.d <= 12) near = n.p; }
+    if (!lines.length && pts.length){                    // only data points: snap to the nearest one along x
+      near = pts.reduce((m, p) => Math.abs(p.x - lx) + 1e-3 * Math.abs(p.y - ly) < Math.abs(m.x - lx) + 1e-3 * Math.abs(m.y - ly) ? p : m, pts[0]); x = near.x; }
+    if (!hits.length && !near) return;
+    hits.sort((p, q) => p.y - q.y || p.dash - q.dash);    // curves on top of each other: one row (the solid one)
+    hits = hits.filter((h, i) => !hits.slice(0, i).some(q => Math.abs(q.y - h.y) < 1.5)).slice(0, 6);
+    ctx.setTransform(f.m);
+    ctx.save(); ctx.strokeStyle = "rgba(38,50,56,.55)"; ctx.lineWidth = 1.2; ctx.setLineDash([4, 4]);
+    orig.beginPath.call(ctx); orig.moveTo.call(ctx, x, b.y); orig.lineTo.call(ctx, x, b.y + b.h); orig.stroke.call(ctx); ctx.restore();
+    const dot = (X, Y, c, r) => { ctx.save(); ctx.fillStyle = c; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; orig.beginPath.call(ctx); orig.arc.call(ctx, X, Y, r, 0, 7); orig.stroke.call(ctx); orig.fill.call(ctx); ctx.restore(); };
+    for (const h of hits) dot(x, h.y, shade(h.col), 4.5);
+    if (near){ ctx.save(); ctx.strokeStyle = "#263238"; ctx.lineWidth = 2; orig.beginPath.call(ctx); orig.arc.call(ctx, near.x, near.y, 8, 0, 7); orig.stroke.call(ctx); ctx.restore(); }
+    const X = split(f.xl), Y = split(f.yl), xs = f.x1 - f.x0, ys = f.y1 - f.y0, z = 13.5, rows = [];
+    const eq = (sym, v, span, unit) => [...sym, [` = ${num(v, span)}${unit ? (unit === "°" ? "" : " ") + unit : ""}`, "n"]];
+    if (!near || lines.length) rows.push({run:eq(X.sym, xv(x), xs, X.unit), col:"#263238"});
+    if (lines.length) for (const h of hits) rows.push({run:eq(Y.sym, yv(h.y), ys, Y.unit), col:h.col, mark:hits.length > 1});
+    if (near){ rows.push({run:[["point:  ", "n"], ...eq(X.sym, xv(near.x), xs, X.unit)], col:near.col, mark:true});
+      rows.push({run:[["point:  ", "n"], ...eq(Y.sym, yv(near.y), ys, Y.unit)], col:near.col, mark:true, hide:true}); }
+    if (!rows.length) return;
+    ctx.save(); ctx.textBaseline = "middle"; ctx.textAlign = "left";
+    const rh = z + 6, mw = Math.max(...rows.map(r => runW(ctx, r.run, z) + (r.mark ? 14 : 0))), bw = mw + 16, bh = rows.length * rh + 8;
+    const right = x + 10 + bw > b.x + b.w; let bx = right ? x - 10 - bw : x + 10;
+    const cw = o.width / dpr; bx = Math.max(b.x + 2, Math.min(bx, b.x + b.w - bw - 2)); bx = Math.max(2, Math.min(bx, cw - bw - 2));
+    let by = ly - bh / 2;
+    if (near && near.x + 10 > bx && near.x - 10 < bx + bw){ by = near.y + 14; if (by + bh > b.y + b.h - 2) by = near.y - 14 - bh; }   // keep the point visible
+    by = Math.max(b.y + 2, Math.min(by, b.y + b.h - bh - 2));
+    ctx.fillStyle = "rgba(255,255,255,.94)"; ctx.strokeStyle = "rgba(38,50,56,.35)"; ctx.lineWidth = 1;
+    orig.beginPath.call(ctx); ctx.roundRect ? ctx.roundRect(bx, by, bw, bh, 6) : ctx.rect(bx, by, bw, bh); orig.fill.call(ctx); orig.stroke.call(ctx);
+    rows.forEach((r, i) => { const yy = by + 4 + rh * i + rh / 2; let xx = bx + 8;
+      if (r.mark && !r.hide){ ctx.fillStyle = shade(r.col); orig.beginPath.call(ctx); orig.arc.call(ctx, xx + 4, yy, 4, 0, 7); orig.fill.call(ctx); }
+      if (r.mark) xx += 14;
+      let run = r.run; if (r.hide){ ctx.font = FONT("n", z); xx += ctx.measureText(run[0][0]).width; run = run.slice(1); }   // 2nd point row lines up under the 1st
+      runDraw(ctx, run, xx, yy, r.col === "#263238" ? r.col : shade(r.col), z); });
+    ctx.restore();
+  }
+  function shade(c){                                      // pale curve colours (e.g. dashed grey) are darkened for text
+    let r, g, bb; const m = /^#([0-9a-f]{6})$/i.exec(c), q = /^rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)/i.exec(c);
+    if (m){ const n = parseInt(m[1], 16); r = n >> 16; g = (n >> 8) & 255; bb = n & 255; } else if (q){ r = +q[1]; g = +q[2]; bb = +q[3]; } else return c;
+    c = `rgb(${r},${g},${bb})`; const L = 0.299 * r + 0.587 * g + 0.114 * bb;
+    if (L < 150) return c; const k = 150 / L; return `rgb(${Math.round(r * k)},${Math.round(g * k)},${Math.round(bb * k)})`;
+  }
+  function bind(cv){
+    const s = st(cv); if (s.bound) return; s.bound = true;
+    const at = e => { const r = cv.getBoundingClientRect(); s.px = e.clientX - r.left; s.py = e.clientY - r.top; s.on = true; };
+    cv.addEventListener("pointermove", e => { if (e.pointerType === "touch" && !s.touch) return; at(e); });
+    cv.addEventListener("pointerdown", e => { s.touch = e.pointerType === "touch"; at(e); });
+    cv.addEventListener("pointerup", e => { if (e.pointerType === "touch") s.touch = false; });
+    cv.addEventListener("pointerleave", e => { if (e.pointerType !== "touch") s.on = false; });
+    document.addEventListener("pointerdown", e => { if (e.target !== cv) s.on = false; });
+  }
+  function tick(){ for (const [cv, s] of S) if (s.ov || s.on) draw(cv, s); requestAnimationFrame(tick); }
+  requestAnimationFrame(tick);
+  return {wrapAxes, quiet, S};
+})();
+if (typeof axesR === "function") axesR = PROBE.wrapAxes(axesR, true);
+if (typeof axes === "function") axes = PROBE.wrapAxes(axes, false);
+if (typeof drawTangent === "function") drawTangent = PROBE.quiet(drawTangent);
+if (typeof shadeArea === "function") shadeArea = PROBE.quiet(shadeArea);
+if (typeof areaName === "function") areaName = PROBE.quiet(areaName);
+if (typeof toolLabels === "function") toolLabels = PROBE.quiet(toolLabels);
+if (typeof arrow === "function") arrow = PROBE.quiet(arrow);
+if (typeof fArrow === "function") fArrow = PROBE.quiet(fArrow);
+if (typeof label === "function") label = PROBE.quiet(label);
+if (typeof rich === "function") rich = PROBE.quiet(rich);
+if (typeof subLabel === "function") subLabel = PROBE.quiet(subLabel);
+if (typeof note === "function") note = PROBE.quiet(note);
+if (typeof pill === "function") pill = PROBE.quiet(pill);
+/* ==== SHARED-UI END ==== */
 /* ============================ 3 CONFIG ============================ */
 const G = 9.81;                 // N kg⁻¹ (IB data booklet)
 const RAMP = 1.00;              // m, length of the board
@@ -831,12 +1148,19 @@ function numBoxes(list){
       else { const st = sl.getAttribute("step"), s0 = sl.min, s1 = sl.max;      // pass the exact value to the slider's own handler,
         sl.step = "any"; sl.min = Math.min(+s0, cv); sl.max = Math.max(+s1, cv); sl.value = cv;   // even outside the slider's range
         sl.dispatchEvent(new Event("input", {bubbles:true})); sl.setAttribute("step", st); sl.min = s0; sl.max = s1; }
+      if (nb._st) STEPPER.check(nb._st, cv === v);
     };
     nb.addEventListener("focus", () => { last = null; });
     nb.addEventListener("input", () => { clearTimeout(nb._tm); nb._tm = setTimeout(() => {   // apply by itself once typing pauses (no Enter needed)
       const raw = nb.value.trim().replace(",", "."); if (raw && isFinite(Number(raw)) && !/[.eE+-]$/.test(raw)){ nb._auto = raw; commit(); } }, 600); });
     nb.addEventListener("change", () => { clearTimeout(nb._tm); commit(); });
     nb.addEventListener("keydown", e => { if (e.key === "Enter"){ clearTimeout(nb._tm); commit(); nb._auto = null; nb.select(); } });
+    let d0;   // ▼ [box] ▲ ↺ (shared stepper): start value = the value when the page has loaded
+    STEPPER.attach(nb, {get:() => +c.get(), unit, toast:nbToast, hard:lim,
+      room:() => c.lim ? c.lim() : c.list ? [c.list[0], c.list[c.list.length - 1]] : [+sl.min, +sl.max],
+      list:c.list ? () => c.list : null, step:() => c.step ?? sl.getAttribute("step"), base:() => c.step ? 0 : sl.min,
+      def:c.lim ? null : () => d0 === undefined ? (d0 = +c.get()) : d0,
+      apply:v => { nb.value = STEPPER.fmt(v); last = null; commit(); }});
     c.show = () => { const t = unit(); if (u.textContent !== t) u.textContent = t; nb.disabled = sl.disabled || (c.off ? c.off() : false);
       const [mn, mx] = lim(); nb.title = `Type a value (${nbFmt(mn)}–${nbFmt(mx)} ${t}) and press Enter`;
       if (document.activeElement !== nb){ const s = nbFmt(c.get()); if (nb.value !== s) nb.value = s; } };
