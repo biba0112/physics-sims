@@ -975,5 +975,6 @@ function numBoxes(list){
 numBoxes([{id:"u", unit:"m s⁻¹", get:() => set.u, type:[0.5, 1000]}, {id:"ang", unit:"°", get:() => set.th, type:[-90, 90]}, {id:"h", unit:"m", get:() => set.h, list:HEIGHTS, type:[0, 10000], put:v => { set.h = v; syncControls(); reset(); }}, {id:"tp", unit:"s", get:() => +R.t.toFixed(3), lim:() => [0, +R.L.T.toFixed(3)], put:v => { R.playing = false; R.t = v; syncProbe(); updateButtons(); }}]);
 requestAnimationFrame(frame);
 </script>
+<script data-goatcounter="https://physics-taneska.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
