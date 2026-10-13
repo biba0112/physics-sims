@@ -242,6 +242,32 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
 .stp.rs:hover:not(:disabled){background:#EEF2F6;border-color:transparent}
 @media (max-width:1300px){ .stp{min-width:30px;padding:0 4px} .fld .nb{width:58px!important} }
 /* ==== SHARED-UI CSS END ==== */
+/* ==== NEWTON CSS START (law badge · ΣF = ma table · 3rd-law checkbox) ==== */
+.nbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:3px 10px;border-bottom:1px solid #E3E9F0;flex:none;min-height:30px}
+.nlaw{font-size:.84rem;padding:2px 10px;border-radius:999px;border:1.5px solid #90A4AE;color:#37474F;background:#F5F7FA;line-height:1.5}
+.nlaw.l1{border-color:#2E7D32;color:#1B5E20;background:#E8F5E9}
+.nlaw.l2{border-color:#E65100;color:#BF360C;background:#FFF3E0}
+.nbar{flex-wrap:nowrap}
+.nlaw{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.nbar .switch{font-size:.84rem;margin-left:auto;white-space:nowrap;flex:none}
+@media (pointer:fine){ .nbar .switch{min-height:28px;padding-top:0;padding-bottom:0} }
+.ntab{flex:none;max-height:40%;overflow:auto;padding:2px 8px 4px;border-top:1px solid #E3E9F0;font-size:.8rem}
+.ntab .nh{display:flex;align-items:center;gap:8px;min-height:26px}
+.ntab .nfold{font:inherit;font-weight:700;color:#1F3A5F;background:none;border:none;cursor:pointer;padding:2px 0;min-height:26px}
+.ntab .nk{color:#606A72}.ntab .nk.ok{color:#2E7D32;font-weight:600}
+.ntab table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.ntab th,.ntab td{padding:1px 4px;text-align:right;border-bottom:1px solid #EEF2F6;white-space:nowrap}
+.ntab th{color:#1F3A5F;font-weight:600}
+.ntab td:first-child,.ntab th:first-child,.ntab td.by,.ntab th:nth-child(2){text-align:left}
+.ntab td:first-child{font-weight:600}.ntab td.by{color:#606A72}
+.ntab tr.ns td{font-weight:700;border-top:1.5px solid #263238}
+.ntab tr.nm td{color:#E65100;font-weight:600}
+.ntab tr.nb td{font-weight:700;color:#1F3A5F;background:#F5F7FA}
+.ntab .ncap{color:#606A72;font-size:.74rem;margin-top:2px;white-space:normal}
+@media (max-height:800px) and (min-width:1100px){ .ntab{font-size:.74rem} .ntab .ncap{display:none} .nbar{min-height:26px;padding:1px 10px} .nlaw{font-size:.78rem} }
+@media (max-width:1099px) and (min-width:760px){ .ntab{font-size:.72rem;max-height:45%} .ntab .ncap{display:none}
+  .fbdcol #fbdWrap{min-height:0} }
+/* ==== NEWTON CSS END ==== */
 /* ==== PHONE CSS START: phone layout (10 Oct 2026) — only phones (narrow, or held sideways with a touch screen); laptops and tablets unchanged ==== */
 @media (max-width:759px), (max-height:500px) and (pointer:coarse){
   html,body{height:auto}
@@ -298,6 +324,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
           <button class="btn navy" id="recBtn" disabled>● Record</button>
         </div>
       </div>
+<!-- NEWTON BAR --><div class="nbar"><span class="nlaw" id="nlaw"></span><label class="switch" title="Show every force together with its Newton's 3rd-law partner"><input type="checkbox" id="n3"> 3rd-law pairs</label></div><!-- /NEWTON BAR -->
       <div id="sceneWrap"><canvas id="scene" aria-label="Side view of a ball being dropped or thrown"></canvas></div>
     </div>
     <div class="card readouts">
@@ -316,6 +343,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
   <section class="card fbdcol" aria-label="Free-body diagram">
     <h2 id="fbdTitle">Free-body diagram of ball A</h2>
     <div id="fbdWrap"><canvas id="fbd" aria-label="Free-body diagram"></canvas></div>
+<!-- NEWTON TABLE --><div class="ntab" id="ntab"></div><!-- /NEWTON TABLE -->
   </section>
 
   <section class="card right">
@@ -438,7 +466,9 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
     </ul>
     <p class="hint">Model: g = 9.81 (Earth), 1.62 (Moon), 3.71 (Mars) m s⁻²; air density 1.20 kg m⁻³. The balls are drawn bigger
       than to scale. The Moon and Mars have no (or almost no) air, so air resistance is only available on Earth.</p>
-    <p style="text-align:right"><button class="btn primary" id="helpClose">Close</button></p>
+    <!-- NEWTON HELP --><h3>Newton's laws</h3>
+<p>The badge above the scene says which law applies at this moment: <b>1st law</b> — at rest or moving at a constant velocity, the resultant force is zero (Σ<i>F</i> = 0); <b>2nd law</b> — accelerating, Σ<i>F</i> = <i>ma</i>. The table under the free-body diagram adds up the forces (Σ<i>F</i>) and compares them with <i>m a</i> (▾ folds it). Tick <b>3rd-law pairs</b> to see every force with its partner: the same size and type, in the opposite direction, acting on the <b>other</b> body (the Earth, the floor, the string, the fluid…).</p><!-- /NEWTON HELP -->
+<p style="text-align:right"><button class="btn primary" id="helpClose">Close</button></p>
   </div>
 </div>
 
@@ -737,6 +767,117 @@ if (typeof subLabel === "function") subLabel = PROBE.quiet(subLabel);
 if (typeof note === "function") note = PROBE.quiet(note);
 if (typeof pill === "function") pill = PROBE.quiet(pill);
 /* ==== SHARED-UI END ==== */
+/* ==== NEWTON START — Newton's-law panel (shared by all simulations; source ~/.cache/sharedui-build/newton/) ====
+   The FBD code of each simulation reports what it draws: NF.body(name, m, ax, ay, {v, axes}) and NF.force(label, Fx, Fy, colour, by, kind).
+   Fx, Fy are in N along the body's two axes (default → right, ↑ up); ax, ay the body's acceleration along the same axes.
+   kind: grav · normal · friction · tension · push · pull · spring · drag · buoy · impact · contact (decides the words for the 3rd-law partner).
+   NEWTON then shows: the law badge above the scene (1st law ΣF = 0 / 2nd law ΣF = ma), the ΣF = ma table under the FBD (foldable),
+   and, with "3rd-law pairs" ticked, every force with its partner on the other body (same size, opposite direction). */
+const NF = (() => {
+  let bodies = [], cur = null, msg = "";
+  return {
+    reset(){ bodies = []; cur = null; msg = ""; },
+    body(name, m, ax, ay, o = {}){ cur = {name, m, ax:ax || 0, ay:ay || 0, v:o.v, axes:o.axes || ["→", "↑"], forces:[], law:o.law, pre:o.pre || ""}; bodies.push(cur); return cur; },
+    force(lab, fx, fy, col, by, kind = "contact"){ if (!cur || !isFinite(fx) || !isFinite(fy)) return;
+      if (Math.hypot(fx, fy) < 1e-9) return; cur.forces.push({lab, fx, fy, col, by, kind}); },
+    none(t){ bodies = []; cur = null; msg = t || ""; },
+    get bodies(){ return bodies; }, get msg(){ return msg; },
+  };
+})();
+const NEWTON = (() => {
+  const VERB = {grav:"gravitational pull", normal:"normal force (push)", friction:"friction", tension:"pull (tension)", push:"push", pull:"pull",
+    spring:"spring force", drag:"drag", buoy:"buoyancy (push of the fluid)", impact:"contact force", contact:"contact force"};
+  const fmtN = v => { const a = Math.abs(v); return a >= 1e4 ? `${(v / 1000).toPrecision(3)} kN` : a < 1e-3 && a > 0 ? `${v.toExponential(2)} N` : `${+v.toPrecision(3)} N`; };
+  const z = v => Math.abs(v) < 5e-4 ? "0" : String(+v.toPrecision(3)).replace("-", "−");
+  const dirGlyph = (x, y) => { const a = Math.atan2(y, x) * 180 / Math.PI; return ["→", "↗", "↑", "↖", "←", "↙", "↓", "↘"][((Math.round(a / 45) % 8) + 8) % 8]; };
+  const plain = s => String(s).replace(/<sub>(.*?)<\/sub>/g, "$1").replace(/<[^>]+>/g, "");
+  let fold = false, last = "";
+  try { const v = localStorage.getItem("newton-fold"); fold = v === null ? innerWidth >= 760 && innerWidth < 1100 : v === "1"; } catch (e) {}   // tablets start folded
+  const lawOf = b => b.law || (Math.hypot(b.ax, b.ay) < 1e-6 ? "1st" : "2nd");
+  function badge(){
+    const el = document.getElementById("nlaw"); if (!el) return;
+    const B = NF.bodies; let html, cls;
+    if (!B.length){ html = NF.msg || "No forces to show here"; cls = "none"; }
+    else {
+      const laws = B.map(lawOf), all1 = laws.every(l => l === "1st"), all2 = laws.every(l => l === "2nd");
+      const who = l => B.length > 1 ? ` (${B.filter((b, i) => laws[i] === l).map(b => b.name).join(", ")})` : "";
+      const rest = B.every(b => b.v !== undefined && Math.abs(b.v) < 1e-6);
+      if (all1){ cls = "l1"; html = `<b>1st law</b> · ${rest ? "at rest" : B.some(b => b.v === undefined) ? "at rest or constant velocity" : "constant velocity"} · Σ<i>F</i> = 0`; }
+      else if (all2){ cls = "l2"; html = `<b>2nd law</b> · accelerating · Σ<i>F</i> = <i>ma</i>`; }
+      else { cls = "l2"; html = `<b>2nd law</b>${who("2nd")} · <b>1st law</b>${who("1st")}`; }
+    }
+    if (B.length && B[0].pre) html = B[0].pre + html;
+    if (el.dataset.h !== html + cls){ el.innerHTML = html; el.className = "nlaw " + cls; el.dataset.h = html + cls; }
+  }
+  function table(){
+    const el = document.getElementById("ntab"); if (!el) return;
+    const B = NF.bodies; let html = "";
+    if (!B.length) html = `<div class="nh"><button class="nfold" data-nfold aria-expanded="${!fold}">${fold ? "▸" : "▾"} Σ<i>F</i> = <i>ma</i> check</button><span class="nk">${NF.msg || "no forces here"}</span></div>`;
+    else {
+      const twoD = B.some(b => b.forces.some(f => Math.abs(f.fy) > 1e-9) && b.forces.some(f => Math.abs(f.fx) > 1e-9) || Math.abs(b.ay) > 1e-9 && Math.abs(b.ax) > 1e-9);
+      const sums = B.map(b => [b.forces.reduce((s, f) => s + f.fx, 0), b.forces.reduce((s, f) => s + f.fy, 0)]);
+      const ok = B.every((b, i) => Math.abs(sums[i][0] - b.m * b.ax) <= 0.01 * (1 + Math.abs(b.m * b.ax)) && Math.abs(sums[i][1] - b.m * b.ay) <= 0.01 * (1 + Math.abs(b.m * b.ay)));
+      html += `<div class="nh"><button class="nfold" data-nfold aria-expanded="${!fold}">${fold ? "▸" : "▾"} Σ<i>F</i> = <i>ma</i> check</button><span class="nk ${ok ? "ok" : ""}">${ok ? "✔ Σ<i>F</i> = <i>ma</i> for every body" : ""}</span></div>`;
+      if (!fold){
+        const vert = !twoD && !B.some(bb => bb.forces.some(f => Math.abs(f.fx) > 1e-9));
+        html += `<table><tr><th>force</th><th>by</th><th>${twoD ? B[0].axes[0] : vert ? B[0].axes[1] : B[0].axes[0]} / N</th>${twoD ? `<th>${B[0].axes[1]} / N</th>` : ""}</tr>`;
+        B.forEach((b, i) => {
+          const comp = (f, k) => k ? f.fy : f.fx, one = !twoD && !B.some(bb => bb.forces.some(f => Math.abs(f.fx) > 1e-9)) ? 1 : 0;   // 1-D vertical: show the y value
+          if (B.length > 1) html += `<tr class="nb"><td colspan="${twoD ? 4 : 3}">on ${b.name}${b.m ? ` (${+b.m.toPrecision(3)} kg)` : ""}</td></tr>`;
+          b.forces.forEach(f => { html += `<tr><td style="color:${f.col}">${f.lab}</td><td class="by">${f.by}</td><td>${z(twoD ? f.fx : comp(f, one))}</td>${twoD ? `<td>${z(f.fy)}</td>` : ""}</tr>`; });
+          html += `<tr class="ns"><td>Σ<i>F</i></td><td></td><td>${z(twoD ? sums[i][0] : sums[i][one])}</td>${twoD ? `<td>${z(sums[i][1])}</td>` : ""}</tr>`;
+          html += `<tr class="nm"><td><i>m a</i></td><td class="by">${b.m ? `${+b.m.toPrecision(3)} kg` : ""}</td><td>${z(b.m * (twoD ? b.ax : (one ? b.ay : b.ax)))}</td>${twoD ? `<td>${z(b.m * b.ay)}</td>` : ""}</tr>`;
+        });
+        html += `</table><div class="ncap">3rd law: each force has a partner of the same size and type, in the opposite direction, on the other body — tick <b>3rd-law pairs</b>.</div>`;
+      }
+    }
+    if (html !== last){ el.innerHTML = html; last = html; }
+  }
+  // 3rd-law pairs: drawn over the scene as a card, one row per force (the force on the body · its partner on the other body)
+  function pairs(){
+    const cb = document.getElementById("n3"); if (!cb || !cb.checked) return;
+    const cv = document.getElementById("scene"); if (!cv) return;
+    const ctx = cv.getContext("2d"), r = cv.getBoundingClientRect(), w = r.width, h = r.height;
+    const rows = NF.bodies.flatMap(b => b.forces.map(f => ({b, f}))).slice(0, 8);
+    const txt = rows.map(({b, f}) => { const M = Math.hypot(f.fx, f.fy), by = plain(f.by), nm = plain(b.name);
+      return [`${plain(f.lab)}: ${by} on ${nm} ${fmtN(M)}`, `${nm} on ${by} ${fmtN(M)}`]; });
+    const title = "3rd-law pairs: same size · same type · opposite direction · on different bodies";
+    ctx.save(); ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+    ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.setLineDash([]); ctx.globalAlpha = 1;
+    const pw = Math.min(w - 16, 600); let fs = 12.5;
+    const fits = () => { ctx.font = `${fs}px "Segoe UI",Calibri,Arial,sans-serif`;
+      const c1 = Math.max(0, ...txt.map(t => ctx.measureText(t[0]).width)), c2 = Math.max(0, ...txt.map(t => ctx.measureText(t[1]).width));
+      ctx.font = `700 ${fs}px "Segoe UI",Calibri,Arial,sans-serif`; return Math.max(ctx.measureText(title).width + 20, c1 + c2 + 90) <= pw ? c1 : -1; };
+    let c1 = fits(); while (c1 < 0 && fs > 8.5){ fs -= 0.5; c1 = fits(); } if (c1 < 0) c1 = pw / 2 - 60;
+    const rh = fs + 8, ph = 24 + rh * Math.max(1, rows.length), x0 = 8, y0 = h - ph - 8;
+    ctx.fillStyle = "rgba(255,255,255,.96)"; ctx.strokeStyle = "#1F3A5F"; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x0, y0, pw, ph, 8) : ctx.rect(x0, y0, pw, ph); ctx.fill(); ctx.stroke();
+    ctx.font = `700 ${fs}px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = "#1F3A5F"; ctx.fillText(title, x0 + 10, y0 + 12);
+    if (!rows.length){ ctx.font = `${fs}px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillText(NF.msg || "No forces in this example.", x0 + 10, y0 + 12 + rh); }
+    const arr = (x, y, ux, uy, L, c, dash) => { ctx.save(); ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = 2.5; if (dash) ctx.setLineDash([4, 3]);
+      const x1 = x - ux * L / 2, y1 = y + uy * L / 2, x2 = x + ux * L / 2, y2 = y - uy * L / 2;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * 5, y2 + uy * 5); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - ux * 7 - uy * 4, y2 + uy * 7 - ux * 4); ctx.lineTo(x2 - ux * 7 + uy * 4, y2 + uy * 7 + ux * 4); ctx.closePath(); ctx.fill(); ctx.restore(); };
+    const col2 = x0 + 34 + c1 + 22;
+    rows.forEach(({b, f}, i) => {
+      const y = y0 + 12 + rh * (i + 1), M = Math.hypot(f.fx, f.fy), ux = f.fx / M, uy = f.fy / M;
+      ctx.font = `${fs}px "Segoe UI",Calibri,Arial,sans-serif`; ctx.fillStyle = f.col;
+      arr(x0 + 19, y, ux, uy, 15, f.col, false); ctx.fillText(txt[i][0], x0 + 34, y);
+      ctx.fillStyle = "#90A4AE"; ctx.fillText("⇄", col2 - 16, y); ctx.fillStyle = f.col;
+      arr(col2 + 9, y, -ux, -uy, 15, f.col, true); ctx.fillText(txt[i][1], col2 + 24, y);
+    });
+    ctx.restore();
+  }
+  function frame(){ try { badge(); table(); pairs(); } catch (e) { console.error(e); } }
+  function hook(){
+    const o = drawFBD;
+    drawFBD = function(){ NF.reset(); const r = o.apply(this, arguments); frame(); return r; };
+    document.addEventListener("click", e => { const b = e.target.closest("[data-nfold]"); if (!b) return; fold = !fold;
+      try { localStorage.setItem("newton-fold", fold ? "1" : "0"); } catch (er) {} last = ""; table(); });
+  }
+  return {hook, frame, lawOf};
+})();
+/* ==== NEWTON END ==== */
 /* ============================ 3 CONFIG ============================ */
 const FIELDS = [
   {id:"earth", name:"Earth", g:9.81, air:true},
@@ -1005,6 +1146,11 @@ function drawFBD(){
   subLabel(ctx, "W", "", ` = mg = ${unit(W)}`, cx + 12, cy + L(W) - 4, COL.W, "left");
   let msg, sub = "";
   const Fd = s.landed || s.held ? 0 : o.m * tr.k * s.v * s.v;
+/*NF*/  { const still = s.landed || (s.held && R.phase === "ready"); NF.body("the ball", o.m, 0, still ? 0 : s.a, {v:still ? 0 : s.v});
+    NF.force("W", 0, -W, COL.W, "the Earth", "grav");
+    if (s.held && R.phase === "ready") NF.force("F<sub>hand</sub>", 0, W, COL.P, "the hand", "push");
+    else if (s.landed) NF.force("F<sub>N</sub>", 0, W, COL.N, "the floor", "normal");
+    else NF.force("F<sub>d</sub>", 0, (s.v < 0 ? 1 : -1) * Fd, COL.d, "the air", "drag"); }/*/NF*/
   if (s.held && R.phase === "ready"){
     arrow(ctx, cx, cy, cx, cy - L(W), COL.P, 4);
     subLabel(ctx, "F", "", ` (hand) = ${unit(W)}`, cx + 12, cy - L(W) + 6, COL.P, "left");
@@ -1518,6 +1664,7 @@ function numBoxes(list){
 }
 numBoxes([{id:"h", unit:"m", get:() => set.h, list:HEIGHTS, type:[0.2, 10000], put:v => { set.h = v; change(); }}, {id:"v0", unit:"m s⁻¹", get:() => set.v0, type:[-1000, 1000]}]);
 requestAnimationFrame(frame);
+/* NEWTON HOOK */ NEWTON.hook();
 </script>
 <script data-goatcounter="https://physics-taneska.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
