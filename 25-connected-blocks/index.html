@@ -331,10 +331,11 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
   </div>
   <div class="grow"></div>
   <div class="scen" id="scen" role="group" aria-label="How the blocks are joined">
-    <button data-sc="push" aria-pressed="true">① <span class="lg">Touching · pushed</span><span class="sh">Touching</span></button>
-    <button data-sc="pull" aria-pressed="false">② <span class="lg">Strings · pulled</span><span class="sh">Strings</span></button>
+    <button data-sc="push" aria-pressed="true">① <span class="lg">Touching</span><span class="sh">Touching</span></button>
+    <button data-sc="pull" aria-pressed="false">② <span class="lg">Strings</span><span class="sh">Strings</span></button>
     <button data-sc="bar" aria-pressed="false">③ <span class="lg">Tow bar</span><span class="sh">Tow bar</span></button>
-    <button data-sc="mix" aria-pressed="false">④ <span class="lg">Mixed · string + touching</span><span class="sh">Mixed</span></button>
+    <button data-sc="mix" aria-pressed="false">④ <span class="lg">Mixed</span><span class="sh">Mixed</span></button>
+    <button data-sc="stack" aria-pressed="false">⑤ <span class="lg">Stacked</span><span class="sh">Stacked</span></button>
   </div>
   <button class="btn" id="helpBtn" aria-label="How to use">? How to use</button>
   <div class="credit">Biljana Taneska · Physics teacher<br><a href="mailto:btaneska@vis.ac.at">btaneska@vis.ac.at</a></div>
@@ -410,7 +411,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
     <h3 id="helpTitle">How to use this simulation</h3>
     <ol>
       <li>Choose how the blocks are joined at the top: ① <b>touching</b> (pushed) · ② <b>strings</b> (pulled) · ③ a <b>tow bar</b> (it can pull
-        and push) · ④ <b>mixed</b>: a string from A to B, and B touches C.</li>
+        and push) · ④ <b>mixed</b>: a string from A to B, and B touches C · ⑤ <b>stacked</b>: B on top of A (and C on top of B).</li>
       <li>Pick an <b>example</b> (cards, problem set, slides, Smart Cart demo) or set your own: 2 or 3 blocks, the masses, the force <i>F</i>, its
         angle θ, where it acts (push or pull, left or right end, or the middle block) and the surface. Use ▼ ▲ next to a box or type a value.</li>
       <li>Press <b>▶ Go</b>. <b>◂ / ▸</b> (or the <b>← →</b> keys) step through the motion. While the blocks move, press <b>✋ Let go</b> (only friction
@@ -437,12 +438,16 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
         has to move: <span class="eq">F<sub>A on B</sub> = F × m<sub>B</sub> / (m<sub>A</sub> + m<sub>B</sub>)</span>. Push the other end and it changes.</li>
       <li>A <b>string</b> can only pull (it goes slack if the blocks move closer). Touching blocks can only <b>push</b> (they separate if the front one is
         faster). A tow bar or rod can pull (tension) and push (compression).</li>
+      <li><b>Stacked blocks:</b> friction is the only horizontal force between them. Pull the bottom block and friction from A drags B forwards — and
+        B pulls A back with the same friction (a 3rd-law pair). B moves with A as long as it needs less than μ<sub>s</sub>F<sub>N</sub>, so a<sub>max</sub> = μ<sub>s</sub>g;
+        pull harder and B slides back on A. Vertically, B pushes down on A with the same normal force with which A pushes B up. Each lower block has a
+        raised stop at both ends (the truck's cab).</li>
       <li>A force at an angle θ: only <i>F</i> cos θ acts along the floor. Pulling up (sin θ) makes <i>F</i><sub>N</sub> and friction smaller on that block;
         pushing down makes them bigger.</li>
     </ul>
     <p class="hint">Model: g = 9.81 N kg⁻¹; light, inextensible strings; rigid blocks; sliding friction μ<sub>d</sub>F<sub>N</sub> (or a fixed resistive force)
       against the motion, static friction up to μ<sub>s</sub>F<sub>N</sub> (μ per block: μ<sub>s</sub> = μ<sub>d</sub>). At rest, static friction is taken up first by the
-      block nearest to the force. When blocks hit or a string jerks tight they move on together (momentum is conserved). The braking force is horizontal.</p>
+      block nearest to the force. When blocks hit or a string jerks tight they move on together (momentum is conserved). The braking force is horizontal; with stacked blocks it acts on the bottom block.</p>
     <p style="text-align:right"><button class="btn primary" id="helpClose">Close</button></p>
   </div>
 </div>
@@ -751,11 +756,13 @@ const PAIR = ["#AD1457", "#00838F"];
 const BCOL = ["#1565C0", "#EF6C00", "#6D4C41"];
 const NM = ["A", "B", "C"];
 // connection types: c = touching (can only push), s = string (can only pull), b = tow bar / rod (push or pull)
-const CONN = {push:["c", "c"], pull:["s", "s"], bar:["b", "b"], mix:["s", "c"]};
+const CONN = {push:["c", "c"], pull:["s", "s"], bar:["b", "b"], mix:["s", "c"], stack:[]};
 const FD = [["pushL", "▶ Push the left end"], ["pullR", "Pull the right end ▶"], ["pushR", "◀ Push the right end"], ["pullL", "◀ Pull the left end"], ["pushM", "▶ Push the middle block (B)"]];
+// ⑤ stacked: the force pulls one block of the stack (A = bottom), to the right (+) or left (−)
+const FDS = [["sA+", "→ Pull A (bottom)"], ["sB+", "→ Pull B"], ["sC+", "→ Pull C (top)"], ["sA-", "← Pull A (bottom)"], ["sB-", "← Pull B"], ["sC-", "← Pull C (top)"]];
 const SURF = [["none", "Frictionless"], ["same", "Same μ for all"], ["each", "μ for each block"], ["res", "Resistive forces (N)"]];
 const BASE = {n:2, mA:4, mB:2, mC:1, F:18, th:0, fd:"pushL", u:0, surf:"none", ms:0.30, md:0.20, mdA:0.20, mdB:0.20, mdC:0.20,
-              RA:0, RB:0, RC:0, skin:null, L:0.25, T:3, ph0:"on"};
+              RA:0, RB:0, RC:0, skin:null, L:0.25, T:3, ph0:"on", mfs:0, mfd:0, rel:null};
 const PRESETS = [
   {id:"custom", name:"my own values"},
   {id:"c1",   sc:"push", name:"Card C1★: pushing two boxes, 4.0 kg + 2.0 kg, 18 N", mA:4, mB:2, F:18},
@@ -790,6 +797,20 @@ const PRESETS = [
   {id:"mx2",  sc:"mix", name:"Push B with friction: 2.0 kg each, 24 N, μd = 0.20", n:3, mA:2, mB:2, mC:2, F:24, fd:"pushM", surf:"same", ms:0.25, md:0.20},
   {id:"mx3",  sc:"mix", name:"Push B: A 1.0 kg, B 3.0 kg, C 2.0 kg, 18 N", n:3, mA:1, mB:3, mC:2, F:18, fd:"pushM"},
   {id:"mx4",  sc:"mix", name:"Push A instead (left end): the string cannot push", n:3, mA:2, mB:2, mC:2, F:12, fd:"pushL", T:2},
+  {id:"s23a", sc:"stack", ms:0.40, md:0.30, name:"Forces in 30 situations, 23: pull A (4.0 kg) with 15 N, B (1.0 kg) on top", mA:4, mB:1, F:15, fd:"sA+"},
+  {id:"s23L", sc:"stack", ms:0.40, md:0.30, name:"Situation 23 at the limit: 19.6 N (a = μs g = 3.92 m s⁻²)", mA:4, mB:1, F:19.62, fd:"sA+"},
+  {id:"s23b", sc:"stack", ms:0.40, md:0.30, name:"Situation 23, pull harder: 30 N — B slips", mA:4, mB:1, F:30, fd:"sA+", T:2},
+  {id:"pt1",  sc:"stack", ms:0.40, md:0.30, name:"Pull the top block B (2.0 kg) with 10 N; A (5.0 kg) on a floor with μs 0.20", mA:5, mB:2, F:10, fd:"sB+", mfs:0.20, mfd:0.15, T:2},
+  {id:"pt2",  sc:"stack", ms:0.40, md:0.30, name:"Pull B with 20 N, smooth floor: A is dragged along", mA:5, mB:2, F:20, fd:"sB+", T:2},
+  {id:"books", sc:"stack", ms:0.40, md:0.30, name:"Three books pushed at constant velocity (2.0, 1.5, 1.0 kg, table μd 0.30)", n:3, mA:2, mB:1.5, mC:1, F:13.2435, fd:"sA+",
+   mfs:0.35, mfd:0.30, u:0.4, skin:["book", "book", "book"], rel:[0, 0.018, 0.018]},
+  {id:"cartb", sc:"stack", name:"Smart Cart (0.25 kg) carrying a 0.50 kg friction block, 2.0 N", mA:0.25, mB:0.5, F:2, fd:"sA+", ms:0.35, md:0.25,
+   skin:["cart", "fblock"], T:1.5},
+  {id:"cartv", sc:"stack", ms:0.40, md:0.30, name:"Box (2.0 kg) on a cart (10 kg) at constant velocity, no force", mA:10, mB:2, F:0, u:1, fd:"sA+"},
+  {id:"Ma",   sc:"stack", ms:0.40, md:0.30, name:"Card M★★★(a): truck 2000 kg, box 50 kg — largest acceleration without sliding", mA:2000, mB:50, F:8044.2, fd:"sA+",
+   skin:["truck", "tbox"], rel:[0, 3.4]},
+  {id:"Mb",   sc:"stack", ms:0.40, md:0.30, name:"Card M★★★(b, c): the truck brakes at 5.0 m s⁻² from 15 m s⁻¹ — the box slides into the cab", mA:2000, mB:50, F:10147.15, fd:"sA+",
+   skin:["truck", "tbox"], rel:[0, 3.4], u:15, ph0:"brake", T:4},
   {id:"mx5",  sc:"mix", name:"Pull C instead (right end): touching blocks cannot pull", n:3, mA:2, mB:2, mC:2, F:12, fd:"pullR", T:2},
 ];
 const SCN = {
@@ -799,6 +820,8 @@ const SCN = {
     hint:"Forces–<i>t</i>: the tension pulls both blocks equally hard. Let go and watch it fall to zero."},
   bar:{pre:"car", mid:"Free-body diagrams · whole system",
     hint:"Forces–<i>t</i>: a tow bar can pull (tension, +) or push (compression, −). Press ◀ Brake while the car moves."},
+  stack:{pre:"s23a", mid:"Free-body diagrams · whole system",
+    hint:"Forces–<i>t</i>: the friction between the blocks is a 3rd-law pair: forwards on the top block, backwards on the one below."},
   mix:{pre:"mx1", mid:"Free-body diagrams · whole system",
     hint:"A string joins A and B (it can only pull); B touches C (it can only push). Push the middle block and both carry a force."},
 };
@@ -851,6 +874,7 @@ const fdEnd = (fd, n) => fd === "pushM" ? (n === 3 ? 1 : 0) : fd === "pushL" || 
 const isPush = fd => fd.startsWith("push");
 // everything the solver needs, from a settings object (set, or a preset for the tasks)
 function params(c){
+  if (c.sc === "stack") return stackParams(c);
   const n = c.n, m = [c.mA, c.mB, c.mC].slice(0, n), types = CONN[c.sc];
   const sk = c.skin || [], w = m.map((mm, i) => blockW(mm, sk[i]));
   const e = fdEnd(c.fd, n), dir = fdDir(c.fd), th = rad(c.th);
@@ -958,6 +982,7 @@ function constrain(p, x, v){
 }
 // Work out the run from state (x, v) at time t0 in phase ph, for up to tMax seconds; returns the stored states
 function simulate(p, x, v, t0, ph, tMax){
+  if (p.stack) return stackSimulate(p, x, v, t0, ph, tMax);
   x = x.slice(); v = v.slice();
   const h = 0.001, per = Math.round(RUN_DT / h), S = [];
   let r = solve(p, x, v, ph), rest = 0;
@@ -978,7 +1003,7 @@ function simulate(p, x, v, t0, ph, tMax){
   return S;
 }
 // starting positions: touching blocks touch, strings and bars are straight
-function startPos(p){ const x = [0]; for (let i = 1; i < p.n; i++) x.push(x[i - 1] + p.w[i - 1] + (p.types[i - 1] === "c" ? 0 : p.L)); return x; }
+function startPos(p){ if (p.stack) return stackStart(p); const x = [0]; for (let i = 1; i < p.n; i++) x.push(x[i - 1] + p.w[i - 1] + (p.types[i - 1] === "c" ? 0 : p.L)); return x; }
 function build(){
   const p = params(set), x = startPos(p), v = p.m.map(() => set.u * p.dir);
   const S = simulate(p, x, v, 0, set.ph0, set.T);
@@ -996,6 +1021,7 @@ function steady(cfg){ const c = {...set, ...cfg}, p = params(c), x = startPos(p)
 // force needed for constant velocity (all blocks moving together in the direction of the force)
 function constF(c){
   const p = params(c), Nn = p.m.map(m => m * g);
+  if (p.stack) return c.mfd * p.N[0];
   if (c.surf === "none") return 0;
   if (c.surf === "res") return p.R.slice(0, p.n).reduce((a, b) => a + b, 0) / Math.cos(p.th);
   const mu = i => c.surf === "same" ? c.md : p.mdi[i];
@@ -1047,6 +1073,118 @@ function step(dt){
   if (R.t >= tEnd()){ R.t = tEnd(); R.playing = false; updateButtons(); }
 }
 const set = {sc:"push", pre:"c1", ...JSON.parse(JSON.stringify(BASE))};
+/* ---- ⑤ Stacked blocks: A on the floor, B on A (, C on B) ----
+   Contact 0 = floor–A, contact j (j ≥ 1) = block j−1 (below) – block j (above). H[j] = horizontal force ON the upper body of contact j
+   (from the floor or from the block below; + = to the right); the block below feels −H[j] (Newton's 3rd law).
+   N[j] = normal force on the upper body = g × (its mass + everything above it); the block above pushes down with the same N[j].
+   Each contact sticks (static friction up to μs N) or slips (μd N against the sliding). The block below has a raised stop at each end:
+   pressed against a stop, the stop adds whatever push is needed in its direction. ◀ Brake = a braking force F on the bottom block. */
+const STACKW = {truck:8.0, tbox:1.0, cart:0.18, fblock:0.10, book:0.30};
+const CAB = 1.6;                                           // truck cab length (the front stop of the bed) / m
+function stackParams(c){
+  const n = c.n, m = [c.mA, c.mB, c.mC].slice(0, n), sk = c.skin || [];
+  const w = m.map((_, i) => STACKW[sk[i]] ? STACKW[sk[i]] * (sk[i] === "book" ? 1 - 0.12 * i : 1) : [1.20, 0.40, 0.26][i]);
+  const bed = w.map((wi, i) => sk[i] === "truck" ? wi - CAB : wi);       // usable length on top of each block
+  const fd = c.fd || "sA+", e = fd[1] === "A" ? 0 : fd[1] === "C" ? Math.min(2, n - 1) : Math.min(1, n - 1), dir = fd[2] === "-" ? -1 : 1;
+  const Nup = m.map((_, j) => g * m.slice(j).reduce((a, b) => a + b, 0));
+  const relMax = m.map((_, j) => j ? Math.max(0, bed[j - 1] - w[j]) : 0);
+  // start position of each upper block on the one below: at the end it would slide away from (so a slip can be seen for longest)
+  const rel0 = m.map((_, j) => j === 0 ? 0 : c.rel && c.rel[j] !== undefined ? c.rel[j] : (e < j) === (dir > 0) ? relMax[j] : 0);
+  return {stack:true, n, m, w, bed, e, dir, F:c.F, th:0, push:false, ms:c.ms, md:c.md, fs:c.mfs, fdk:c.mfd, N:Nup, rel0, relMax, types:[]};
+}
+function stackStart(p){ const x = [0]; for (let j = 1; j < p.n; j++) x.push(x[j - 1] + p.rel0[j]); return x; }
+function stackSolve(p, x, v, ph){
+  const n = p.n, Fa = p.m.map((_, i) => ph === "on" && i === p.e ? p.dir * p.F : 0), B = ph === "brake" ? p.F : 0;
+  const s = [], d = [], rv = [], atL = [], atR = [];
+  for (let c = 0; c < n; c++){
+    if (c === 0){ s.push(p.fs * p.N[0] + B); d.push(p.fdk * p.N[0] + B); rv.push(v[0]); atL.push(false); atR.push(false); continue; }
+    s.push(p.ms * p.N[c]); d.push(p.md * p.N[c]); rv.push(v[c] - v[c - 1]);
+    const rel = x[c] - x[c - 1]; atL.push(rel <= 1e-7); atR.push(rel >= p.relMax[c] - 1e-7);
+  }
+  const opts = rv.map((r, c) => Math.abs(r) > VEPS ? [r > 0 ? "+" : "-"] : ["0", "+", "-"].filter(o => !(o === "+" && atR[c]) && !(o === "-" && atL[c])));
+  let combos = [[]]; for (const o of opts) combos = combos.flatMap(cb => o.map(x2 => [...cb, x2]));
+  combos.sort((a, b) => a.filter(z => z !== "0").length - b.filter(z => z !== "0").length);
+  let best = null;
+  for (const cb of combos){
+    const H = Array(n).fill(0), a = Array(n).fill(0);
+    cb.forEach((o, c) => { if (o !== "0") H[c] = o === "+" ? -d[c] : d[c]; });
+    // groups of blocks joined by sticking contacts
+    let lo = 0;
+    for (let i = 0; i < n; i++){
+      if (i + 1 < n && cb[i + 1] === "0") continue;
+      let M = 0, F = 0; for (let k = lo; k <= i; k++){ M += p.m[k]; F += Fa[k]; }
+      const fixed = lo === 0 && cb[0] === "0", ag = fixed ? 0 : (F + H[lo] - (i + 1 < n ? H[i + 1] : 0)) / M;
+      for (let k = lo; k <= i; k++) a[k] = ag;
+      lo = i + 1;
+    }
+    for (let j = n - 1; j >= 0; j--) if (cb[j] === "0") H[j] = p.m[j] * a[j] - Fa[j] + (j + 1 < n ? H[j + 1] : 0);
+    let ok = true;
+    for (let c = 0; c < n && ok; c++){
+      const tol = 1e-7 * (1 + s[c]), ra = c === 0 ? a[0] : a[c] - a[c - 1];
+      if (cb[c] === "0") ok = (Math.abs(H[c]) <= s[c] + tol) || (atL[c] && H[c] > 0) || (atR[c] && H[c] < 0);
+      else if (Math.abs(rv[c]) <= VEPS) ok = cb[c] === "+" ? ra >= -1e-9 : ra <= 1e-9;
+    }
+    if (ok){ best = {a, H, cb}; break; }
+    if (!best) best = {a, H, cb};
+  }
+  const {a, H, cb} = best, f = [], S = [], fb = [];
+  for (let c = 0; c < n; c++){
+    let fr = cb[c] === "0" ? clamp(H[c], -s[c], s[c]) : H[c]; const st = H[c] - fr;
+    if (c === 0 && B > 0){ const cap = cb[c] === "0" ? s[0] : d[0]; fb.push(cap ? fr * B / cap : 0); fr -= fb[0]; } else if (c === 0) fb.push(0);
+    f.push(fr); S.push(st);
+  }
+  for (let i = 0; i < n; i++) if (Math.abs(a[i]) < 1e-9) a[i] = 0;
+  const big = 1e-9 * (1 + Math.max(...s, Math.abs(p.F))); for (let c = 0; c < n; c++) if (Math.abs(H[c]) < big) H[c] = 0;
+  return {a, H, f, S, fb:fb[0], state:cb.map((o, c) => o !== "0" ? "slip" : Math.abs(S[c]) > 1e-9 ? "stop" : "stick"), Fa};
+}
+function stackRec(t, p, x, v, r, ph){
+  const o = {t, ph, Fx:r.Fa[p.e], Fy:0, lift:"", Ff:r.f[0] + r.fb};
+  for (let i = 0; i < p.n; i++){ o["x" + i] = x[i]; o["v" + i] = v[i]; o["a" + i] = r.a[i]; o["H" + i] = r.H[i]; o["f" + i] = r.f[i]; o["S" + i] = r.S[i];
+    o["k" + i] = r.state[i]; o["N" + i] = p.N[i]; o["b" + i] = 0; o["r" + i] = i ? x[i] - x[i - 1] : x[0]; }
+  o.b0 = r.fb; o.st0 = r.state[0] === "stick" && Math.abs(v[0]) < VEPS ? "1" : "";
+  let M = 0, P = 0, X = 0; for (let i = 0; i < p.n; i++){ M += p.m[i]; P += p.m[i] * v[i]; X += p.m[i] * (x[i] + p.w[i] / 2); }
+  o.vc = P / M; o.xc = X / M; return o;
+}
+function stackSimulate(p, x, v, t0, ph, tMax){
+  x = x.slice(); v = v.slice();
+  const h = 0.001, per = Math.round(RUN_DT / h), S = [];
+  let r = stackSolve(p, x, v, ph), rest = 0;
+  S.push(stackRec(t0, p, x, v, r, ph));
+  const still = () => v.every(vi => Math.abs(vi) < VEPS) && r.a.every(ai => Math.abs(ai) < 1e-9);
+  if (still()) return S;
+  const above = c => { const ids = []; for (let i = c; i < p.n; i++) ids.push(i); return ids; };
+  const share = (ids, vv) => { let M = 0, P = 0; ids.forEach(i => { M += p.m[i]; P += p.m[i] * vv[i]; }); return P / M; };
+  for (let k = 1; k * h <= tMax + 1e-9; k++){
+    r = stackSolve(p, x, v, ph);
+    const v0 = v.slice();
+    for (let i = 0; i < p.n; i++) v[i] += r.a[i] * h;
+    // sliding friction stops sliding but never reverses it
+    for (let c = 0; c < p.n; c++){
+      if (r.state[c] !== "slip") continue;
+      const before = c ? v0[c] - v0[c - 1] : v0[0], after = c ? v[c] - v[c - 1] : v[0];
+      if (before !== 0 && Math.sign(after) !== Math.sign(before)){
+        if (c === 0){ let top = 1; while (top < p.n && r.state[top] !== "slip") top++;          // blocks stuck to A stop with it
+          const shift = v[0]; for (let i = 0; i < top; i++) v[i] -= shift; }
+        else { const ids = [...above(c), c - 1], vc = share(ids, v); ids.forEach(i => v[i] = vc); }
+      }
+    }
+    for (let i = 0; i < p.n; i++) x[i] += (v0[i] + v[i]) / 2 * h;
+    // stops at the ends of each lower block (inelastic: the upper part moves on with the block below)
+    for (let c = 1; c < p.n; c++){
+      const rel = x[c] - x[c - 1], lim = rel < 0 ? 0 : rel > p.relMax[c] ? p.relMax[c] : null;
+      if (lim === null) continue;
+      const dx = lim - rel; for (const i of above(c)) x[i] += dx;
+      const rvc = v[c] - v[c - 1];
+      if ((lim === 0 && rvc < 0) || (lim > 0 && rvc > 0)){ const ids = [...above(c), c - 1], vc = share(ids, v); ids.forEach(i => v[i] = vc); }
+    }
+    if (k % per === 0){ r = stackSolve(p, x, v, ph); S.push(stackRec(t0 + k * h, p, x, v, r, ph));
+      rest = still() ? rest + 1 : 0; if (rest >= 15) break; }
+  }
+  return S;
+}
+function stackSteady(c){ const p = stackParams(c), x = stackStart(p), v = p.m.map(() => c.u), r = stackSolve(p, x, v, c.ph0 || "on"); return {...r, p}; }
+// first time the upper block of contact j reaches a stop (for Card M: when the box hits the cab)
+function stopTime(S, j){ for (const s of S) if (s["k" + j] === "stop" || (s["r" + j] !== undefined && j && Math.abs(s["r" + j] - M.p.relMax[j]) < 1e-6)) return s.t; return null; }
 
 /* ============================ 6 SCENE ============================ */
 function fitCanvas(cv){
@@ -1155,6 +1293,7 @@ function skinDraw(ctx, sk, x, y, w, h, i){
 const skinH = (sk, wpx) => sk === "cart" ? clamp(wpx * 0.55, 22, 46) : sk === "car" ? wpx * 0.36 : sk === "truck" ? wpx * 0.38 : sk === "trailer" ? wpx * 0.36
   : sk === "sled" ? wpx * 0.32 : clamp(wpx * 0.78, 24, 78);
 function sceneMain(ctx, w, h, s){
+  if (M.p.stack) return sceneStack(ctx, w, h, s);
   bg(ctx, w, h);
   const p = M.p, n = p.n, sk = set.skin || [];
   const cp = h < 240, band = cp ? 58 : 74, sp = cp ? 26 : 34;          // compact layout for a short scene
@@ -1282,6 +1421,7 @@ function placeLabels(ctx, L){
   }
 }
 function midMain(ctx, w, h, s){
+  if (M.p.stack) return fbdStack(ctx, w, h, s);
   const p = M.p, n = p.n, [A, B] = twoBoxes(w, h, 0.58);
   // 1 · one FBD per block, all to the same scale
   const F = p.m.map((_, i) => forcesOn(s, i)), Fmax = Math.max(...F.flat().map(f => Math.hypot(f.x, f.y)));
@@ -1325,6 +1465,7 @@ function midMain(ctx, w, h, s){
 }
 // table of the horizontal forces on every block (+ = to the right) and the check ΣF = ma
 function renderKtab(s){
+  if (M.p.stack) return ktabStack(s);
   const p = M.p, n = p.n, el = $("ktab"), z = v => Math.abs(v) < 5e-4 ? "0" : mn(sig(v, 3));
   const rows = [], cell = (v, c) => `<td${c ? ` style="color:${c}"` : ""}>${v === null ? "" : z(v)}</td>`;
   const val = (fn) => p.m.map((_, i) => fn(i));
@@ -1340,6 +1481,174 @@ function renderKtab(s){
     <tr><td><i>m a</i></td>${p.m.map((m, i) => cell(m * s["a" + i])).join("")}</tr></table>
     <div class="cap">+ = to the right · each 3rd-law pair: the same size with opposite signs, on two different blocks</div>`;
   if (el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; }
+}
+/* ---- ⑤ Stacked blocks: scene, FBDs, table, readouts ---- */
+const SNAME = {truck:"truck", tbox:"box", cart:"Smart Cart", fblock:"friction block", book:"book"};
+const BOOKC = ["#C62828", "#1565C0", "#2E7D32"];
+const ASPECT = {truck:0.11, tbox:0.8, cart:0.45, fblock:0.55, book:0.17};
+function stackHeights(p, k, avail){
+  const sk = set.skin || [];
+  let hs = p.w.map((w, i) => w * k * (ASPECT[sk[i]] || [0.30, 0.42, 0.5][i]));
+  const tot = hs.reduce((a, b) => a + b, 0); if (tot > avail) hs = hs.map(x => x * avail / tot);
+  return hs.map(x => Math.max(14, x));
+}
+function sceneStack(ctx, w, h, s){
+  bg(ctx, w, h);
+  const p = M.p, n = p.n, sk = set.skin || [], cp = h < 240, sp = cp ? 26 : 32;
+  const Yf = Math.min(h - (cp ? 58 : 74), 250 + (n - 1) * 46);
+  const k = Math.min(w * 0.52 / p.w[0], (w - 220) / p.w[0]), off = p.dir > 0 ? -55 : 55;
+  const X = xx => w / 2 + off + (xx - (s.x0 + p.w[0] / 2)) * k;
+  // floor and distance marks
+  ctx.fillStyle = "#D7CCC8"; ctx.fillRect(0, Yf, w, h - Yf); ctx.fillStyle = "#A1887F"; ctx.fillRect(0, Yf, w, 3);
+  const st = niceStep(w / k, 7), xs0 = s.x0 + p.w[0] / 2 - (w / 2 + off) / k;
+  ctx.save(); ctx.strokeStyle = "#8D6E63"; ctx.fillStyle = "#6D4C41"; ctx.font = `11px "Segoe UI",Calibri,Arial,sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (let v = Math.ceil(xs0 / st) * st; v <= xs0 + w / k; v += st){ const xx = X(v); ctx.beginPath(); ctx.moveTo(xx, Yf + 3); ctx.lineTo(xx, Yf + 9); ctx.stroke(); ctx.fillText(`${+v.toFixed(6)} m`, xx, Yf + 10); }
+  ctx.restore();
+  const hs = stackHeights(p, k, Math.max(40, Yf - 48));
+  const B = [], PL = []; let base = Yf;
+  for (let i = 0; i < n; i++){ const xl = X(s["x" + i]), wp = p.w[i] * k, hp = hs[i];
+    const top = sk[i] === "truck" ? base - hp : base - hp; B.push({xl, wp, hp, xc:xl + wp / 2, bot:base, top}); base = top; }
+  // draw from the bottom up, with the stops at the ends of each lower block
+  B.forEach((b, i) => {
+    const s_ = sk[i];
+    ctx.save();
+    if (s_ === "truck"){ const cab = CAB * k, r = Math.max(5, b.hp * 0.9);
+      ctx.fillStyle = "#90A4AE"; ctx.fillRect(b.xl, b.top, b.wp - cab, b.hp);
+      ctx.fillStyle = "#EF6C00"; ctx.fillRect(b.xl + b.wp - cab, b.top - b.hp * 2.6, cab, b.hp * 3.6);
+      ctx.fillStyle = "#E3F2FD"; ctx.fillRect(b.xl + b.wp - cab * 0.7, b.top - b.hp * 2.3, cab * 0.55, b.hp * 1.0);
+      ctx.fillStyle = "#607D8B"; ctx.fillRect(b.xl, b.top - 6, 4, 6);
+      wheel(ctx, b.xl + b.wp * 0.15, Yf - r, r); wheel(ctx, b.xl + b.wp * 0.32, Yf - r, r); wheel(ctx, b.xl + b.wp * 0.86, Yf - r, r);
+      b.bedTop = b.top; }
+    else if (s_ === "cart") skinDraw(ctx, "cart", b.xl, b.bot, b.wp, b.hp, 0);
+    else if (s_ === "book"){ ctx.fillStyle = BOOKC[i % 3]; rrect(ctx, b.xl, b.top, b.wp, b.hp, 3); ctx.fill(); ctx.fillStyle = "#FFF8E1"; ctx.fillRect(b.xl + b.wp - 6, b.top + 2, 4, b.hp - 4); }
+    else woodBox(ctx, b.xl, b.bot, b.wp, b.hp);
+    if (i < n - 1 && s_ !== "truck" && s_ !== "book"){ ctx.fillStyle = "#5D4037"; ctx.fillRect(b.xl - 1, b.top - 6, 4, 6); ctx.fillRect(b.xl + b.wp - 3, b.top - 6, 4, 6); }
+    ctx.restore();
+  });
+  B.forEach((b, i) => { const t = `${NM[i]} · ${fm(p.m[i])} kg${sk[i] && SNAME[sk[i]] ? " (" + SNAME[sk[i]] + ")" : ""}`;
+    ctx.save(); ctx.font = `600 12px "Segoe UI",Calibri,Arial,sans-serif`; const tw = ctx.measureText(t).width; ctx.restore();
+    if (sk[i] === "truck") PL.push({main:"", sub:"", rest:t, x:b.xl + 4, y:b.top - 12, col:"#4E342E", align:"left", size:11.5});
+    else if (b.wp > tw + 30 && b.hp >= 18) label(ctx, t, b.xc, b.top + b.hp / 2, "#4E342E", "center", 12);
+    else PL.push({main:"", sub:"", rest:t, x:b.xc, y:b.top - 10 - (i === n - 1 ? 0 : 0), col:"#4E342E", align:"center", size:11.5}); });
+  // force arrows: one scale for the horizontal forces in the scene
+  const Hs = Array.from({length:n}, (_, i) => Math.abs(s["H" + i])), Fm = Math.max(1e-9, Math.abs(p.F), ...Hs);
+  const kf = Math.max(20, Math.min(80, w * 0.14)) / Fm, L = F => Math.max(14, Math.abs(F) * kf);
+  // applied force on block e (rope + hand; driving force for the truck)
+  if (s.ph === "on" && p.F > 0){ const b = B[p.e], ux = p.dir, len = L(p.F), y = b.top + b.hp * 0.5, xf = ux > 0 ? b.xl + b.wp : b.xl;
+    if (sk[p.e] === "truck"){ const xt = ux > 0 ? b.xl + b.wp : b.xl; arrow(ctx, xt, y, xt + ux * len, y, COL.P, 4);
+      label(ctx, `driving force ${fmtF(p.F)}`, xt + ux * len, y - 15, COL.P, ux > 0 ? "right" : "left", 12); }
+    else { ctx.save(); ctx.strokeStyle = "#455A64"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(xf, y); ctx.lineTo(xf + ux * (len + 16), y); ctx.stroke(); ctx.restore();
+      arrow(ctx, xf, y - 7, xf + ux * len, y - 7, COL.P, 4); hand(ctx, xf + ux * (len + 22), y);
+      label(ctx, `F = ${fmtF(p.F)}`, xf + ux * (len + 38), y, COL.P, ux > 0 ? "left" : "right", 13); } }
+  // floor friction (and the brake) under A
+  { const f = s.H0; if (Math.abs(f) > 1e-9){ const yf = Yf + (cp ? 22 : 30), sg = Math.sign(f); arrow(ctx, B[0].xc, yf, B[0].xc + sg * L(f), yf, COL.F, 3);
+    label(ctx, Math.abs(s.b0) > 1e-9 ? `brake + Ff ${fmtF(Math.abs(f))}` : `Ff ${fmtF(Math.abs(f))}`, B[0].xc - sg * 4, yf, COL.F, sg > 0 ? "right" : "left", 11.5); } }
+  // the two 3rd-law pairs at every interface: friction (bold) and normal force (thin)
+  for (let j = 1; j < n; j++){
+    const up = B[j], lo = B[j - 1], yi = up.bot, H = s["H" + j], c = PAIR[j - 1], xc = up.xc;
+    const kn = Math.min(up.hp * 0.85, 40) / Math.max(...p.N.slice(1)), ln = Math.max(10, p.N[j] * kn), xn = p.dir > 0 ? up.xl + up.wp - Math.min(14, up.wp * 0.2) : up.xl + Math.min(14, up.wp * 0.2);
+    ctx.save(); ctx.globalAlpha = .75; arrow(ctx, xn, yi, xn, yi - ln, c, 2); arrow(ctx, xn, yi, xn, yi + Math.min(ln, lo.hp * 0.9), c, 2); ctx.restore();
+    if (Math.abs(H) > 1e-9){ const sg = Math.sign(H), len = Math.min(L(H), up.wp * 0.8);
+      arrow(ctx, xc - sg * len / 2, yi - 7, xc + sg * len / 2, yi - 7, c, 4); arrow(ctx, xc + sg * len / 2, yi + 7, xc - sg * len / 2, yi + 7, c, 4);
+      const stop = Math.abs(s["S" + j]) > 1e-9 ? " (+ stop)" : "";
+      const roomL = Math.min(up.xl, xc - len / 2), roomR = w - Math.max(up.xl + up.wp, xc + len / 2), L_ = p.dir > 0 ? roomL > 125 || roomL > roomR : roomR < 125 && roomL > roomR, xr = L_ ? Math.min(up.xl, xc - len / 2) - 8 : Math.max(up.xl + up.wp, xc + len / 2) + 8, al = L_ ? "right" : "left";
+      PL.push({main:"F", sub:`f, ${NM[j - 1]} on ${NM[j]}`, rest:` ${fmtF(Math.abs(H))}${stop}`, x:xr, y:yi - 10, col:c, align:al, size:12});
+      PL.push({main:"F", sub:`f, ${NM[j]} on ${NM[j - 1]}`, rest:` ${fmtF(Math.abs(H))}`, x:xr, y:yi + 10, col:c, align:al, size:12}); }
+  }
+  placeLabels(ctx, PL);
+  // v and a of each block (groups that move together share one pair of arrows)
+  const groups = []; B.forEach((b, i) => { const g0 = groups[groups.length - 1];
+    if (g0 && Math.abs(s["v" + i] - s["v" + g0[0]]) < 1e-4 && Math.abs(s["a" + i] - s["a" + g0[0]]) < 1e-4) g0.push(i); else groups.push([i]); });
+  groups.forEach((G, gi) => { const xc = groups.length > 1 ? w * (0.28 + 0.4 * gi) : B[G[0]].xc, v = s["v" + G[0]], a = s["a" + G[0]], nm = groups.length > 1 ? G.map(i => NM[i]).join("") + ": " : "";
+    if (Math.abs(v) > 1e-4){ const lv = clamp(18 + Math.abs(v) * 12, 18, 60) * Math.sign(v), yv = Yf + (cp ? 38 : 50); arrow(ctx, xc - lv / 2, yv, xc + lv / 2, yv, COL.v, 3);
+      label(ctx, `${nm}v ${f2(Math.abs(v))} m s⁻¹`, xc + lv / 2 + Math.sign(v) * 6, yv, COL.v, v > 0 ? "left" : "right", 11.5); }
+    if (Math.abs(a) > 1e-6){ const la = clamp(16 + Math.abs(a) * 6, 16, 50) * Math.sign(a), ya = Yf + (cp ? 51 : 66); arrow(ctx, xc - la / 2, ya, xc + la / 2, ya, COL.a, 3);
+      label(ctx, `${nm}a ${sig(Math.abs(a))} m s⁻²`, xc + la / 2 + Math.sign(a) * 6, ya, COL.a, a > 0 ? "left" : "right", 11.5); } });
+  const [t1, c1] = motionTextStack(s); label(ctx, t1, 10, 16, c1, "left", 14);
+  label(ctx, s.ph === "on" ? (p.F > 0 ? "pulling" : "no force") : s.ph === "off" ? "✋ let go" : "◀ braking", w - 10, 16, s.ph === "on" ? COL.P : COL.F, "right", 13);
+  if (sk[0] === "truck" && n > 1) label(ctx, `box → cab: ${f2(p.relMax[1] - s.r1)} m`, w - 10, 34, COL.navy, "right", 12.5);
+  if (M.still && tEnd() <= 0) note(ctx, M.still, w / 2, 54, w - 60, COL.F, 12);
+}
+function motionTextStack(s){
+  const n = M.p.n, vs = [], as = [];
+  for (let i = 0; i < n; i++){ vs.push(s["v" + i]); as.push(s["a" + i]); }
+  const slips = []; for (let j = 1; j < n; j++){ if (s["k" + j] === "slip") slips.push(`${NM[j]} slides on ${NM[j - 1]}`); else if (s["k" + j] === "stop") slips.push(`${NM[j]} against the stop`); }
+  const extra = slips.length ? ` · ${slips.join(", ")}` : n > 1 ? " · moving together" : "";
+  if (vs.every(v => Math.abs(v) < 1e-4) && as.every(a => Math.abs(a) < 1e-6)) return [`At rest: ΣF = 0 on every block`, COL.N];
+  if (as.every(a => Math.abs(a) < 1e-6)) return [`Constant velocity: ΣF = 0 on every block${extra}`, COL.N];
+  return [`Accelerating: ΣF = ma${extra}`, COL.a];
+}
+// every force on block i (x, y in N; up +): {label main/sub, colour, dx (vertical arrows), row (horizontal arrows)}
+function forcesOnStack(s, i){
+  const p = M.p, n = p.n, out = [];
+  out.push({x:0, y:-p.m[i] * g, col:COL.W, main:"W", sub:"", dx:-5});
+  out.push({x:0, y:p.N[i], col:i ? PAIR[i - 1] : COL.N, main:"F", sub:i ? `N, ${NM[i - 1]} on ${NM[i]}` : "N", dx:-5});
+  if (i + 1 < n) out.push({x:0, y:-p.N[i + 1], col:PAIR[i], main:"F", sub:`N, ${NM[i + 1]} on ${NM[i]}`, dx:6});
+  if (i === p.e && s.ph === "on" && p.F > 0) out.push({x:s.Fx, y:0, col:COL.P, main:"F", sub:"", row:-1});
+  if (i === 0){ if (Math.abs(s.f0) > 1e-9) out.push({x:s.f0, y:0, col:COL.F, main:"F", sub:"f", row:1});
+    if (Math.abs(s.b0) > 1e-9) out.push({x:s.b0, y:0, col:COL.F, main:"F", sub:"brake", row:1, dash:true}); }
+  else if (Math.abs(s["H" + i]) > 1e-9) out.push({x:s["H" + i], y:0, col:PAIR[i - 1], main:"F", sub:`f, ${NM[i - 1]} on ${NM[i]}`, row:1});
+  if (i + 1 < n && Math.abs(s["H" + (i + 1)]) > 1e-9) out.push({x:-s["H" + (i + 1)], y:0, col:PAIR[i], main:"F", sub:`f, ${NM[i + 1]} on ${NM[i]}`, row:0});
+  return out;
+}
+function fbdStack(ctx, w, h, s){
+  const p = M.p, n = p.n, [A, B] = twoBoxes(w, h, 0.62);
+  const F = p.m.map((_, i) => forcesOnStack(s, i)), Fmax = Math.max(...F.flat().map(f => Math.hypot(f.x, f.y)));
+  const cw = A.w / n, cy = A.y + 44 + (A.h - 44) / 2, room = Math.max(16, Math.min(cw / 2 - 18, (A.h - 44) / 2 - 18)), L = [];
+  const Fi = F.map(fs => Math.max(...fs.map(f => Math.hypot(f.x, f.y)))), own = Math.max(...Fi) / Math.min(...Fi) > 8;
+  label(ctx, own ? "Each block on its own (each FBD to its own scale)" : "Each block on its own (to scale)", A.x + 10, A.y + 12, COL.navy, "left", 12.5);
+  for (let i = 0; i < n; i++){
+    const cx = A.x + cw * (i + 0.5);
+    ctx.save(); ctx.globalAlpha = .55; ctx.fillStyle = "#BCAAA4"; ctx.fillRect(cx - 13, cy - 13, 26, 26); ctx.restore();
+    label(ctx, `${NM[i]} · ${fm(p.m[i])} kg`, cx, A.y + 30, "#4E342E", "center", 12);
+    for (const f of F[i]){
+      const k = room / (own ? Fi[i] : Fmax), hor = Math.abs(f.y) < 1e-12, Lp = Math.hypot(f.x, f.y) * k; if (Lp < 2) continue;
+      const x0 = cx + (hor ? 0 : f.dx || 0), y0 = cy + (hor ? (f.row || 0) * 6 : 0), ux = f.x / Math.hypot(f.x, f.y), uy = -f.y / Math.hypot(f.x, f.y);
+      const x2 = x0 + ux * Lp, y2 = y0 + uy * Lp; arrow(ctx, x0, y0, x2, y2, f.col, 3.5, !!f.dash);
+      const al = Math.abs(ux) < 0.35 ? (f.dx > 0 ? "left" : f.dx < 0 ? "right" : "center") : ux > 0 ? "left" : "right";
+      L.push({main:f.main, sub:f.sub, rest:"", x:hor ? x2 + ux * 6 : x2 + (f.dx > 0 ? 5 : -5), y:hor ? y2 : y2 + uy * 8, col:f.col, align:al, size:11.5});
+    }
+  }
+  placeLabels(ctx, L);
+  sepLine(ctx, B);
+  const together = Array.from({length:n - 1}, (_, j) => s["k" + (j + 1)] !== "slip").every(x => x);
+  label(ctx, together ? "Whole system (the pairs between the blocks cancel)" : "A block slides: use each block's FBD", B.x + 10, B.y + 16, together ? COL.navy : COL.F, "left", 12.5);
+  const bw = 54, bh = 15, yb = B.y + 30 + n * bh / 2 + 8, x0 = B.x + B.w / 2;
+  ctx.save(); ctx.strokeStyle = COL.accent; ctx.lineWidth = 1.6; ctx.setLineDash([6, 4]); rrect(ctx, x0 - bw / 2 - 12, yb - n * bh / 2 - 8, bw + 24, n * bh + 16, 9); ctx.stroke(); ctx.restore();
+  for (let i = 0; i < n; i++){ const ww = bw - i * 12, y = yb + n * bh / 2 - (i + 1) * bh; ctx.fillStyle = "#BCAAA4"; ctx.fillRect(x0 - ww / 2, y, ww, bh - 1); plain(ctx, NM[i], x0, y + bh / 2, "#4E342E", 10.5); }
+  const Fx = s.ph === "on" ? s.Fx : 0, Ff = s.H0, kk = Math.min(B.w * 0.18, 90) / Math.max(1e-9, Math.abs(Fx), Math.abs(Ff));
+  if (Math.abs(Fx) > 1e-9){ const sg = Math.sign(Fx), xs = x0 + sg * (bw / 2 + 12); arrow(ctx, xs, yb - 4, xs + Fx * kk + sg * 8, yb - 4, COL.P, 4); subLabel(ctx, "F", "", "", xs + Fx * kk / 2, yb - 18, COL.P, "center", 12.5); }
+  if (Math.abs(Ff) > 1e-9){ const sg = Math.sign(Ff), xs = x0 + sg * (bw / 2 + 12); arrow(ctx, xs, yb + 10, xs + Ff * kk + sg * 8, yb + 10, COL.F, 3.5); subLabel(ctx, "F", "f, floor", "", xs + Ff * kk / 2, yb + 25, COL.F, "center", 12); }
+  const Mt = p.m.reduce((a, b) => a + b, 0), ext0 = Fx + Ff, ext = Math.abs(ext0) < 1e-9 * (1 + Math.abs(Fx)) ? 0 : ext0, a = s.a0;
+  const l1 = together ? `ΣF = F − F_f,floor = (${p.m.map((_, i) => "m" + NM[i]).join(" + ")}) a`.replace("F_f,floor", "Ff,floor") : "Top block slides: ΣF = ma for each block";
+  label(ctx, l1, B.x + B.w / 2, B.y + B.h - (together ? 30 : 14), COL.ink, "center", 12.5);
+  if (together) label(ctx, `${mn(sig(ext))} N = ${sig(Mt)} kg × a  →  a = ${mn(sig(a))} m s⁻²`, B.x + B.w / 2, B.y + B.h - 12, COL.accent, "center", 12.5);
+}
+function ktabStack(s){
+  const p = M.p, n = p.n, el = $("ktab"), z = v => Math.abs(v) < 5e-4 ? "0" : mn(sig(v, 3));
+  const cell = (v, c) => `<td${c ? ` style="color:${c}"` : ""}>${v === null ? "" : z(v)}</td>`, val = fn => p.m.map((_, i) => fn(i));
+  const rows = [["<i>F</i> (applied)", val(i => i === p.e && s.ph === "on" ? s.Fx : null), COL.P], ["floor friction", val(i => i ? null : s.f0), COL.F]];
+  if (Math.abs(s.b0) > 1e-9) rows.push(["braking force", val(i => i ? null : s.b0), COL.F]);
+  for (let j = 1; j < n; j++) rows.push([`${NM[j - 1]} ↔ ${NM[j]} friction${Math.abs(s["S" + j]) > 1e-9 ? " + stop" : ""} (${s["k" + j]})`,
+    val(i => i === j ? s["H" + j] : i === j - 1 ? -s["H" + j] : null), PAIR[j - 1]]);
+  const sum = val(i => (i === p.e && s.ph === "on" ? s.Fx : 0) + s["H" + i] - (i + 1 < n ? s["H" + (i + 1)] : 0));
+  const html = `<table><tr><th>horizontal force / N</th>${p.m.map((_, i) => `<th>on ${NM[i]}</th>`).join("")}</tr>
+    ${rows.map(r => `<tr><td style="color:${r[2]};font-weight:600">${r[0]}</td>${r[1].map(v => cell(v, r[2])).join("")}</tr>`).join("")}
+    <tr class="sum"><td>Σ<i>F</i></td>${sum.map(v => cell(v)).join("")}</tr>
+    <tr><td><i>m a</i></td>${p.m.map((m, i) => cell(m * s["a" + i])).join("")}</tr></table>
+    <div class="cap">+ = to the right · vertical: each block's <i>F</i><sub>N</sub> from below = its weight + the push from the block above</div>`;
+  if (el.dataset.h !== html){ el.innerHTML = html; el.dataset.h = html; }
+}
+function readoutsStack(s){
+  const p = M.p, n = p.n, same = p.m.every((_, i) => Math.abs(s["a" + i] - s.a0) < 1e-6 && Math.abs(s["v" + i] - s.v0) < 1e-4);
+  let html = "<table>" + (same ? row("acceleration <i>a</i>", `${mn(sig(s.a0))} m s⁻²`, "speed <i>v</i>", `${f2(Math.abs(s.v0))} m s⁻¹`, COL.a, COL.v)
+    : row("accelerations", p.m.map((_, i) => `${NM[i]} ${mn(sig(s["a" + i], 3))}`).join(" · ") + " m s⁻²", "", "", COL.a)
+      + row("speeds", p.m.map((_, i) => `${NM[i]} ${f2(Math.abs(s["v" + i]))}`).join(" · ") + " m s⁻¹", "", "", COL.v));
+  html += row("applied force <i>F</i>", s.ph === "on" ? fmtF(Math.abs(s.Fx)) : s.ph === "off" ? "0 (let go)" : `braking ${fmtF(p.F)}`, "floor friction", fmtF(Math.abs(s.f0)), COL.P, COL.F);
+  for (let j = 1; j < n; j++){ const H = s["H" + j], a = NM[j - 1], b = NM[j], ar = v => v > 1e-9 ? "→" : v < -1e-9 ? "←" : "";
+    html += row(`friction ${a} on ${b}`, `${fmtF(Math.abs(H))} ${ar(H)}`, `friction ${b} on ${a}`, `${fmtF(Math.abs(H))} ${ar(-H)} <span class="k">${s["k" + j]}</span>`, PAIR[j - 1], PAIR[j - 1]);
+    html += row(`<i>F</i><sub>N</sub> ${a} on ${b}`, `${fmtF(p.N[j])} ↑`, `<i>F</i><sub>N</sub> ${b} on ${a}`, `${fmtF(p.N[j])} ↓`, PAIR[j - 1], PAIR[j - 1]); }
+  return html + `<tr><td colspan="5" class="ev">3rd law at each contact: friction and normal force come in pairs — same size, opposite directions, on the two blocks</td></tr></table>`;
 }
 /* ============================ 8 GRAPHS ============================ */
 function niceUp(x){ const p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p;
@@ -1494,9 +1803,13 @@ const GQ = {
      area:{nm:["Change in velocity of A", "Δv", "m s⁻¹"]}},
   F:{btn:"forces–<i>t</i>", sym:[["F","i"]], un:"N", get s(){
      const p = M.p, out = [["F applied", s => s.ph === "on" ? Math.hypot(s.Fx, s.Fy) : 0, COL.P, true]];
+     if (p.stack){ for (let j = 1; j < p.n; j++) out.push([`friction ${NM[j - 1]} on ${NM[j]}`, s => s["H" + j], PAIR[j - 1]]);
+       out.push(["floor friction", s => Math.abs(s.H0), COL.F, true]); return out; }
      for (let j = 0; j < p.n - 1; j++) out.push([`${NM[j]}–${NM[j + 1]} ${ptype(j) === "c" ? "push" : ptype(j) === "s" ? "tension" : "bar (+ pull)"}`, s => linkVal(s, j), PAIR[j]]);
      out.push(["total friction", s => Math.abs(s.Ff), COL.F, true]); return out; }},
-  x:{btn:"<i>x</i>–<i>t</i>", sym:[["x","i"]], un:"m", get s(){ const S0 = M.S[0]; return blockSeries("x", (s, i) => s["x" + i] - S0["x" + i]); },
+  x:{btn:"<i>x</i>–<i>t</i>", sym:[["x","i"]], un:"m", get s(){ const S0 = M.S[0];
+       if (M.p.stack) return M.p.m.map((_, i) => i ? [`${NM[i]} on ${NM[i - 1]}`, s => s["r" + i] - S0["r" + i], BCOL[i]] : ["A on the floor", s => s.x0 - S0.x0, BCOL[0]]);
+       return blockSeries("x", (s, i) => s["x" + i] - S0["x" + i]); },
      tan:{nm:"velocity of A", un:"m s⁻¹"}},
 };
 const graphsFor = () => ["v", "a", "F", "x"];
@@ -1546,6 +1859,10 @@ function drawAna(){
 const nearLink = p => p.n < 2 ? -1 : p.push ? (p.dir > 0 ? Math.min(p.e, p.n - 2) : p.e - 1) : (p.dir > 0 ? p.e - 1 : p.e);
 function trialData(){
   const s = at(R.t), p = M.p;
+  if (p.stack){ if (s.ph !== "on") return "Record while the force acts (before ✋ Let go or ◀ Brake).";
+    const nz = x => document.getElementById("noiseChk").checked ? x * (1 + 0.02 * (2 * Math.random() - 1)) : x;
+    const q = []; for (let j = 1; j < p.n; j++) q.push(nz(Math.abs(s["H" + j])));
+    return {n:p.n, m:p.m.slice(), F:set.F, th:0, a:nz(s["a" + p.e] * p.dir), q, jn:0, slip:s.k1 === "slip"}; }
   if (s.ph !== "on") return "Record while the force acts (before ✋ Let go or ◀ Brake).";
   if (!Array.from({length:p.n - 1}, (_, j) => s["e" + j]).every(x => x)) return "The blocks are not moving together now: record when they are all joined.";
   const nz = x => document.getElementById("noiseChk").checked ? x * (1 + 0.02 * (2 * Math.random() - 1)) : x;
@@ -1554,12 +1871,15 @@ function trialData(){
 }
 const DC = [["masses / kg", t => t.m.map(fm).join(" + ")], ["<i>F</i> / N", t => sig(t.F)], ["θ / °", t => f0(t.th)], ["<i>a</i> / m s⁻²", t => sig(t.a)],
   ["A–B / N", t => sig(t.q[0])], ["B–C / N", t => t.q.length > 1 ? sig(t.q[1]) : "—"]];
-const DCOLS = {push:DC, pull:DC, bar:DC, mix:DC};
-const ALL = ["push", "pull", "bar", "mix"];
+const DCOLS = {push:DC, pull:DC, bar:DC, mix:DC, stack:DC};
+const ALL = ["push", "pull", "bar", "mix", "stack"];
+const NOSTACK = ["push", "pull", "bar", "mix"];
 const ANA = [
   {id:"aF", sc:ALL, name:"<i>a</i>–<i>F</i>", x:t => t.F, y:t => t.a, xs:[["applied force ","n"],["F","i"]], xu:"N", ys:[["a","i"]], yu:"m s⁻²", fit:"line",
    g:f => `gradient = ${sig(f.k)} kg⁻¹ → total mass = 1/gradient = ${sig(1 / f.k)} kg · intercept ${mn(sig(f.b, 2))} m s⁻²`, hint:"keep the masses, change F"},
-  {id:"qF", sc:ALL, name:"link–<i>F</i>", x:t => t.F, y:t => t.q[t.jn], xs:[["applied force ","n"],["F","i"]], xu:"N", ys:[["force between blocks","n"]], yu:"N", fit:"line",
+  {id:"fF", sc:["stack"], name:"friction–<i>F</i>", x:t => t.F, y:t => t.q[0], xs:[["applied force ","n"],["F","i"]], xu:"N", ys:[["friction on B","n"]], yu:"N", fit:"line",
+   g:f => `gradient = ${sig(f.k)} = m_B/(m_A + m_B) while they move together · flat at μd m_B g once B slides`, hint:"fit only the points before B slides"},
+  {id:"qF", sc:NOSTACK, name:"link–<i>F</i>", x:t => t.F, y:t => t.q[t.jn], xs:[["applied force ","n"],["F","i"]], xu:"N", ys:[["force between blocks","n"]], yu:"N", fit:"line",
    g:f => `gradient = ${sig(f.k)} = fraction of the mass beyond the link · intercept ${mn(sig(f.b, 2))} N`, hint:"keep the masses, change F"},
 ];
 
@@ -1623,6 +1943,29 @@ const TASKS = [
   {type:"predict", setup:{sc:"pull", pre:"exitv"}, text:"The truck now tows the car at a constant velocity. The resultant force on the car is…",
    opts:["zero", "equal to the tension", "equal to the resistive force"], correct:0,
    why:"Constant velocity → Newton's 1st law: ΣF = 0. The rope still pulls (T = 200 N here), but it just balances the 200 N resistive force on the car."},
+ ]},
+ {id:"stk", title:"4 · Stacked blocks", time:"≈ 20 min", steps:[
+  {type:"predict", setup:{sc:"stack", pre:"s23a"}, text:"⑤ You pull the bottom block A; block B rests on top of it. Which force makes B speed up?",
+   opts:["the pull F", "friction from A on B", "the normal force from A", "nothing — B stays where it is"], correct:1,
+   why:"F acts on A only. The only horizontal force on B is the friction from A, forwards. Its 3rd-law partner, the friction from B on A, acts backwards on A."},
+  {type:"num", setup:{sc:"stack", pre:"s23a"}, text:"A (4.0 kg) is pulled with 15 N on a smooth floor; B (1.0 kg) moves with it. Calculate the friction force on B.",
+   answer:() => stackSteady(P("s23a")).H[1], unit:"N", hint:"Together: a = 15/5.0. B alone: F<sub>f</sub> = m<sub>B</sub>a."},
+  {type:"num", setup:{sc:"stack", pre:"s23L"}, text:"μs = 0.40 between the blocks. Calculate the largest pull on A for which B does not slide.",
+   answer:() => 0.40 * g * 5, unit:"N", hint:"B can get at most μ<sub>s</sub>m<sub>B</sub>g, so a<sub>max</sub> = μ<sub>s</sub>g; then F = (m<sub>A</sub> + m<sub>B</sub>)a<sub>max</sub>."},
+  {type:"predict", setup:{sc:"stack", pre:"s23b"}, text:"Now the pull is 30 N. Block B…",
+   opts:["moves with A", "slides backwards on A, but still speeds up forwards", "stays at rest on the floor"], correct:1,
+   why:"Friction can give B at most μ<sub>d</sub>g = 2.94 m s⁻² once it slides. A speeds up faster (6.76 m s⁻²), so B slides back relative to A while still moving forwards."},
+  {type:"num", setup:{sc:"stack", pre:"s23b"}, text:"Calculate the acceleration of A while B slides (μd = 0.30).", answer:() => stackSteady(P("s23b")).a[0], unit:"m s⁻²",
+   hint:"A: 30 − μ<sub>d</sub>m<sub>B</sub>g = m<sub>A</sub>a<sub>A</sub> (the friction from B pulls A back)."},
+  {type:"predict", setup:{sc:"stack", pre:"pt1"}, text:"You pull the top block B (2.0 kg) with 10 N. A (5.0 kg) stands on a floor with μs = 0.20. Block A…",
+   opts:["stays at rest", "moves with B", "moves, but slower than B"], correct:0,
+   why:"B slides, so it pulls A forwards with only μ<sub>d</sub>m<sub>B</sub>g = 5.89 N. The floor can hold A with up to 0.20 × 7.0 × 9.81 = 13.7 N, so A stays put."},
+  {type:"num", setup:{sc:"stack", pre:"Ma"}, text:"Card M★★★(a): a 50 kg box on a truck bed, μs = 0.40. Calculate the largest acceleration of the truck for which the box does not slide.",
+   answer:() => 0.40 * g, unit:"m s⁻²", hint:"Only friction pushes the box forwards: μ<sub>s</sub>mg = ma<sub>max</sub>."},
+  {type:"num", setup:{sc:"stack", pre:"Mb"}, text:"(c) The truck brakes at 5.0 m s⁻²; μd = 0.30. Calculate the time until the box, 2.0 m behind the cab, hits the cab.",
+   answer:() => Math.sqrt(2 * 2.0 / (5.0 - 0.30 * g)), unit:"s", hint:"Relative to the truck the box speeds up at 5.0 − μ<sub>d</sub>g; s = ½at²."},
+  {type:"num", setup:{sc:"stack", pre:"books"}, text:"Three books (2.0, 1.5, 1.0 kg from the bottom). Calculate the normal force of the middle book on the bottom book.",
+   answer:() => g * 2.5, unit:"N", hint:"The middle book pushes down with the weight of the middle and the top book."},
  ]},
 ];
 // Step types: "do" (instruction + done tick), "predict" (lock in a choice, then check),
@@ -1689,20 +2032,22 @@ function taskChange(e){
   if (t.dataset.done){ taskState[t.dataset.done].done = t.checked; renderTasks(); save(); }
 }
 /* ============================ 11 UI ============================ */
-const skinLab = i => { const k = (set.skin || [])[i]; return k && k !== "cart" ? ` (${k})` : ""; };
+const skinLab = i => { const k = (set.skin || [])[i], nm = {tbox:"box", fblock:"friction block", cart:"Smart Cart"}[k] || k; return k ? ` (${nm})` : ""; };
 const CTL = [
   {id:"pre", kind:"select", lab:"Example", opts:() => PRESETS.filter(q => q.id === "custom" || q.sc === set.sc).map(q => [q.id, q.name]), keepPre:true},
   {id:"n", kind:"seg", lab:"Blocks", opts:[[2, "2"], [3, "3"]], show:() => set.sc !== "mix"},
   {id:"mA", kind:"range", log:true, lab:() => `Mass <i>m</i><sub>A</sub>${skinLab(0)}`, unit:"kg", min:0.1, max:20, tmin:0.01, tmax:10000},
   {id:"mB", kind:"range", log:true, lab:() => `Mass <i>m</i><sub>B</sub>${skinLab(1)}`, unit:"kg", min:0.1, max:20, tmin:0.01, tmax:10000},
   {id:"mC", kind:"range", log:true, lab:() => `Mass <i>m</i><sub>C</sub>${skinLab(2)}`, unit:"kg", min:0.1, max:20, tmin:0.01, tmax:10000, show:() => set.n === 3},
-  {id:"fd", kind:"select", lab:"Force acts", opts:() => FD.filter(o => o[0] !== "pushM" || set.n === 3)},
+  {id:"fd", kind:"select", lab:"Force acts", opts:() => set.sc === "stack" ? FDS.filter(o => o[0][1] !== "C" || set.n === 3) : FD.filter(o => o[0] !== "pushM" || set.n === 3)},
   {id:"F", kind:"range", lab:"Force <i>F</i>", unit:"N", min:0, max:100, step:0.5, tmin:0, tmax:100000},
-  {id:"th", kind:"range", lab:() => set.fd.startsWith("push") ? "Angle θ (down)" : "Angle θ (up)", unit:"°", min:0, max:60, step:1, tmin:0, tmax:85},
+  {id:"th", kind:"range", lab:() => set.fd.startsWith("push") ? "Angle θ (down)" : "Angle θ (up)", unit:"°", min:0, max:60, step:1, tmin:0, tmax:85, show:() => set.sc !== "stack"},
   {id:"u", kind:"range", lab:"Start speed <i>u</i>", unit:"m s⁻¹", min:0, max:3, step:0.1, tmin:0, tmax:100},
-  {id:"surf", kind:"select", lab:"Surface", opts:SURF},
-  {id:"ms", kind:"range", lab:"μ<sub>s</sub>", unit:"", min:0, max:1, step:0.01, tmin:0, tmax:2, show:() => set.surf === "same"},
-  {id:"md", kind:"range", lab:"μ<sub>d</sub>", unit:"", min:0, max:1, step:0.01, tmin:0, tmax:2, show:() => set.surf === "same"},
+  {id:"surf", kind:"select", lab:"Surface", opts:SURF, show:() => set.sc !== "stack"},
+  {id:"ms", kind:"range", lab:() => set.sc === "stack" ? "μ<sub>s</sub> between blocks" : "μ<sub>s</sub>", unit:"", min:0, max:1, step:0.01, tmin:0, tmax:2, show:() => set.surf === "same" || set.sc === "stack"},
+  {id:"md", kind:"range", lab:() => set.sc === "stack" ? "μ<sub>d</sub> between blocks" : "μ<sub>d</sub>", unit:"", min:0, max:1, step:0.01, tmin:0, tmax:2, show:() => set.surf === "same" || set.sc === "stack"},
+  {id:"mfs", kind:"range", lab:"μ<sub>s</sub> floor", unit:"", min:0, max:1, step:0.01, tmin:0, tmax:2, show:() => set.sc === "stack"},
+  {id:"mfd", kind:"range", lab:"μ<sub>d</sub> floor", unit:"", min:0, max:1, step:0.01, tmin:0, tmax:2, show:() => set.sc === "stack"},
   {id:"mdA", kind:"range", lab:"μ<sub>d</sub> of A", unit:"", min:0, max:1, step:0.01, tmin:0, tmax:2, show:() => set.surf === "each"},
   {id:"mdB", kind:"range", lab:"μ<sub>d</sub> of B", unit:"", min:0, max:1, step:0.01, tmin:0, tmax:2, show:() => set.surf === "each"},
   {id:"mdC", kind:"range", lab:"μ<sub>d</sub> of C", unit:"", min:0, max:1, step:0.01, tmin:0, tmax:2, show:() => set.surf === "each" && set.n === 3},
@@ -1713,10 +2058,12 @@ const CTL = [
 function onChanged(c, v){
   if (c.id === "pre") fresh = true;
   if (c.id === "n" && v === 2 && set.fd === "pushM") set.fd = "pushL";
+  if (c.id === "n" && v === 2 && set.fd[1] === "C") set.fd = "sB" + set.fd[2];
   if (c.id === "fd" && v === "pushM" && set.n < 3) set.n = 3;
   if (c.id === "n" || c.id === "fd") scenarioExtra();
 }
 function readouts(s){
+  if (M.p.stack) return readoutsStack(s);
   const p = M.p, n = p.n, same = p.m.every((_, i) => Math.abs(s["a" + i] - s.a0) < 1e-6 && Math.abs(s["v" + i] - s.v0) < 1e-4);
   const ar = same ? row("acceleration <i>a</i>", `${mn(sig(s["a" + p.e] * p.dir))} m s⁻²`, "speed <i>v</i>", `${f2(Math.abs(s.v0))} m s⁻¹`, COL.a, COL.v)
     : row("accelerations", p.m.map((_, i) => `${NM[i]} ${mn(sig(s["a" + i], 2))}`).join(" · ") + " m s⁻²", "", "", COL.a);
@@ -1834,7 +2181,7 @@ function scenarioExtra(){
   // the "push the middle block" button only exists with three blocks; mixed mode always has three blocks
   if (set.sc === "mix") set.n = 3;
   const veh = (set.skin || []).some(k => k === "car" || k === "truck");
-  $("brakeBtn").title = veh ? "The car brakes: a braking force of size F on the car" : "A braking force of size F on the block that was pushed or pulled";
+  $("brakeBtn").title = set.sc === "stack" ? "The bottom block brakes: a braking force of size F on it" : veh ? "The car brakes: a braking force of size F on the car" : "A braking force of size F on the block that was pushed or pulled";
 }
 function drawScene(){
   const {ctx, w, h} = fitCanvas($("scene")); ctx.clearRect(0, 0, w, h);
