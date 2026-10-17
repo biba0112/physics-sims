@@ -32,42 +32,71 @@ a.ghost{border:1px solid var(--line);color:var(--navy);background:#fff}
 .group{grid-column:1/-1;margin:10px 0 0;color:var(--navy);font-size:1.15rem;border-bottom:2px solid var(--accent);padding-bottom:4px}
 
 
-/* ---- three rows of theme tabs (Course Companion colours): Simulations · Quizzes · Videos ---- */
-.tabrows{max-width:1100px;margin:14px auto 0;padding:0 16px;display:grid;gap:12px}
-.rowlabel{font-weight:800;color:var(--navy);font-size:1.02rem;margin:0 0 6px 2px;letter-spacing:.01em}
-.tabrow.quiz .rowlabel::before{content:"✔ ";color:#2E7D32}.tabrow.video .rowlabel::before{content:"▶ ";color:#C62828}.tabrow.sim .rowlabel::before{content:"▶ ";color:var(--accent)}
-.theme-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 .theme{position:relative}
-.theme-btn{width:100%;display:flex;align-items:center;gap:10px;background:var(--tc);color:#fff;border:2px solid var(--tc);border-radius:10px;
-  padding:6px 12px 6px 6px;min-height:54px;font:inherit;text-align:left;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.18)}
-.tabrow.quiz .theme-btn,.tabrow.video .theme-btn{background:#fff;color:var(--tc);min-height:46px;box-shadow:none}
-.theme-btn:hover,.theme-btn[aria-expanded="true"]{filter:brightness(1.06);box-shadow:0 0 0 3px #fff,0 0 0 5px var(--tc)}
-.tabrow.quiz .theme-btn:hover,.tabrow.video .theme-btn:hover,.tabrow.quiz .theme-btn[aria-expanded="true"],.tabrow.video .theme-btn[aria-expanded="true"]{background:color-mix(in srgb,var(--tc) 9%,#fff)}
-.theme-btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-.theme-btn .L{flex:none;width:38px;height:38px;border-radius:8px;background:#fff;color:var(--tc);display:grid;place-items:center;font-weight:800;font-size:1.35rem}
-.tabrow.quiz .theme-btn .L,.tabrow.video .theme-btn .L{width:32px;height:32px;background:var(--tc);color:#fff;font-size:1.1rem}
-.theme-btn .tn{flex:1;font-weight:700;font-size:.9rem;line-height:1.2}
-.theme-btn .car{font-size:.9rem;opacity:.9}
-.theme-menu{position:absolute;z-index:20;top:calc(100% + 6px);left:0;min-width:100%;width:max-content;max-width:min(360px,calc(100vw - 32px));
-  max-height:min(70vh,620px);overflow:auto;margin:0;padding:6px;list-style:none;background:#fff;border:2px solid var(--tc);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.22)}
-.theme:nth-child(n+4) .theme-menu{left:auto;right:0}
-.theme-menu a,.theme-menu .soon{display:flex;align-items:flex-start;gap:10px;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--ink);min-height:44px}
-.theme-menu a:hover,.theme-menu a:focus-visible{background:color-mix(in srgb,var(--tc) 12%,#fff);outline:none}
-.theme-menu .code{flex:none;min-width:34px;text-align:center;font-weight:800;color:#fff;background:var(--tc);border-radius:5px;padding:2px 6px}
-.theme-menu .nm{font-weight:600;line-height:1.25}
-.theme-menu small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
-.theme-menu .soon{color:#9AA3AA;cursor:default}.theme-menu .soon .code{background:#C9CED3}
-.theme-menu .hl{display:inline-block;margin-left:6px;font-size:.68rem;font-weight:700;color:var(--tc);border:1px solid var(--tc);border-radius:4px;padding:0 4px;vertical-align:1px}
-.theme-menu .soon .hl{color:#9AA3AA;border-color:#C9CED3}
-.theme-menu .sec{margin:8px 4px 2px;padding:6px 6px 2px;border-top:1px solid var(--line);font-size:.78rem;font-weight:800;color:var(--tc)}
-.theme-menu .sec:first-child{border-top:0;margin-top:0}
-.theme-menu .all a{min-height:40px;font-weight:700;color:var(--tc);border-top:1px solid var(--line);border-radius:0;margin-top:4px}
-.theme-menu .none{display:block;padding:8px 10px;color:#9AA3AA;font-size:.9rem}
-.filter-note{max-width:1100px;margin:12px auto 0;padding:0 16px;color:var(--muted);font-size:.95rem}
-.start-hint{max-width:1100px;margin:18px auto 0;padding:0 16px;color:var(--muted);font-size:1rem;text-align:center}
-.start-hint[hidden]{display:none}
-.filter-note a{color:var(--accent);font-weight:600;margin-left:6px}
 .is-hidden{display:none!important}
+/* ---- theme accordion (17 Oct 2026): one bar per theme (A-E), subtopic lines with 4 kind buttons, cards open under the line ---- */
+[hidden]{display:none!important}
+.start-hint{max-width:1100px;margin:16px auto 0;padding:0 16px;color:var(--muted);font-size:1rem}
+.themes{max-width:1100px;margin:8px auto 0;padding:0 16px;display:grid;gap:10px}
+.th-h{margin:0;font-size:1rem}
+.th-bar{width:100%;display:flex;align-items:center;gap:12px;min-height:58px;padding:8px 16px 8px 9px;border:2px solid var(--tc);border-radius:11px;
+  background:var(--tc);color:#fff;font:inherit;text-align:left;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.th-bar:hover{filter:brightness(1.06)}
+.th-bar:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.th.open .th-bar{border-radius:11px 11px 0 0;box-shadow:none}
+.th-bar .L{flex:none;width:40px;height:40px;border-radius:8px;background:#fff;color:var(--tc);display:grid;place-items:center;font-weight:800;font-size:1.35rem}
+.th-bar .tx{flex:1;min-width:0;display:flex;align-items:center;gap:4px 14px}
+.th-bar .tn{flex:1;min-width:0;font-weight:700;font-size:1.1rem;line-height:1.25}
+.th-bar .sum{flex:none;font-size:.88rem;font-weight:600;opacity:.92;white-space:nowrap}
+.th-bar .car{flex:none;width:16px;text-align:center}
+.th-body{background:color-mix(in srgb,var(--tc) 6%,#fff);border:2px solid var(--tc);border-top:0;border-radius:0 0 11px 11px;padding:2px 12px 6px}
+.st + .st{border-top:1px solid color-mix(in srgb,var(--tc) 22%,#fff)}
+.st-line{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 14px;padding:8px 0}
+.st-name{margin:0;display:flex;align-items:center;gap:8px;min-width:0;font-size:1rem;line-height:1.25;color:var(--ink)}
+.st-name .code{flex:none;min-width:38px;text-align:center;font-weight:800;font-size:.88rem;color:#fff;background:var(--tc);border-radius:5px;padding:2px 6px}
+.st-name .nm{font-weight:700}
+.st-name .hl{display:inline-block;margin-left:6px;font-size:.68rem;font-weight:700;color:var(--tc);border:1px solid var(--tc);border-radius:4px;padding:0 4px;vertical-align:2px}
+.kbs{display:grid;grid-template-columns:repeat(4,9.6rem);gap:8px}
+.kb{display:flex;align-items:center;justify-content:center;gap:5px;min-height:44px;padding:6px 8px;border:2px solid var(--tc);border-radius:9px;
+  background:#fff;color:var(--tc);font-weight:700;font-size:.88rem;line-height:1.15;text-decoration:none;white-space:nowrap}
+.kb.k-sim{background:var(--tc);color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.kb.k-exercise{border-style:dashed}
+a.kb:hover,a.kb.on{background:color-mix(in srgb,var(--tc) 12%,#fff)}
+a.kb.k-sim:hover,a.kb.k-sim.on{background:var(--tc);filter:brightness(1.1)}
+a.kb.on{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--tc)}
+a.kb:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.kb.soon{border:2px solid #D5DADF;background:#F3F5F7;color:#9AA3AA;box-shadow:none;cursor:default}
+.kb.soon .ks{display:none}
+.kb.soon .sn::before{content:"· "}
+.st.open > .st-line{position:sticky;top:0;z-index:6;background:color-mix(in srgb,var(--tc) 6%,#fff);box-shadow:0 7px 8px -7px rgba(0,0,0,.3)}
+.st-panel{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;padding:6px 0 16px}
+.st-panel .subgroup{margin:6px 0 -4px}
+.foot-note{max-width:1100px;margin:18px auto 28px;padding:0 16px;color:var(--muted);font-size:.9rem}
+@media (max-width:1099px){
+  .st-line{grid-template-columns:1fr}
+  .kbs{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (max-width:1023px){
+  .th-bar .tx{flex-direction:column;align-items:flex-start}
+  .th-bar .tn{flex:none}
+}
+@media (max-width:759px){
+  .start-hint{margin-top:10px;font-size:.92rem}
+  .themes{gap:8px}
+  .th-bar{min-height:60px;gap:10px;padding:7px 12px 7px 7px}
+  .th-bar .tw,.th-bar .sum{display:none}
+  .th-bar .tn{font-size:1rem}
+  .th-body{padding:0 8px 4px}
+  .st-line{gap:6px}
+  .kbs{gap:6px}
+  .kb{flex-direction:column;gap:1px;min-height:50px;padding:4px 2px;font-size:.92rem}
+  .kb .kw{font-size:0;line-height:1}
+  .kb .kw::after{content:attr(data-short);font-size:.72rem;font-weight:600}
+  .kb.soon .sn{order:-1;font-size:.72rem}
+  .kb.soon .sn::before{content:""}
+  .st-panel{grid-template-columns:1fr;gap:10px}
+}
+/* ---- end theme accordion ---- */
 /* main blocks */
 .block{grid-column:1/-1;margin:18px 0 0;padding:10px 14px;background:var(--navy);color:#fff;border-radius:10px;font-size:1.3rem;border-bottom:4px solid var(--accent)}
 .theme-h{grid-column:1/-1;margin:8px 0 0;display:flex;align-items:center;gap:10px;color:var(--tc);font-size:1.15rem}
@@ -75,21 +104,11 @@ a.ghost{border:1px solid var(--line);color:var(--navy);background:#fff}
 .group[data-topic]{border-bottom-color:var(--tc);display:flex;align-items:center;gap:8px}
 .group[data-topic]::before{content:"";width:12px;height:22px;border-radius:3px;background:var(--tc);flex:none}
 .subgroup{grid-column:1/-1;margin:4px 0 -4px;color:var(--tc);font-size:1rem;font-weight:700}
-@media (max-width:900px){.theme-bar{grid-template-columns:repeat(5,minmax(0,1fr))}
-  .theme-btn{flex-direction:column;justify-content:center;padding:6px 2px;gap:2px}.theme-btn .car{display:none}
-  .tabrow.sim .theme-btn .tn{display:none}.tabrow.quiz .theme-btn .tn,.tabrow.video .theme-btn .tn{font-size:0}
-  .tabrow.quiz .theme-btn .tn::after{content:"Quiz";font-size:.72rem}.tabrow.video .theme-btn .tn::after{content:"Videos";font-size:.72rem}
-  .theme-menu,.theme:nth-child(n+4) .theme-menu{position:fixed;left:16px;right:16px;top:auto;width:auto;min-width:0;max-width:none}}
-.tabrow.exercise .rowlabel::before{content:"✎ ";color:#E65100}
-.tabrow.exercise .theme-btn{background:#fff;color:var(--tc);min-height:46px;box-shadow:none;border-style:dashed}
-.tabrow.exercise .theme-btn:hover,.tabrow.exercise .theme-btn[aria-expanded="true"]{background:color-mix(in srgb,var(--tc) 9%,#fff)}
-.tabrow.exercise .theme-btn .L{width:32px;height:32px;background:var(--tc);color:#fff;font-size:1.1rem}
 .card.exercise{border-left:5px solid #E65100}
 .card.exercise .tag{color:#E65100}
 .card.exercise .lv{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .card.exercise .lv a{font-size:.85rem;font-weight:600;color:#1F3A5F;border:1px solid #DDE6F0;border-radius:14px;padding:3px 10px;text-decoration:none}
 .card.exercise .lv a:hover{border-color:#1F3A5F}
-@media (max-width:900px){.tabrow.exercise .theme-btn .tn{font-size:0}.tabrow.exercise .theme-btn .tn::after{content:"Exercises";font-size:.72rem}}
 /* video cards */
 .card.video{border-left:5px solid #C62828}
 .card.video .tag{color:#C62828}
@@ -104,8 +123,6 @@ a.vbtn{background:#C62828;color:#fff}
   header h1{font-size:1.3rem}
   header p{font-size:.9rem}
   .credit{font-size:.78rem}
-  .tabrows{margin-top:10px;gap:10px}
-  .rowlabel{margin-bottom:4px}
   main{padding:14px 12px 80px;gap:10px}
   .card{padding:12px 14px}
   .card h2{font-size:1.08rem}
@@ -114,7 +131,6 @@ a.vbtn{background:#C62828;color:#fff}
   .card .row a.btn{flex:1 1 40%;text-align:center;padding:10px 8px}
   .card .row a.primary{flex-basis:100%}
   .block{font-size:1.15rem;margin-top:10px}
-  .theme-menu{max-height:min(75vh,620px)}
   .totop{position:fixed;right:14px;bottom:14px;z-index:15;display:none;align-items:center;gap:6px;min-height:46px;padding:8px 16px;
     border:0;border-radius:23px;background:var(--navy);color:#fff;font:inherit;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer}
   .totop.on{display:flex}
@@ -137,16 +153,13 @@ a.vbtn{background:#C62828;color:#fff}
   .card:has(a.thumb) > .tag,.card:has(a.thumb) > h2,.card:has(a.thumb) > p{margin-right:106px}
 }
 /* ---- end card icons ---- */
-/* ---- theme/topic icons (CSS, 17 Oct 2026): theme icon on the tab buttons + theme headings, topic icon in menus + topic headings ---- */
-.tic,.mic,.sic,.hic,.gic{flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.theme-btn:has(.tic){gap:6px}
-.theme-btn .tic{width:18px;height:18px}
-.theme-menu .mic{width:22px;height:22px;color:var(--tc);margin-top:2px}
-.theme-menu .soon .mic{color:#C9CED3}
-.theme-menu .sec .sic{width:16px;height:16px;vertical-align:-3px;margin-right:5px}
+/* ---- theme/topic icons (CSS, 17 Oct 2026): theme icon on the theme bars + theme headings, topic icon on the subtopic lines + topic headings ---- */
+.tic,.mic,.hic,.gic{flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.th-bar .tic{width:26px;height:26px;margin-left:-2px}
+.st-name .mic{width:22px;height:22px;color:var(--tc)}
 .theme-h .hic{width:26px;height:26px}
 .group .gic{width:22px;height:22px}
-@media (max-width:1099px){.theme-btn .tic{display:none}.theme-btn:has(.tic){gap:10px}}
+@media (max-width:759px){.th-bar .tic{width:22px;height:22px}}
 /* ---- end theme/topic icons ---- */
 </style>
 </head>
@@ -160,9 +173,12 @@ a.vbtn{background:#C62828;color:#fff}
   <div class="hbar"><div class="credit">Biljana Taneska · Physics teacher<br><a href="mailto:btaneska@vis.ac.at">btaneska@vis.ac.at</a></div>
   </div>
 </header>
-<div class="tabrows" id="tabrows"></div>
-<p class="start-hint" id="start-hint">Choose a theme and a topic above: simulations, quizzes, videos or exercises.</p>
-<div class="filter-note" id="filter-note" hidden><span id="filter-txt"></span> <a href="#" id="show-all">✕ Close</a></div>
+<!-- ---- theme accordion ---- -->
+<p class="start-hint" id="start-hint">Open a theme, then choose simulations, quizzes, videos or exercises for a topic.</p>
+<div class="themes" id="themes"></div>
+<p class="foot-note">Works in any modern browser on laptops, Chromebooks, tablets and phones. Once opened, the simulation keeps
+    working without internet.</p>
+<!-- ---- end theme accordion ---- -->
 <main>
   <h2 class="block" id="sims" data-block="sim">Simulations</h2>
   <p class="lead" data-block="sim">Interactive simulations with worksheets (Word and PDF), by theme and topic of the IB course.</p>
@@ -807,8 +823,255 @@ a.vbtn{background:#C62828;color:#fff}
     <div class="row"><a class="btn vbtn" href="https://youtu.be/CKo7gVjp_8s" target="_blank" rel="noopener">▶ Watch on YouTube</a></div>
   </div>
 
-  <p class="note">Works in any modern browser on laptops, Chromebooks, tablets and phones. Once opened, the simulation keeps
-    working without internet.</p>
+  <!-- ---- lesson cards for topics without video cards (17 Oct 2026, accordion) ---- -->
+  <h3 class="group" id="v-A4" data-block="video" data-topic="A4" style="--tc:#2055A3">A.4 Rigid body mechanics</h3>
+  <div class="card video lesson" data-kind="video" data-topic="A4">
+    <span class="tag">A.4 Rigid body mechanics · HL · video lessons</span>
+    <h2>Sirius Revision — A.4 Rigid body mechanics</h2>
+    <p class="vmeta">Explained lessons with IB examples (HL topic) (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=A.4%20Rigid%20body%20mechanics" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-A5" data-block="video" data-topic="A5" style="--tc:#2055A3">A.5 Galilean and special relativity</h3>
+  <div class="card video lesson" data-kind="video" data-topic="A5">
+    <span class="tag">A.5 Galilean and special relativity · HL · video lessons</span>
+    <h2>Sirius Revision — A.5 Galilean and special relativity</h2>
+    <p class="vmeta">Explained lessons with IB examples (HL topic) (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=A.5%20Galilean%20and%20special%20relativity" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h2 class="theme-h" id="v-themeB" data-block="video" data-theme="B" style="--tc:#1F982E"><span class="L">B</span>Theme B — The particulate nature of matter</h2>
+  <h3 class="group" id="v-B1" data-block="video" data-topic="B1" style="--tc:#1F982E">B.1 Thermal energy transfers</h3>
+  <div class="card video lesson" data-kind="video" data-topic="B1">
+    <span class="tag">B.1 Thermal energy transfers · video lessons</span>
+    <h2>Sirius Revision — B.1 Thermal energy transfers</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=B.1%20Thermal%20energy%20transfers" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="B1">
+    <span class="tag">B.1 Thermal energy transfers · video lessons</span>
+    <h2>Andy Masley — B.1 Thermal energy transfers</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=thermal%20energy" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-B2" data-block="video" data-topic="B2" style="--tc:#1F982E">B.2 Greenhouse effect</h3>
+  <div class="card video lesson" data-kind="video" data-topic="B2">
+    <span class="tag">B.2 Greenhouse effect · video lessons</span>
+    <h2>Sirius Revision — B.2 Greenhouse effect</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=B.2%20Greenhouse%20effect" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="B2">
+    <span class="tag">B.2 Greenhouse effect · video lessons</span>
+    <h2>Andy Masley — B.2 Greenhouse effect</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=greenhouse%20effect" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-B3" data-block="video" data-topic="B3" style="--tc:#1F982E">B.3 Gas laws</h3>
+  <div class="card video lesson" data-kind="video" data-topic="B3">
+    <span class="tag">B.3 Gas laws · video lessons</span>
+    <h2>Sirius Revision — B.3 Gas laws</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=B.3%20Gas%20laws" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="B3">
+    <span class="tag">B.3 Gas laws · video lessons</span>
+    <h2>Andy Masley — B.3 Gas laws</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=gas%20laws" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-B4" data-block="video" data-topic="B4" style="--tc:#1F982E">B.4 Thermodynamics</h3>
+  <div class="card video lesson" data-kind="video" data-topic="B4">
+    <span class="tag">B.4 Thermodynamics · HL · video lessons</span>
+    <h2>Sirius Revision — B.4 Thermodynamics</h2>
+    <p class="vmeta">Explained lessons with IB examples (HL topic) (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=B.4%20Thermodynamics" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-B5" data-block="video" data-topic="B5" style="--tc:#1F982E">B.5 Current and circuits</h3>
+  <div class="card video lesson" data-kind="video" data-topic="B5">
+    <span class="tag">B.5 Current and circuits · video lessons</span>
+    <h2>Sirius Revision — B.5 Current and circuits</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=B.5%20Current%20and%20circuits" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="B5">
+    <span class="tag">B.5 Current and circuits · video lessons</span>
+    <h2>Andy Masley — B.5 Current and circuits</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=circuits" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h2 class="theme-h" id="v-themeC" data-block="video" data-theme="C" style="--tc:#62347C"><span class="L">C</span>Theme C — Wave behaviour</h2>
+  <h3 class="group" id="v-C1" data-block="video" data-topic="C1" style="--tc:#62347C">C.1 Simple harmonic motion</h3>
+  <div class="card video lesson" data-kind="video" data-topic="C1">
+    <span class="tag">C.1 Simple harmonic motion · video lessons</span>
+    <h2>Sirius Revision — C.1 Simple harmonic motion</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=C.1%20Simple%20harmonic%20motion" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="C1">
+    <span class="tag">C.1 Simple harmonic motion · video lessons</span>
+    <h2>Andy Masley — C.1 Simple harmonic motion</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=simple%20harmonic%20motion" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-C2" data-block="video" data-topic="C2" style="--tc:#62347C">C.2 Wave model</h3>
+  <div class="card video lesson" data-kind="video" data-topic="C2">
+    <span class="tag">C.2 Wave model · video lessons</span>
+    <h2>Sirius Revision — C.2 Wave model</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=C.2%20Wave%20model" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="C2">
+    <span class="tag">C.2 Wave model · video lessons</span>
+    <h2>Andy Masley — C.2 Wave model</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=waves" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-C3" data-block="video" data-topic="C3" style="--tc:#62347C">C.3 Wave phenomena</h3>
+  <div class="card video lesson" data-kind="video" data-topic="C3">
+    <span class="tag">C.3 Wave phenomena · video lessons</span>
+    <h2>Sirius Revision — C.3 Wave phenomena</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=C.3%20Wave%20phenomena" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="C3">
+    <span class="tag">C.3 Wave phenomena · video lessons</span>
+    <h2>Andy Masley — C.3 Wave phenomena</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=diffraction%20interference" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-C4" data-block="video" data-topic="C4" style="--tc:#62347C">C.4 Standing waves and resonance</h3>
+  <div class="card video lesson" data-kind="video" data-topic="C4">
+    <span class="tag">C.4 Standing waves and resonance · video lessons</span>
+    <h2>Sirius Revision — C.4 Standing waves and resonance</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=C.4%20Standing%20waves%20and%20resonance" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="C4">
+    <span class="tag">C.4 Standing waves and resonance · video lessons</span>
+    <h2>Andy Masley — C.4 Standing waves and resonance</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=standing%20waves" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-C5" data-block="video" data-topic="C5" style="--tc:#62347C">C.5 Doppler effect</h3>
+  <div class="card video lesson" data-kind="video" data-topic="C5">
+    <span class="tag">C.5 Doppler effect · video lessons</span>
+    <h2>Sirius Revision — C.5 Doppler effect</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=C.5%20Doppler%20effect" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="C5">
+    <span class="tag">C.5 Doppler effect · video lessons</span>
+    <h2>Andy Masley — C.5 Doppler effect</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=Doppler%20effect" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h2 class="theme-h" id="v-themeD" data-block="video" data-theme="D" style="--tc:#DF3528"><span class="L">D</span>Theme D — Fields</h2>
+  <h3 class="group" id="v-D1" data-block="video" data-topic="D1" style="--tc:#DF3528">D.1 Gravitational fields</h3>
+  <div class="card video lesson" data-kind="video" data-topic="D1">
+    <span class="tag">D.1 Gravitational fields · video lessons</span>
+    <h2>Sirius Revision — D.1 Gravitational fields</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=D.1%20Gravitational%20fields" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="D1">
+    <span class="tag">D.1 Gravitational fields · video lessons</span>
+    <h2>Andy Masley — D.1 Gravitational fields</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=gravitational%20field" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-D2" data-block="video" data-topic="D2" style="--tc:#DF3528">D.2 Electric and magnetic fields</h3>
+  <div class="card video lesson" data-kind="video" data-topic="D2">
+    <span class="tag">D.2 Electric and magnetic fields · video lessons</span>
+    <h2>Sirius Revision — D.2 Electric and magnetic fields</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=D.2%20Electric%20and%20magnetic%20fields" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="D2">
+    <span class="tag">D.2 Electric and magnetic fields · video lessons</span>
+    <h2>Andy Masley — D.2 Electric and magnetic fields</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=electric%20field" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-D3" data-block="video" data-topic="D3" style="--tc:#DF3528">D.3 Motion in electromagnetic fields</h3>
+  <div class="card video lesson" data-kind="video" data-topic="D3">
+    <span class="tag">D.3 Motion in electromagnetic fields · video lessons</span>
+    <h2>Sirius Revision — D.3 Motion in electromagnetic fields</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=D.3%20Motion%20in%20electromagnetic%20fields" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="D3">
+    <span class="tag">D.3 Motion in electromagnetic fields · video lessons</span>
+    <h2>Andy Masley — D.3 Motion in electromagnetic fields</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=magnetic%20force" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-D4" data-block="video" data-topic="D4" style="--tc:#DF3528">D.4 Induction</h3>
+  <div class="card video lesson" data-kind="video" data-topic="D4">
+    <span class="tag">D.4 Induction · HL · video lessons</span>
+    <h2>Sirius Revision — D.4 Induction</h2>
+    <p class="vmeta">Explained lessons with IB examples (HL topic) (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=D.4%20Induction" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h2 class="theme-h" id="v-themeE" data-block="video" data-theme="E" style="--tc:#D72D6C"><span class="L">E</span>Theme E — Nuclear and quantum physics</h2>
+  <h3 class="group" id="v-E1" data-block="video" data-topic="E1" style="--tc:#D72D6C">E.1 Structure of the atom</h3>
+  <div class="card video lesson" data-kind="video" data-topic="E1">
+    <span class="tag">E.1 Structure of the atom · video lessons</span>
+    <h2>Sirius Revision — E.1 Structure of the atom</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=E.1%20Structure%20of%20the%20atom" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="E1">
+    <span class="tag">E.1 Structure of the atom · video lessons</span>
+    <h2>Andy Masley — E.1 Structure of the atom</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=atom" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-E2" data-block="video" data-topic="E2" style="--tc:#D72D6C">E.2 Quantum physics</h3>
+  <div class="card video lesson" data-kind="video" data-topic="E2">
+    <span class="tag">E.2 Quantum physics · HL · video lessons</span>
+    <h2>Sirius Revision — E.2 Quantum physics</h2>
+    <p class="vmeta">Explained lessons with IB examples (HL topic) (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=E.2%20Quantum%20physics" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-E3" data-block="video" data-topic="E3" style="--tc:#D72D6C">E.3 Radioactive decay</h3>
+  <div class="card video lesson" data-kind="video" data-topic="E3">
+    <span class="tag">E.3 Radioactive decay · video lessons</span>
+    <h2>Sirius Revision — E.3 Radioactive decay</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=E.3%20Radioactive%20decay" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="E3">
+    <span class="tag">E.3 Radioactive decay · video lessons</span>
+    <h2>Andy Masley — E.3 Radioactive decay</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=radioactive%20decay" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-E4" data-block="video" data-topic="E4" style="--tc:#D72D6C">E.4 Fission</h3>
+  <div class="card video lesson" data-kind="video" data-topic="E4">
+    <span class="tag">E.4 Fission · video lessons</span>
+    <h2>Sirius Revision — E.4 Fission</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=E.4%20Fission" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="E4">
+    <span class="tag">E.4 Fission · video lessons</span>
+    <h2>Andy Masley — E.4 Fission</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=fission" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <h3 class="group" id="v-E5" data-block="video" data-topic="E5" style="--tc:#D72D6C">E.5 Fusion and stars</h3>
+  <div class="card video lesson" data-kind="video" data-topic="E5">
+    <span class="tag">E.5 Fusion and stars · video lessons</span>
+    <h2>Sirius Revision — E.5 Fusion and stars</h2>
+    <p class="vmeta">Explained lessons with IB examples (YouTube channel @siriusrevision).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@siriusrevision/search?query=E.5%20Fusion%20and%20stars" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <div class="card video lesson" data-kind="video" data-topic="E5">
+    <span class="tag">E.5 Fusion and stars · video lessons</span>
+    <h2>Andy Masley — E.5 Fusion and stars</h2>
+    <p class="vmeta">Animated IB Physics SL lectures (YouTube channel @AndyMasley).</p>
+    <div class="row"><a class="btn vbtn" href="https://www.youtube.com/@AndyMasley/search?query=fusion%20stars" target="_blank" rel="noopener">▶ Watch the lessons</a></div>
+  </div>
+  <!-- ---- end lesson cards ---- -->
   <h2 class="block" id="exercises" data-block="exercise">Exercises — practise the calculations</h2>
   <p class="lead" data-block="exercise">24 calculation exercises per topic in three IB levels: Level 1 (Paper 1 style, one step), Level 2 (multi-step) and Level 3 (Paper 2 structured, with marks). Type your answer for instant marking, hints and worked solutions; ↻ New numbers lets you practise again.</p>
   <h2 class="theme-h" id="e-themeA" data-block="exercise" data-theme="A" style="--tc:#2055A3"><span class="L">A</span>Theme A — Space, time and motion</h2>
@@ -846,142 +1109,121 @@ a.vbtn{background:#C62828;color:#fff}
     </div>
   </div>
 </main>
-<script>
+<script>/* ---- theme accordion (JS, 17 Oct 2026): one bar per theme; subtopic lines with 4 kind buttons; the cards from <main> open under the line ---- */
 (function(){
   const THEMES = [["A", "Space, time and motion", "#2055A3", [["A1", "Kinematics", 0], ["A2", "Forces and momentum", 0], ["A3", "Work, energy and power", 0], ["A4", "Rigid body mechanics", 1], ["A5", "Galilean and special relativity", 1]]], ["B", "The particulate nature of matter", "#1F982E", [["B1", "Thermal energy transfers", 0], ["B2", "Greenhouse effect", 0], ["B3", "Gas laws", 0], ["B4", "Thermodynamics", 1], ["B5", "Current and circuits", 0]]], ["C", "Wave behaviour", "#62347C", [["C1", "Simple harmonic motion", 0], ["C2", "Wave model", 0], ["C3", "Wave phenomena", 0], ["C4", "Standing waves and resonance", 0], ["C5", "Doppler effect", 0]]], ["D", "Fields", "#DF3528", [["D1", "Gravitational fields", 0], ["D2", "Electric and magnetic fields", 0], ["D3", "Motion in electromagnetic fields", 0], ["D4", "Induction", 1]]], ["E", "Nuclear and quantum physics", "#D72D6C", [["E1", "Structure of the atom", 0], ["E2", "Quantum physics", 1], ["E3", "Radioactive decay", 0], ["E4", "Fission", 0], ["E5", "Fusion and stars", 0]]]];
-  const SIRIUS = (code, name) => "https://www.youtube.com/@siriusrevision/search?query=" + encodeURIComponent(code[0] + "." + code[1] + " " + name);
-  // Andy Masley (IB Physics SL lectures, no HL): one channel search per lesson topic, added 15 Oct 2026
-  const MASLEY = q => "https://www.youtube.com/@AndyMasley/search?query=" + encodeURIComponent(q);
-  const MASLEY_TOPICS = {"A1": [["Distance, displacement and velocity", "displacement velocity acceleration"], ["Motion graphs", "motion graphs"], ["Equations of motion", "kinematic equations"], ["Projectile motion", "projectile motion"]], "A2": [["Types of forces and free-body diagrams", "free body diagrams"], ["Newton's laws", "Newton's laws"], ["Circular motion", "circular motion"], ["Momentum and impulse", "momentum impulse"]], "A3": [["Work and energy", "work energy"], ["Power and efficiency", "power efficiency"]], "B1": [["Thermal energy transfers", "thermal energy"]], "B2": [["Greenhouse effect", "greenhouse effect"]], "B3": [["Gas laws", "gas laws"]], "B5": [["Current and circuits", "circuits"]], "C1": [["Simple harmonic motion", "simple harmonic motion"]], "C2": [["Wave model", "waves"]], "C3": [["Wave phenomena", "diffraction interference"]], "C4": [["Standing waves and resonance", "standing waves"]], "C5": [["Doppler effect", "Doppler effect"]], "D1": [["Gravitational fields", "gravitational field"]], "D2": [["Electric and magnetic fields", "electric field"]], "D3": [["Motion in electromagnetic fields", "magnetic force"]], "E1": [["Structure of the atom", "atom"]], "E3": [["Radioactive decay", "radioactive decay"]], "E4": [["Fission", "fission"]], "E5": [["Fusion and stars", "fusion stars"]]};
+  // kind, label, label for 1, short label (phones), sign, hash suffix
+  const KINDS = [["sim", "Simulations", "Simulation", "Sims", "▶", ""], ["quiz", "Quizzes", "Quiz", "Quizzes", "✔", "-quizzes"],
+                 ["video", "Videos", "Videos", "Videos", "▶", "-videos"], ["exercise", "Exercises", "Exercises", "Exerc.", "✎", "-exercises"]];
   const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const code = k => k[0] + "." + k[1];
-  // cards: kind (sim/quiz/video) and topic from the markup or the tag text, so new cards need no extra attributes
-  const cards = [...document.querySelectorAll("main .card")];
+  const main = document.querySelector("main"), box = document.getElementById("themes");
+  // cards: kind (sim/quiz/video/exercise) and topic from the markup or the tag text, so new cards need no extra attributes
+  const cards = [...main.querySelectorAll(".card")];
   cards.forEach(c => {
     if (!c.dataset.kind) c.dataset.kind = c.classList.contains("video") ? "video" : c.classList.contains("quiz") ? "quiz" : c.classList.contains("exercise") ? "exercise" : "sim";
     if (!c.dataset.topic){ const m = ((c.querySelector(".tag") || {}).textContent || "").match(/\b([A-E])\.(\d)\b/); if (m) c.dataset.topic = m[1] + m[2]; }
   });
-  const of = (kind, topic, extra) => cards.filter(c => c.dataset.kind === kind && c.dataset.topic === topic && (!extra || extra(c)));
-
-  // ---------- the three rows ----------
-  const ROWS = [["sim", "Simulations", ""], ["quiz", "Quizzes", "Quiz · "], ["video", "Videos", "Videos · "], ["exercise", "Exercises", "Exercises · "]];
-  let h = "";
-  ROWS.forEach(([kind, label, pre]) => {
-    h += '<div class="tabrow ' + kind + '"><div class="rowlabel">' + label + '</div><nav class="theme-bar" aria-label="' + label + ' by theme">';
-    THEMES.forEach(([L, tname, col, topics]) => {
-      let items = "";
-      if (kind === "sim"){
-        topics.forEach(([k, name, hl]) => {
-          const n = of("sim", k).length, q = of("quiz", k).length, b = hl ? '<span class="hl">HL</span>' : "";
-          const inner = '<span class="code">' + code(k) + '</span><span class="nm">' + esc(name) + b + '<small>' +
-            (n ? n + " simulation" + (n > 1 ? "s" : "") : "coming soon") + '</small></span>';
-          items += n ? '<li><a role="menuitem" href="#' + k + '">' + inner + '</a></li>' : '<li><span class="soon" role="menuitem" aria-disabled="true">' + inner + '</span></li>';
-        });
-      } else if (kind === "quiz"){
-        let any = 0;
-        topics.forEach(([k, name, hl]) => { const qs = of("quiz", k); if (!qs.length) return; any += qs.length;
-          items += '<li class="sec" role="presentation">' + code(k) + " " + esc(name) + '</li>';
-          qs.forEach(c => { items += '<li><a role="menuitem" href="' + c.querySelector("a.primary").getAttribute("href") + '"><span class="code">✔</span><span class="nm">' +
-            esc(c.querySelector("h2").textContent) + '<small>10-question quiz</small></span></a></li>'; }); });
-        items += any ? '<li class="all"><a role="menuitem" href="#quiz-' + L + '">All Topic ' + L + ' quizzes on this page ↓</a></li>'
-                     : '<li role="presentation"><span class="none">Quizzes coming soon</span></li>';
-      } else if (kind === "exercise"){
-        let any = 0;
-        topics.forEach(([k, name, hl]) => { const es = of("exercise", k); if (!es.length) return; any += es.length;
-          items += '<li class="sec" role="presentation">' + code(k) + " " + esc(name) + '</li>';
-          es.forEach(c => { const href = c.querySelector("a.primary").getAttribute("href");
-            items += '<li><a role="menuitem" href="' + href + '"><span class="code">✎</span><span class="nm">All levels<small>24 exercises with worked solutions</small></span></a></li>';
-            [["1", "Paper 1 style · one step"], ["2", "Multi-step"], ["3", "Paper 2 structured"]].forEach(([n, t]) => {
-              items += '<li><a role="menuitem" href="' + href + '#L' + n + '"><span class="code">L' + n + '</span><span class="nm">Level ' + n + '<small>' + t + '</small></span></a></li>'; });
-            items += '<li><a role="menuitem" href="' + c.querySelector("a.ghost").getAttribute("href") + '"><span class="code">⎙</span><span class="nm">Printable (PDF)<small>to do on paper</small></span></a></li>'; }); });
-        items += any ? '<li class="all"><a role="menuitem" href="#exercise-' + L + '">All Topic ' + L + ' exercises on this page ↓</a></li>'
-                     : '<li role="presentation"><span class="none">Exercises coming soon</span></li>';
-      } else {
-        let any = 0;
-        topics.forEach(([k, name, hl]) => { const n = of("video", k, c => !c.classList.contains("lesson")).length; any += n;
-          items += '<li class="sec" role="presentation">' + code(k) + " " + esc(name) + (hl ? ' <span class="hl">HL</span>' : "") + '</li>';
-          items += '<li><a role="menuitem" target="_blank" rel="noopener" href="' + SIRIUS(k, name) + '"><span class="code">▶</span><span class="nm">Video lessons — Sirius Revision<small>YouTube, opens in a new tab ↗</small></span></a></li>';
-          (MASLEY_TOPICS[k] || []).forEach(([lt, q]) => { items += '<li><a role="menuitem" target="_blank" rel="noopener" href="' + MASLEY(q) + '"><span class="code">▶</span><span class="nm">' +
-            esc((MASLEY_TOPICS[k].length > 1 ? lt : "Video lessons") + " — Andy Masley") + '<small>YouTube, opens in a new tab ↗</small></span></a></li>'; });
-          if (n) items += '<li><a role="menuitem" href="#' + k + '-videos"><span class="code">' + n + '</span><span class="nm">Experiment videos<small>demos and labs from our lessons</small></span></a></li>'; });
-        if (any) items += '<li class="all"><a role="menuitem" href="#video-' + L + '">All Topic ' + L + ' videos on this page ↓</a></li>';
-      }
-      const id = kind + "-" + L;
-      h += '<div class="theme" style="--tc:' + col + '"><button type="button" class="theme-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-' + id +
-        '" id="tab-' + id + '"><span class="L">' + L + '</span><span class="tn">' + (pre ? pre + "Topic " + L : esc(tname)) + '</span><span class="car" aria-hidden="true">▾</span></button>' +
-        '<ul class="theme-menu" id="menu-' + id + '" role="menu" aria-labelledby="tab-' + id + '" hidden>' + items + '</ul></div>';
-    });
-    h += '</nav></div>';
-  });
-  document.getElementById("tabrows").innerHTML = h;
-
-  // ---------- menu behaviour ----------
-  const themes = [...document.querySelectorAll(".tabrows .theme")];
-  function closeAll(except){ themes.forEach(t => { if (t === except) return;
-    t.querySelector(".theme-menu").hidden = true; t.querySelector(".theme-btn").setAttribute("aria-expanded", "false"); }); }
-  themes.forEach(t => {
-    const b = t.querySelector(".theme-btn"), m = t.querySelector(".theme-menu");
-    b.addEventListener("click", e => { e.stopPropagation(); const open = m.hidden; closeAll(t); m.hidden = !open;
-      b.setAttribute("aria-expanded", String(open));
-      if (open && window.innerWidth <= 900) m.style.top = (b.getBoundingClientRect().bottom + 6) + "px";
-      if (open){ const f = m.querySelector("a"); if (f) f.focus(); } });
-    m.addEventListener("keydown", e => {
-      const items = [...m.querySelectorAll("a")], i = items.indexOf(document.activeElement);
-      if (e.key === "ArrowDown" && items.length){ e.preventDefault(); items[(i + 1) % items.length].focus(); }
-      if (e.key === "ArrowUp" && items.length){ e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
-      if (e.key === "Escape"){ closeAll(); b.focus(); } });
-    m.querySelectorAll("a").forEach(a => a.addEventListener("click", () => closeAll()));
-  });
-  document.addEventListener("click", e => { if (!e.target.closest(".tabrows .theme")) closeAll(); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeAll(); });
-  window.addEventListener("scroll", () => { if (window.innerWidth <= 900) closeAll(); }, {passive: true});
-
-  // ---------- filtering: #A2 · #A2-quizzes · #A2-videos · #A2-exercises · #quiz-A · #video-A · #exercise-A ----------
+  const of = (kind, topic) => cards.filter(c => c.dataset.kind === kind && c.dataset.topic === topic);
   const TN = {}; THEMES.forEach(([L, tname, col, topics]) => topics.forEach(([k, name]) => TN[k] = name));
-  const note = document.getElementById("filter-note"), txt = document.getElementById("filter-txt");
-  const heads = [...document.querySelectorAll("main [data-block]")];
-  function apply(){
-    const raw = decodeURIComponent(location.hash.slice(1));
-    let m, test = null, label = "";
-    if ((m = raw.match(/^([A-E]\d)(?:-(quizzes|videos|exercises))?$/)) && TN[m[1]]){
-      const k = m[1], kind = m[2] === "quizzes" ? "quiz" : m[2] === "videos" ? "video" : m[2] === "exercises" ? "exercise" : "sim";
-      test = c => c.dataset.topic === k && c.dataset.kind === kind;
-      label = code(k) + " " + TN[k] + (kind === "sim" ? " simulations" : kind === "quiz" ? " quizzes" : kind === "exercise" ? " exercises" : " videos");
-    } else if ((m = raw.match(/^(quiz|video|exercise)-([A-E])$/))){
-      const kind = m[1], L = m[2]; test = c => c.dataset.kind === kind && (c.dataset.topic || "")[0] === L;
-      label = "Topic " + L + (kind === "quiz" ? " quizzes" : kind === "exercise" ? " exercises" : " videos");
-    }
-    if (!test) test = () => false;   // start screen: only the tab rows
-    cards.forEach(c => c.classList.toggle("is-hidden", !test(c)));
-    heads.forEach(el => {   // a heading or lead stays if any visible card belongs to it
-      const d = el.dataset, vis = cards.some(c => !c.classList.contains("is-hidden") && c.dataset.kind === d.block &&
-        (!d.theme || (c.dataset.topic || "")[0] === d.theme) && (!d.topic || c.dataset.topic === d.topic) && (!d.sub || c.dataset.sub === d.sub));
-      el.classList.toggle("is-hidden", !vis);
+  const many = (n, one, more) => n + " " + (n === 1 ? one : more);
+
+  // ---------- build: theme bars, subtopic lines, empty panels ----------
+  let h = "";
+  THEMES.forEach(([L, tname, col, topics]) => {
+    const n = kind => topics.reduce((a, [k]) => a + of(kind, k).length, 0), sum = [];
+    if (n("sim")) sum.push(many(n("sim"), "simulation", "simulations"));
+    if (n("quiz")) sum.push(many(n("quiz"), "quiz", "quizzes"));
+    if (n("exercise")) sum.push(many(n("exercise"), "exercise set", "exercise sets"));
+    h += '<section class="th" id="th-' + L + '" style="--tc:' + col + '"><h2 class="th-h"><button type="button" class="th-bar" id="thb-' + L +
+      '" aria-expanded="false" aria-controls="thp-' + L + '"><span class="L">' + L + '</span><span class="tx"><span class="tn"><span class="tw">Theme ' + L +
+      ' — </span>' + esc(tname) + '</span><span class="sum">' + (sum.length ? sum.join(" · ") : "video lessons · more coming soon") +
+      '</span></span><span class="car" aria-hidden="true">▾</span></button></h2><div class="th-body" id="thp-' + L + '" role="region" aria-labelledby="thb-' + L + '" hidden>';
+    topics.forEach(([k, name, hl]) => {
+      let btns = "", panels = "";
+      KINDS.forEach(([kind, label, one, short, sign, suf]) => {
+        const c = of(kind, k).length, counted = kind === "sim" || kind === "quiz";
+        if (c){
+          btns += '<a class="kb k-' + kind + '" href="#' + k + suf + '" data-kind="' + kind + '" aria-controls="sp-' + k + '-' + kind + '" aria-expanded="false"><span class="ks">' +
+            sign + (counted ? " " + c : "") + '</span> <span class="kw" data-short="' + short + '">' + (counted && c === 1 ? one : label) + '</span></a>';
+          panels += '<div class="st-panel" id="sp-' + k + '-' + kind + '" role="region" aria-label="' + code(k) + " " + esc(name) + " — " + label.toLowerCase() + '" hidden></div>';
+        } else btns += '<span class="kb k-' + kind + ' soon" aria-disabled="true"><span class="ks">' + sign + '</span> <span class="kw" data-short="' + short + '">' + label + '</span><span class="sn">soon</span></span>';
+      });
+      h += '<div class="st" id="st-' + k + '" data-topic="' + k + '"><div class="st-line"><h3 class="st-name"><span class="code">' + code(k) + '</span><span class="nm">' + esc(name) +
+        (hl ? '<span class="hl">HL</span>' : "") + '</span></h3><div class="kbs" role="group" aria-label="' + code(k) + " " + esc(name) + '">' + btns + '</div></div>' + panels + '</div>';
     });
-    const on = !!label; note.hidden = !on; document.getElementById("start-hint").hidden = on;
-    if (on){ txt.textContent = "Showing " + label + "."; note.scrollIntoView({behavior: "smooth", block: "start"}); }
+    h += '</div></section>';
+  });
+  box.innerHTML = h;
+  // move every card (and the A.2 sub-group headings) into its panel, in page order; <main> keeps only the headings
+  [...main.children].forEach(el => {
+    const k = el.dataset.topic, kind = el.classList.contains("card") ? el.dataset.kind : el.matches("h4.subgroup") ? el.dataset.block : null;
+    const p = kind && document.getElementById("sp-" + k + "-" + kind); if (p) p.appendChild(el);
+  });
+  main.querySelectorAll("[id]").forEach(e => e.removeAttribute("id"));   // old #A2 … anchors: the accordion handles them
+  main.hidden = true;
+
+  // ---------- state: one theme open, at most one panel; the hash keeps the old link names ----------
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let S = {theme: null, topic: null, kind: null};
+  function parse(hash){   // #A2 · #A2-quizzes · #A2-videos · #A2-exercises · #B3 · #A … #E · #quiz-A · #video-A · #exercise-A
+    const raw = decodeURIComponent((hash || "").replace(/^#/, "")); let m;
+    if ((m = raw.match(/^([A-E]\d)(?:-(quizzes|videos|exercises))?$/)) && TN[m[1]]){
+      const kind = {quizzes: "quiz", videos: "video", exercises: "exercise"}[m[2]] || "sim";
+      return {theme: m[1][0], topic: m[1], kind: document.getElementById("sp-" + m[1] + "-" + kind) ? kind : null};
+    }
+    if ((m = raw.match(/^(?:(?:quiz|video|exercise)-)?([A-E])$/))) return {theme: m[1], topic: null, kind: null};
+    return {theme: "A", topic: null, kind: null};   // start: Theme A (the current course) open
   }
-  document.getElementById("show-all").addEventListener("click", e => { e.preventDefault();
-    history.pushState("", document.title, location.pathname + location.search); apply(); window.scrollTo({top: 0, behavior: "smooth"}); });
-  window.addEventListener("hashchange", apply); apply();
-  window.addEventListener("load", () => { if (location.hash) setTimeout(apply, 50); });
+  const url = s => location.pathname + location.search + (s.kind ? "#" + s.topic + KINDS.find(x => x[0] === s.kind)[5] : s.topic ? "#" + s.topic : s.theme ? "#" + s.theme : "");
+  // open panel: a long one brings its line to the top (it then sticks); a short one scrolls only as far as needed to be fully visible
+  function reveal(el, open){ const r = el.getBoundingClientRect(), H = innerHeight; let dy = 0;
+    if (r.top < 0 || (open && r.height > H - 12)) dy = r.top - 6;
+    else if (open && r.bottom > H) dy = Math.min(r.bottom - H + 8, r.top - 6);
+    else if (r.top > H - 80) dy = r.top - 6;
+    if (Math.abs(dy) > 1) window.scrollBy({top: dy, behavior: reduce ? "auto" : "smooth"}); }
+  function render(s, target, open){
+    S = s;
+    box.querySelectorAll(".th").forEach(t => { const on = t.id === "th-" + s.theme, b = t.querySelector(".th-bar");
+      t.classList.toggle("open", on); b.setAttribute("aria-expanded", String(on)); b.querySelector(".car").textContent = on ? "▴" : "▾"; t.querySelector(".th-body").hidden = !on; });
+    box.querySelectorAll(".st").forEach(st => st.classList.toggle("open", !!s.kind && st.dataset.topic === s.topic));
+    box.querySelectorAll(".st-panel").forEach(p => p.hidden = !(s.kind && p.id === "sp-" + s.topic + "-" + s.kind));
+    box.querySelectorAll("a.kb").forEach(a => { const on = !!s.kind && a.dataset.kind === s.kind && a.closest(".st").dataset.topic === s.topic;
+      a.classList.toggle("on", on); a.setAttribute("aria-expanded", String(on)); });
+    if (target) reveal(target, open);
+  }
+  function go(s, target, open){ history.pushState(s, "", url(s)); render(s, target, open); }
+  box.querySelectorAll(".th-bar").forEach(b => b.addEventListener("click", () => { const L = b.id.slice(4);
+    go(S.theme === L ? {theme: null, topic: null, kind: null} : {theme: L, topic: null, kind: null}, b); }));
+  box.addEventListener("click", e => { const a = e.target.closest("a.kb"); if (!a) return; e.preventDefault();
+    const st = a.closest(".st"), k = st.dataset.topic, kind = a.dataset.kind;
+    if (S.topic === k && S.kind === kind) go({theme: k[0], topic: null, kind: null}, st);   // the open button again: close
+    else go({theme: k[0], topic: k, kind}, st, true); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && S.kind){ const st = document.getElementById("st-" + S.topic);
+    go({theme: S.theme, topic: null, kind: null}, st); const a = st.querySelector("a.kb"); if (a) a.focus(); } });
+  const fromState = st => st && "theme" in st ? st : parse(location.hash);
+  window.addEventListener("popstate", e => { const s = fromState(e.state);
+    render(s, s.topic ? document.getElementById("st-" + s.topic) : s.theme ? document.getElementById("thb-" + s.theme) : null, !!s.kind); });
+  const s0 = parse(location.hash); history.replaceState(s0, "", location.href);
+  render(s0, s0.topic ? document.getElementById("st-" + s0.topic) : null, !!s0.kind);
+  if (s0.topic) window.addEventListener("load", () => setTimeout(() => render(S, document.getElementById("st-" + S.topic), !!S.kind), 60));
 })();
 </script>
-<button class="totop" id="totop" type="button" aria-label="Back to the topic tabs">↑ Topics</button>
+<button class="totop" id="totop" type="button" aria-label="Back to the themes">↑ Topics</button>
 <script>
-// phones: "↑ Topics" appears once the tab rows have scrolled out of view, and scrolls back to them
-(function(){ const b = document.getElementById("totop"), rows = document.getElementById("tabrows");
-  const upd = () => b.classList.toggle("on", rows.getBoundingClientRect().bottom < 0);
+// phones: "↑ Topics" appears once the first theme bar has scrolled out of view, and scrolls back to the themes
+(function(){ const b = document.getElementById("totop"), box = document.getElementById("themes");
+  const upd = () => b.classList.toggle("on", box.getBoundingClientRect().top < -60);
   window.addEventListener("scroll", upd, {passive: true}); window.addEventListener("resize", upd); upd();
-  b.addEventListener("click", () => rows.scrollIntoView({behavior: "smooth", block: "start"}));
+  b.addEventListener("click", () => box.scrollIntoView({behavior: "smooth", block: "start"}));
 })();
 </script>
-<script>/* ---- theme/topic icons (JS, 17 Oct 2026): adds the sprite icons to tabs, menus and headings from their letters/codes ---- */
+<!-- ---- end theme accordion JS ---- -->
+<script>/* ---- theme/topic icons (JS, 17 Oct 2026): adds the sprite icons to the theme bars, subtopic lines and headings from their letters/codes ---- */
 (function(){
   const u = (id, c) => '<svg class="' + c + '" aria-hidden="true"><use href="#' + id + '"/></svg>', has = id => document.getElementById(id);
-  document.querySelectorAll(".theme-btn > .L").forEach(L => { const id = "ic-th-" + L.textContent.trim(); if (has(id)) L.insertAdjacentHTML("afterend", u(id, "tic")); });
-  document.querySelectorAll(".theme-menu .code").forEach(c => { const id = "ic-tp-" + c.textContent.trim().replace(".", ""); if (/^ic-tp-[A-E]\d$/.test(id) && has(id)) c.insertAdjacentHTML("afterend", u(id, "mic")); });
-  document.querySelectorAll(".theme-menu .sec").forEach(s => { const m = s.textContent.match(/^([A-E])\.(\d)/); if (m && has("ic-tp-" + m[1] + m[2])) s.insertAdjacentHTML("afterbegin", u("ic-tp-" + m[1] + m[2], "sic")); });
+  document.querySelectorAll(".th-bar > .L").forEach(L => { const id = "ic-th-" + L.textContent.trim(); if (has(id)) L.insertAdjacentHTML("afterend", u(id, "tic")); });
+  document.querySelectorAll(".st-name > .code").forEach(c => { const id = "ic-tp-" + c.textContent.trim().replace(".", ""); if (/^ic-tp-[A-E]\d$/.test(id) && has(id)) c.insertAdjacentHTML("beforebegin", u(id, "mic")); });
   document.querySelectorAll("h2.theme-h[data-theme] > .L").forEach(L => { const id = "ic-th-" + L.parentNode.dataset.theme; if (has(id)) L.insertAdjacentHTML("afterend", u(id, "hic")); });
   document.querySelectorAll("h3.group[data-topic]").forEach(h => { const id = "ic-tp-" + h.dataset.topic; if (has(id)) h.insertAdjacentHTML("afterbegin", u(id, "gic")); });
 })();
