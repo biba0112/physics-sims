@@ -119,9 +119,28 @@ a.vbtn{background:#C62828;color:#fff}
     border:0;border-radius:23px;background:var(--navy);color:#fff;font:inherit;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer}
   .totop.on{display:flex}
 }
+/* ---- card icons + thumbnails (17 Oct 2026) ---- */
+.card h2{display:flex;align-items:center;gap:9px}
+.card h2 .ic{flex:none;width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;color:#2055A3}
+.card.quiz h2 .ic{color:#2E7D32}.card.exercise h2 .ic{color:#E65100}
+.card .row:has(> a.thumb){display:grid;grid-template-columns:auto 1fr;align-items:center}
+.card .row:has(> a.thumb) > a.primary{grid-column:1/-1;justify-self:start}
+.card .row:has(> a.thumb) > a.ghost{grid-column:1;text-align:center;white-space:nowrap}
+.card .row a.thumb{grid-column:2;grid-row:2/4;justify-self:end;width:100%;max-width:120px;line-height:0;border-radius:6px}
+.card .row a.thumb img{display:block;width:100%;height:auto;aspect-ratio:16/10;border:1px solid var(--line);border-radius:6px;background:#F5F8FB}
+.card .row a.thumb:hover img,.card .row a.thumb:focus-visible img{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+@media (max-width:759px){
+  .card{position:relative}
+  .card .row:has(> a.thumb){display:flex}
+  .card .row a.thumb{position:absolute;top:12px;right:14px;margin:0;width:96px}
+  .card .row a.thumb img{width:96px;height:60px}
+  .card:has(a.thumb) > .tag,.card:has(a.thumb) > h2,.card:has(a.thumb) > p{margin-right:106px}
+}
+/* ---- end card icons ---- */
 </style>
 </head>
 <body>
+<svg id="icons" width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="ic-friction" viewBox="0 0 24 24"><rect x="6" y="9" width="8" height="7" rx="1"/><path d="M2 16h20"/><path d="M14 12.5h7M18.5 10.5l2.5 2-2.5 2"/><path d="M9.5 19H4M6 17.5l-2 1.5 2 1.5"/></symbol><symbol id="ic-normal" viewBox="0 0 24 24"><rect x="7" y="12" width="10" height="6" rx="1"/><path d="M2 18h20M5 18v3M19 18v3"/><path d="M12 12V3M9.5 5.5L12 3l2.5 2.5"/></symbol><symbol id="ic-incline" viewBox="0 0 24 24"><path d="M2 20h20L2 9z"/><path d="M7.2 9.3l4.4 2.4-1.9 3.5-4.4-2.4z" transform="rotate(0)"/></symbol><symbol id="ic-inclinepulley" viewBox="0 0 24 24"><path d="M2 20h14L2 11"/><path d="M5 11.6l3.6 2-1.5 2.7-3.6-2z"/><path d="M8.3 13.4l7.5-4.4"/><circle cx="17" cy="8.5" r="2"/><path d="M19 8.5v6"/><rect x="17" y="14.5" width="4" height="4"/></symbol><symbol id="ic-spring" viewBox="0 0 24 24"><path d="M4 3h16M12 3v2l-4 1.5 8 2-8 2 8 2-8 2 4 1.5v1"/><rect x="8.5" y="17" width="7" height="5" rx="1"/></symbol><symbol id="ic-springs2" viewBox="0 0 24 24"><path d="M2 3h20"/><path d="M6 3v1.5l-2.5 1 5 1.5-5 1.5 5 1.5-5 1.5 5 1.5-2.5 1V19"/><path d="M16 3v2l-2.5 1 5 1.5-5 1.5 2.5 1v1l-2.5 1 5 1.5-5 1.5 2.5 1V19"/><path d="M3 19h6M13 19h6"/></symbol><symbol id="ic-drag" viewBox="0 0 24 24"><path d="M5 3v17a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3"/><path d="M5 7h14" stroke-dasharray="2 2"/><circle cx="12" cy="15" r="2"/><path d="M12 13V8M10.3 9.7L12 8l1.7 1.7"/></symbol><symbol id="ic-buoyancy" viewBox="0 0 24 24"><path d="M4 4v15a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4"/><path d="M4 10c2.7 1 5.3-1 8 0s5.3 1 8 0"/><rect x="9.5" y="13" width="5" height="4"/><path d="M12 13V6M10 8l2-2 2 2"/></symbol><symbol id="ic-pendulum" viewBox="0 0 24 24"><path d="M6 3h12M12 3l-5 13"/><circle cx="6.3" cy="17.8" r="2.2"/><path d="M5 17c2.5 3 11.5 3 14 0" stroke-dasharray="1.5 2"/></symbol><symbol id="ic-freefall" viewBox="0 0 24 24"><circle cx="9" cy="3.5" r="1.5"/><circle cx="9" cy="7.5" r="1.5"/><circle cx="9" cy="13.5" r="1.5"/><circle cx="9" cy="21" r="1.5" fill="currentColor"/><path d="M16 4v15M13.5 16.5L16 19l2.5-2.5"/></symbol><symbol id="ic-horizontal" viewBox="0 0 24 24"><path d="M2 8h8v13"/><path d="M10 7c5 0 9 5 10.5 13" stroke-dasharray="2 2"/><circle cx="10" cy="6.5" r="1.5" fill="currentColor"/><path d="M2 21h20"/></symbol><symbol id="ic-projectile" viewBox="0 0 24 24"><path d="M2 21h20"/><path d="M3 20C7 4 16 4 21 20" stroke-dasharray="2 2"/><circle cx="12" cy="8" r="1.7" fill="currentColor"/></symbol><symbol id="ic-components" viewBox="0 0 24 24"><path d="M4 20h13M14.5 17.5L17 20l-2.5 2.5" /><path d="M4 20V5M1.5 7.5L4 5l2.5 2.5"/><path d="M4 20L17 5M12.3 5.4L17 5l-.3 4.7" /><path d="M17 5v15" stroke-dasharray="1.5 2"/></symbol><symbol id="ic-target" viewBox="0 0 24 24"><circle cx="17" cy="15" r="5"/><circle cx="17" cy="15" r="2"/><path d="M2 20C3 9 9 6 15.6 13.6" stroke-dasharray="2 2"/></symbol><symbol id="ic-airres" viewBox="0 0 24 24"><path d="M2 21h20"/><path d="M3 20C6 6 15 6 21 20" stroke-dasharray="1.5 2.5"/><path d="M3 20C6 8 12 6 14 20"/><path d="M16 8h5M17 6l-2 2 2 2"/></symbol><symbol id="ic-circular" viewBox="0 0 24 24"><circle cx="11" cy="13" r="7" stroke-dasharray="2 2"/><circle cx="11" cy="6" r="1.8" fill="currentColor"/><path d="M11 6h9M17.5 3.5L20 6l-2.5 2.5"/><path d="M11 8v3.5M9.5 10l1.5 1.5 1.5-1.5"/></symbol><symbol id="ic-impulse" viewBox="0 0 24 24"><g transform="rotate(30 9 9)"><ellipse cx="9" cy="9" rx="5" ry="6.5"/><path stroke-width="1" d="M7 3.1v11.8M9 2.6v12.8M11 3.1v11.8M4.6 6h8.8M4 9h10M4.6 12h8.8"/></g><path d="M5.8 14.6L3 19.4"/><circle cx="19.6" cy="8" r="2.2" fill="currentColor"/><path d="M15.3 6.8h1.4M15.5 9.4h1.2"/></symbol><symbol id="ic-collision" viewBox="0 0 24 24"><circle cx="6.5" cy="13" r="4"/><circle cx="17.5" cy="13" r="4"/><path d="M2 5h6M6 3l2 2-2 2"/><path d="M22 5h-6M18 3l-2 2 2 2"/></symbol><symbol id="ic-work" viewBox="0 0 24 24"><rect x="4" y="11" width="7" height="6" rx="1"/><path d="M2 17h20"/><path d="M11 13l8-6M15.7 6.6L19 7l-.6 3.3"/><path d="M4 20.5h16M17.5 19l2.5 1.5-2.5 1.5"/></symbol><symbol id="ic-energy" viewBox="0 0 24 24"><path d="M2 5c3 0 4 15 8 15s3-8 6-8 4 8 6 8"/><circle cx="4.5" cy="6" r="1.8" fill="currentColor"/><path d="M2 21h20" stroke-dasharray="1.5 2"/></symbol><symbol id="ic-power" viewBox="0 0 24 24"><path d="M2 21h4v-4h4v-4h4v-4h4V5h4"/><circle cx="7" cy="6" r="3.5"/><path d="M7 4v2l1.5 1"/></symbol><symbol id="ic-sankey" viewBox="0 0 24 24"><path d="M2 6h10c4 0 5 0 8 0M17.5 3.5L20 6l-2.5 2.5"/><path d="M2 11h7c3 0 3 4 3 10M9.5 18.5L12 21l2.5-2.5"/><path d="M2 6v5"/></symbol><symbol id="ic-pulley" viewBox="0 0 24 24"><path d="M12 1.5V3"/><circle cx="12" cy="7" r="4"/><circle cx="12" cy="7" r=".8" fill="currentColor"/><path d="M8 7v8M16 7v4.5"/><rect x="5.5" y="15" width="5" height="6"/><rect x="13.5" y="11.5" width="5" height="4"/></symbol><symbol id="ic-twothreads" viewBox="0 0 24 24"><path d="M3 21V4M21 21V4M1.5 4h3M19.5 4h3"/><path d="M3 5.5l9 6.5 9-6.5"/><path d="M12 12v2.5"/><rect x="9.5" y="14.5" width="5" height="4.5"/></symbol><symbol id="ic-connected" viewBox="0 0 24 24"><path d="M2 18h20"/><rect x="7" y="10" width="7" height="8"/><rect x="14" y="12" width="6" height="6"/><path d="M1 14h4.5M3.5 12l2 2-2 2"/><path d="M14 6h4M16.5 4.5L18 6l-1.5 1.5M14 6h-4M11.5 4.5L10 6l1.5 1.5"/></symbol><symbol id="ic-graph" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M5 18L11 9h9"/><path d="M11 9v12" stroke-dasharray="1.5 2"/></symbol></svg>
 <header>
   <div>
     <h1>IB DP Physics SL/HL</h1>
@@ -140,257 +159,282 @@ a.vbtn{background:#C62828;color:#fff}
   <h3 class="group" id="A1" data-block="sim" data-topic="A1" style="--tc:#2055A3">A.1 Kinematics</h3>
   <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
-    <h2>Free fall</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-freefall"/></svg>Free fall</h2>
     <p>Drop or throw a ball straight up or down: strobe images, y–t, v–t and a–t graphs, and g from h against t².</p>
     <div class="row">
       <a class="btn primary" href="10-free-fall/">▶ Open the simulation</a>
       <a class="btn ghost" href="10-free-fall/worksheet.docx" download data-goatcounter-click="download/10-free-fall/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="10-free-fall/worksheet.pdf" data-goatcounter-click="download/10-free-fall/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="10-free-fall/" title="Open the simulation"><img src="10-free-fall/thumb.webp" width="120" height="75" loading="lazy" alt="Free fall simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
-    <h2>Horizontal launch</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-horizontal"/></svg>Horizontal launch</h2>
     <p>A ball rolls off a bench or cliff: horizontal and vertical motion separately, range and landing velocity.</p>
     <div class="row">
       <a class="btn primary" href="11-horizontal-launch/">▶ Open the simulation</a>
       <a class="btn ghost" href="11-horizontal-launch/worksheet.docx" download data-goatcounter-click="download/11-horizontal-launch/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="11-horizontal-launch/worksheet.pdf" data-goatcounter-click="download/11-horizontal-launch/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="11-horizontal-launch/" title="Open the simulation"><img src="11-horizontal-launch/thumb.webp" width="120" height="75" loading="lazy" alt="Horizontal launch simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
-    <h2>Angled launch</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-projectile"/></svg>Angled launch</h2>
     <p>Launch at any angle: maximum height, time of flight and range — why 45° goes furthest.</p>
     <div class="row">
       <a class="btn primary" href="12-angled-launch/">▶ Open the simulation</a>
       <a class="btn ghost" href="12-angled-launch/worksheet.docx" download data-goatcounter-click="download/12-angled-launch/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="12-angled-launch/worksheet.pdf" data-goatcounter-click="download/12-angled-launch/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="12-angled-launch/" title="Open the simulation"><img src="12-angled-launch/thumb.webp" width="120" height="75" loading="lazy" alt="Angled launch simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
-    <h2>Velocity components</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-components"/></svg>Velocity components</h2>
     <p>Follow the velocity along the path: components, speed, direction and Δv = gΔt.</p>
     <div class="row">
       <a class="btn primary" href="13-velocity-components/">▶ Open the simulation</a>
       <a class="btn ghost" href="13-velocity-components/worksheet.docx" download data-goatcounter-click="download/13-velocity-components/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="13-velocity-components/worksheet.pdf" data-goatcounter-click="download/13-velocity-components/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="13-velocity-components/" title="Open the simulation"><img src="13-velocity-components/thumb.webp" width="120" height="75" loading="lazy" alt="Velocity components simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
-    <h2>Hit the target</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-target"/></svg>Hit the target</h2>
     <p>Plan a shot into a cup, a hoop or a window with the equations of motion.</p>
     <div class="row">
       <a class="btn primary" href="14-hit-the-target/">▶ Open the simulation</a>
       <a class="btn ghost" href="14-hit-the-target/worksheet.docx" download data-goatcounter-click="download/14-hit-the-target/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="14-hit-the-target/worksheet.pdf" data-goatcounter-click="download/14-hit-the-target/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="14-hit-the-target/" title="Open the simulation"><img src="14-hit-the-target/thumb.webp" width="120" height="75" loading="lazy" alt="Hit the target simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
-    <h2>Air resistance</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-airres"/></svg>Air resistance</h2>
     <p>The real path with drag beside the ideal parabola: shorter, lower and steeper on the way down.</p>
     <div class="row">
       <a class="btn primary" href="15-air-resistance/">▶ Open the simulation</a>
       <a class="btn ghost" href="15-air-resistance/worksheet.docx" download data-goatcounter-click="download/15-air-resistance/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="15-air-resistance/worksheet.pdf" data-goatcounter-click="download/15-air-resistance/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="15-air-resistance/" title="Open the simulation"><img src="15-air-resistance/thumb.webp" width="120" height="75" loading="lazy" alt="Air resistance simulation"></a>
     </div>
   </div>
   <h3 class="group" id="A2" data-block="sim" data-topic="A2" style="--tc:#2055A3">A.2 Forces and momentum</h3>
   <h4 class="subgroup" data-block="sim" data-topic="A2" data-sub="forces" style="--tc:#2055A3">Types of forces and Newton&#x27;s laws</h4>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
-    <h2>Friction block</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-friction"/></svg>Friction block</h2>
     <p>Static and dynamic friction: pull a block with a newton meter, find μs and μd from a graph.</p>
     <div class="row">
       <a class="btn primary" href="01-friction-block/">▶ Open the simulation</a>
       <a class="btn ghost" href="01-friction-block/worksheet.docx" download data-goatcounter-click="download/01-friction-block/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="01-friction-block/worksheet.pdf" data-goatcounter-click="download/01-friction-block/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="01-friction-block/" title="Open the simulation"><img src="01-friction-block/thumb.webp" width="120" height="75" loading="lazy" alt="Friction block simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
-    <h2>Normal force</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-normal"/></svg>Normal force</h2>
     <p>What does a scale really measure? Push and pull, a tilted board, a lift and a stack of blocks.</p>
     <div class="row">
       <a class="btn primary" href="02-normal-force/">▶ Open the simulation</a>
       <a class="btn ghost" href="02-normal-force/worksheet.docx" download data-goatcounter-click="download/02-normal-force/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="02-normal-force/worksheet.pdf" data-goatcounter-click="download/02-normal-force/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="02-normal-force/" title="Open the simulation"><img src="02-normal-force/thumb.webp" width="120" height="75" loading="lazy" alt="Normal force simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
-    <h2>Friction on an incline</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-incline"/></svg>Friction on an incline</h2>
     <p>Tilt a ramp until the block slips (μs = tan θ), then let it slide and find μd.</p>
     <div class="row">
       <a class="btn primary" href="03-friction-incline/">▶ Open the simulation</a>
       <a class="btn ghost" href="03-friction-incline/worksheet.docx" download data-goatcounter-click="download/03-friction-incline/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="03-friction-incline/worksheet.pdf" data-goatcounter-click="download/03-friction-incline/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="03-friction-incline/" title="Open the simulation"><img src="03-friction-incline/thumb.webp" width="120" height="75" loading="lazy" alt="Friction on an incline simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Forces · Newton's 2nd law</span>
-    <h2>Incline with a pulley</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-inclinepulley"/></svg>Incline with a pulley</h2>
     <p>A block on a ramp tied over a pulley to a hanging mass: tension, friction and acceleration.</p>
     <div class="row">
       <a class="btn primary" href="04-incline-pulley/">▶ Open the simulation</a>
       <a class="btn ghost" href="04-incline-pulley/worksheet.docx" download data-goatcounter-click="download/04-incline-pulley/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="04-incline-pulley/worksheet.pdf" data-goatcounter-click="download/04-incline-pulley/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="04-incline-pulley/" title="Open the simulation"><img src="04-incline-pulley/thumb.webp" width="120" height="75" loading="lazy" alt="Incline with a pulley simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
-    <h2>Spring force</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-spring"/></svg>Spring force</h2>
     <p>Hooke's law: hang masses, read the extension, find k ± Δk, and see the elastic limit.</p>
     <div class="row">
       <a class="btn primary" href="05-spring-force/">▶ Open the simulation</a>
       <a class="btn ghost" href="05-spring-force/worksheet.docx" download data-goatcounter-click="download/05-spring-force/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="05-spring-force/worksheet.pdf" data-goatcounter-click="download/05-spring-force/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="05-spring-force/" title="Open the simulation"><img src="05-spring-force/thumb.webp" width="120" height="75" loading="lazy" alt="Spring force simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces (extension)</span>
-    <h2>Springs in series and parallel</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-springs2"/></svg>Springs in series and parallel</h2>
     <p>Combine two springs: how does the effective spring constant change?</p>
     <div class="row">
       <a class="btn primary" href="06-springs-series-parallel/">▶ Open the simulation</a>
       <a class="btn ghost" href="06-springs-series-parallel/worksheet.docx" download data-goatcounter-click="download/06-springs-series-parallel/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="06-springs-series-parallel/worksheet.pdf" data-goatcounter-click="download/06-springs-series-parallel/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="06-springs-series-parallel/" title="Open the simulation"><img src="06-springs-series-parallel/thumb.webp" width="120" height="75" loading="lazy" alt="Springs in series and parallel simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
-    <h2>Drag and Stokes' law</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-drag"/></svg>Drag and Stokes' law</h2>
     <p>Ball bearings falling through glycerol: terminal velocity and Stokes' law — plus a skydiver.</p>
     <div class="row">
       <a class="btn primary" href="07-drag-stokes/">▶ Open the simulation</a>
       <a class="btn ghost" href="07-drag-stokes/worksheet.docx" download data-goatcounter-click="download/07-drag-stokes/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="07-drag-stokes/worksheet.pdf" data-goatcounter-click="download/07-drag-stokes/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="07-drag-stokes/" title="Open the simulation"><img src="07-drag-stokes/thumb.webp" width="120" height="75" loading="lazy" alt="Drag and Stokes' law simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Types of forces</span>
-    <h2>Buoyancy</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-buoyancy"/></svg>Buoyancy</h2>
     <p>Archimedes' principle with a newton meter and a eureka can: sink, float or hover?</p>
     <div class="row">
       <a class="btn primary" href="08-buoyancy/">▶ Open the simulation</a>
       <a class="btn ghost" href="08-buoyancy/worksheet.docx" download data-goatcounter-click="download/08-buoyancy/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="08-buoyancy/worksheet.pdf" data-goatcounter-click="download/08-buoyancy/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="08-buoyancy/" title="Open the simulation"><img src="08-buoyancy/thumb.webp" width="120" height="75" loading="lazy" alt="Buoyancy simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Forces · circular motion · energy</span>
-    <h2>Pendulum tension</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-pendulum"/></svg>Pendulum tension</h2>
     <p>Hold a pendulum aside or let it swing: how does the tension in the string change?</p>
     <div class="row">
       <a class="btn primary" href="09-pendulum-tension/">▶ Open the simulation</a>
       <a class="btn ghost" href="09-pendulum-tension/worksheet.docx" download data-goatcounter-click="download/09-pendulum-tension/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="09-pendulum-tension/worksheet.pdf" data-goatcounter-click="download/09-pendulum-tension/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="09-pendulum-tension/" title="Open the simulation"><img src="09-pendulum-tension/thumb.webp" width="120" height="75" loading="lazy" alt="Pendulum tension simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Forces · Newton's laws</span>
-    <h2>Pulleys and hanging masses</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-pulley"/></svg>Pulleys and hanging masses</h2>
     <p>One pulley (Atwood machine) or a knot on two or three pulleys: accelerating masses, measuring g, and three forces in balance.</p>
     <div class="row">
       <a class="btn primary" href="23-pulleys-hanging-masses/">▶ Open the simulation</a>
       <a class="btn ghost" href="23-pulleys-hanging-masses/worksheet.docx" download data-goatcounter-click="download/23-pulleys-hanging-masses/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="23-pulleys-hanging-masses/worksheet.pdf" data-goatcounter-click="download/23-pulleys-hanging-masses/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="23-pulleys-hanging-masses/" title="Open the simulation"><img src="23-pulleys-hanging-masses/thumb.webp" width="120" height="75" loading="lazy" alt="Pulleys and hanging masses simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Forces · Newton's laws</span>
-    <h2>Hanging on two threads</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-twothreads"/></svg>Hanging on two threads</h2>
     <p>A bird on a wire, a tightrope walker, a traffic light: one weight on two threads at an angle. How big is the tension — and when does the thread snap?</p>
     <div class="row">
       <a class="btn primary" href="24-hanging-two-threads/">▶ Open the simulation</a>
       <a class="btn ghost" href="24-hanging-two-threads/worksheet.docx" download data-goatcounter-click="download/24-hanging-two-threads/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="24-hanging-two-threads/worksheet.pdf" data-goatcounter-click="download/24-hanging-two-threads/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="24-hanging-two-threads/" title="Open the simulation"><img src="24-hanging-two-threads/thumb.webp" width="120" height="75" loading="lazy" alt="Hanging on two threads simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="forces">
     <span class="tag">A.2 Forces · Newton's laws</span>
-    <h2>Connected blocks</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-connected"/></svg>Connected blocks</h2>
     <p>Two or three blocks pushed, pulled on strings, towed with a bar or stacked on top of each other: Newton's 3rd-law pairs while they speed up, move at a constant velocity, slide or brake.</p>
     <div class="row">
       <a class="btn primary" href="25-connected-blocks/">▶ Open the simulation</a>
       <a class="btn ghost" href="25-connected-blocks/worksheet.docx" download data-goatcounter-click="download/25-connected-blocks/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="25-connected-blocks/worksheet.pdf" data-goatcounter-click="download/25-connected-blocks/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="25-connected-blocks/" title="Open the simulation"><img src="25-connected-blocks/thumb.webp" width="120" height="75" loading="lazy" alt="Connected blocks simulation"></a>
     </div>
   </div>
   <h4 class="subgroup" data-block="sim" data-topic="A2" data-sub="circular" style="--tc:#2055A3">Circular motion</h4>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="circular">
     <span class="tag">A.2 Forces · circular motion</span>
-    <h2>Circular motion</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-circular"/></svg>Circular motion</h2>
     <p>A rotating chair, a satellite, a car on a bend and a playground carousel: what provides the centripetal force?</p>
     <div class="row">
       <a class="btn primary" href="16-circular-motion/">▶ Open the simulation</a>
       <a class="btn ghost" href="16-circular-motion/worksheet.docx" download data-goatcounter-click="download/16-circular-motion/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="16-circular-motion/worksheet.pdf" data-goatcounter-click="download/16-circular-motion/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="16-circular-motion/" title="Open the simulation"><img src="16-circular-motion/thumb.webp" width="120" height="75" loading="lazy" alt="Circular motion simulation"></a>
     </div>
   </div>
   <h4 class="subgroup" data-block="sim" data-topic="A2" data-sub="momentum" style="--tc:#2055A3">Momentum and impulse</h4>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="momentum">
     <span class="tag">A.2 Momentum · impulse</span>
-    <h2>Impulse</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-impulse"/></svg>Impulse</h2>
     <p>A cart hits a force sensor, an egg lands in a bedsheet, a racket hits a ball: impulse is the area under the force–time graph.</p>
     <div class="row">
       <a class="btn primary" href="17-impulse/">▶ Open the simulation</a>
       <a class="btn ghost" href="17-impulse/worksheet.docx" download data-goatcounter-click="download/17-impulse/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="17-impulse/worksheet.pdf" data-goatcounter-click="download/17-impulse/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="17-impulse/" title="Open the simulation"><img src="17-impulse/thumb.webp" width="120" height="75" loading="lazy" alt="Impulse simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A2" data-sub="momentum">
     <span class="tag">A.2 Momentum · collisions</span>
-    <h2>Collisions and explosions</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-collision"/></svg>Collisions and explosions</h2>
     <p>Elastic, inelastic and sticky collisions and explosions from rest: total momentum stays the same — but what happens to kinetic energy?</p>
     <div class="row">
       <a class="btn primary" href="18-collisions-explosions/">▶ Open the simulation</a>
       <a class="btn ghost" href="18-collisions-explosions/worksheet.docx" download data-goatcounter-click="download/18-collisions-explosions/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="18-collisions-explosions/worksheet.pdf" data-goatcounter-click="download/18-collisions-explosions/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="18-collisions-explosions/" title="Open the simulation"><img src="18-collisions-explosions/thumb.webp" width="120" height="75" loading="lazy" alt="Collisions and explosions simulation"></a>
     </div>
   </div>
   <h3 class="group" id="A3" data-block="sim" data-topic="A3" style="--tc:#2055A3">A.3 Work, energy and power</h3>
   <div class="card" data-kind="sim" data-topic="A3">
     <span class="tag">A.3 Work</span>
-    <h2>Work done</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-work"/></svg>Work done</h2>
     <p>Pull a box at an angle, lift or push a load up a ramp, pull a Smart Cart, brake a car: work is force × distance — and the area under the force–distance graph.</p>
     <div class="row">
       <a class="btn primary" href="19-work-done/">▶ Open the simulation</a>
       <a class="btn ghost" href="19-work-done/worksheet.docx" download data-goatcounter-click="download/19-work-done/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="19-work-done/worksheet.pdf" data-goatcounter-click="download/19-work-done/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="19-work-done/" title="Open the simulation"><img src="19-work-done/thumb.webp" width="120" height="75" loading="lazy" alt="Work done simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A3">
     <span class="tag">A.3 Energy</span>
-    <h2>Energy conservation</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-energy"/></svg>Energy conservation</h2>
     <p>A cart on a ramp, a roller coaster, a pendulum to the nose, a flying spring: energy moves between kinetic, gravitational and elastic stores — the total stays the same.</p>
     <div class="row">
       <a class="btn primary" href="20-energy-conservation/">▶ Open the simulation</a>
       <a class="btn ghost" href="20-energy-conservation/worksheet.docx" download data-goatcounter-click="download/20-energy-conservation/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="20-energy-conservation/worksheet.pdf" data-goatcounter-click="download/20-energy-conservation/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="20-energy-conservation/" title="Open the simulation"><img src="20-energy-conservation/thumb.webp" width="120" height="75" loading="lazy" alt="Energy conservation simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A3">
     <span class="tag">A.3 Power</span>
-    <h2>Power</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-power"/></svg>Power</h2>
     <p>Who is the most powerful on the stairs? A car up a hill and a lift motor: power is the rate of doing work, P = Fv.</p>
     <div class="row">
       <a class="btn primary" href="21-power/">▶ Open the simulation</a>
       <a class="btn ghost" href="21-power/worksheet.docx" download data-goatcounter-click="download/21-power/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="21-power/worksheet.pdf" data-goatcounter-click="download/21-power/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="21-power/" title="Open the simulation"><img src="21-power/thumb.webp" width="120" height="75" loading="lazy" alt="Power simulation"></a>
     </div>
   </div>
   <div class="card" data-kind="sim" data-topic="A3">
     <span class="tag">A.3 Efficiency</span>
-    <h2>Efficiency and energy density</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-sankey"/></svg>Efficiency and energy density</h2>
     <p>Bouncing balls, a motor lifting a load, Sankey diagrams to scale, and how far a car goes on a tank of fuel.</p>
     <div class="row">
       <a class="btn primary" href="22-efficiency-energy-density/">▶ Open the simulation</a>
       <a class="btn ghost" href="22-efficiency-energy-density/worksheet.docx" download data-goatcounter-click="download/22-efficiency-energy-density/worksheet.docx">Worksheet (Word)</a>
       <a class="btn ghost" href="22-efficiency-energy-density/worksheet.pdf" data-goatcounter-click="download/22-efficiency-energy-density/worksheet.pdf">Worksheet (PDF)</a>
+      <a class="thumb" href="22-efficiency-energy-density/" title="Open the simulation"><img src="22-efficiency-energy-density/thumb.webp" width="120" height="75" loading="lazy" alt="Efficiency and energy density simulation"></a>
     </div>
   </div>
   <h2 class="block" id="quizzes" data-block="quiz">Quizzes — test yourself</h2>
@@ -399,7 +443,7 @@ a.vbtn{background:#C62828;color:#fff}
   <h3 class="group" id="q-A1" data-block="quiz" data-topic="A1" style="--tc:#2055A3">A.1 Kinematics</h3>
   <div class="card quiz" data-kind="quiz" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
-    <h2>Projectile motion</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-projectile"/></svg>Projectile motion</h2>
     <p>Free fall, horizontal and angled launches, velocity components and air resistance. 10 questions · after the simulations and worksheets.</p>
     <div class="row">
       <a class="btn primary" href="quiz-projectile-motion/">✔ Start the quiz</a>
@@ -408,7 +452,7 @@ a.vbtn{background:#C62828;color:#fff}
   </div>
   <div class="card quiz" data-kind="quiz" data-topic="A1">
     <span class="tag">A.1 Kinematics · graphs</span>
-    <h2>Motion graphs</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-graph"/></svg>Motion graphs</h2>
     <p>s–t, v–t and a–t graphs: gradients and areas, and the equations of motion. 10 questions · after the simulations and worksheets.</p>
     <div class="row">
       <a class="btn primary" href="quiz-motion-graphs/">✔ Start the quiz</a>
@@ -418,7 +462,7 @@ a.vbtn{background:#C62828;color:#fff}
   <h3 class="group" id="q-A2" data-block="quiz" data-topic="A2" style="--tc:#2055A3">A.2 Forces and momentum</h3>
   <div class="card quiz" data-kind="quiz" data-topic="A2">
     <span class="tag">A.2 Forces · Newton's laws</span>
-    <h2>Forces</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-friction"/></svg>Forces</h2>
     <p>Weight and normal force, friction, ramps, connected bodies, springs, drag and buoyancy. 10 questions · after the simulations and worksheets.</p>
     <div class="row">
       <a class="btn primary" href="quiz-forces/">✔ Start the quiz</a>
@@ -427,7 +471,7 @@ a.vbtn{background:#C62828;color:#fff}
   </div>
   <div class="card quiz" data-kind="quiz" data-topic="A2">
     <span class="tag">A.2 Circular motion</span>
-    <h2>Circular motion</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-circular"/></svg>Circular motion</h2>
     <p>Speed and period, centripetal acceleration and force, cars on bends, satellites and pendulums. 10 questions · after the simulations and worksheets.</p>
     <div class="row">
       <a class="btn primary" href="quiz-circular-motion/">✔ Start the quiz</a>
@@ -436,7 +480,7 @@ a.vbtn{background:#C62828;color:#fff}
   </div>
   <div class="card quiz" data-kind="quiz" data-topic="A2">
     <span class="tag">A.2 Momentum</span>
-    <h2>Momentum and impulse</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-collision"/></svg>Momentum and impulse</h2>
     <p>Momentum, impulse and force–time graphs, collisions, explosions and kinetic energy. 10 questions · after the simulations and worksheets.</p>
     <div class="row">
       <a class="btn primary" href="quiz-momentum/">✔ Start the quiz</a>
@@ -446,7 +490,7 @@ a.vbtn{background:#C62828;color:#fff}
   <h3 class="group" id="q-A3" data-block="quiz" data-topic="A3" style="--tc:#2055A3">A.3 Work, energy and power</h3>
   <div class="card quiz" data-kind="quiz" data-topic="A3">
     <span class="tag">A.3 Work and energy</span>
-    <h2>Work and energy</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-energy"/></svg>Work and energy</h2>
     <p>Work done, force–distance graphs, kinetic and potential energy and conservation of energy. 10 questions · after the simulations and worksheets.</p>
     <div class="row">
       <a class="btn primary" href="quiz-work-energy/">✔ Start the quiz</a>
@@ -455,7 +499,7 @@ a.vbtn{background:#C62828;color:#fff}
   </div>
   <div class="card quiz" data-kind="quiz" data-topic="A3">
     <span class="tag">A.3 Power and efficiency</span>
-    <h2>Power and efficiency</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-sankey"/></svg>Power and efficiency</h2>
     <p>Power, P = Fv, efficiency, Sankey diagrams and energy density. 10 questions · after the simulations and worksheets.</p>
     <div class="row">
       <a class="btn primary" href="quiz-power-efficiency/">✔ Start the quiz</a>
@@ -760,7 +804,7 @@ a.vbtn{background:#C62828;color:#fff}
   <h3 class="group" id="e-A1" data-block="exercise" data-topic="A1" style="--tc:#2055A3">A.1 Kinematics</h3>
   <div class="card exercise" data-kind="exercise" data-topic="A1">
     <span class="tag">A.1 Kinematics</span>
-    <h2>Kinematics</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-projectile"/></svg>Kinematics</h2>
     <p>Equations of motion, motion graphs, free fall and projectiles. 24 exercises · 8 per level.</p>
     <div class="lv"><a href="ex-kinematics/#L1">Level 1 · Paper 1</a><a href="ex-kinematics/#L2">Level 2 · Multi-step</a><a href="ex-kinematics/#L3">Level 3 · Paper 2</a></div>
     <div class="row">
@@ -771,7 +815,7 @@ a.vbtn{background:#C62828;color:#fff}
   <h3 class="group" id="e-A2" data-block="exercise" data-topic="A2" style="--tc:#2055A3">A.2 Forces and momentum</h3>
   <div class="card exercise" data-kind="exercise" data-topic="A2">
     <span class="tag">A.2 Forces and momentum</span>
-    <h2>Forces and momentum</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-connected"/></svg>Forces and momentum</h2>
     <p>Free-body diagrams, Newton's laws, ramps and pulleys, springs and fluids, circular motion, momentum and impulse. 24 exercises · 8 per level.</p>
     <div class="lv"><a href="ex-forces-momentum/#L1">Level 1 · Paper 1</a><a href="ex-forces-momentum/#L2">Level 2 · Multi-step</a><a href="ex-forces-momentum/#L3">Level 3 · Paper 2</a></div>
     <div class="row">
@@ -782,7 +826,7 @@ a.vbtn{background:#C62828;color:#fff}
   <h3 class="group" id="e-A3" data-block="exercise" data-topic="A3" style="--tc:#2055A3">A.3 Work, energy and power</h3>
   <div class="card exercise" data-kind="exercise" data-topic="A3">
     <span class="tag">A.3 Work, energy and power</span>
-    <h2>Work, energy and power</h2>
+    <h2><svg class="ic" aria-hidden="true"><use href="#ic-energy"/></svg>Work, energy and power</h2>
     <p>Work, kinetic, gravitational and elastic energy, energy conservation, power, efficiency and Sankey diagrams. 24 exercises · 8 per level.</p>
     <div class="lv"><a href="ex-work-energy-power/#L1">Level 1 · Paper 1</a><a href="ex-work-energy-power/#L2">Level 2 · Multi-step</a><a href="ex-work-energy-power/#L3">Level 3 · Paper 2</a></div>
     <div class="row">
