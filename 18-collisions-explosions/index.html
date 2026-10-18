@@ -17,7 +17,7 @@
     2 MARKUP    header with the three types · scene + readouts · FBD · tabs (graphs / data / tasks) · controls
     3 CONFIG    looks, examples (presets), bumper model
     4 PHYSICS   one collision or explosion (pure functions): velocities after, impulse, force pulse
-    5 RUN       run state; the contact plays at real speed (0.1–0.2 s)
+    5 RUN       run state; the contact plays at real speed (0.01 s, almost instant)
     6 SCENE     side view of the two bodies
     7 FBD       free-body diagrams of A and B during the contact (Newton's 3rd law pair, kept faded after the hit) + momentum bars
     8 GRAPHS    v–t, p–t (total stays the same), F–t on A and on B, KE–t
@@ -436,7 +436,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
         <b>+ is to the right</b>. Set a value with <b>▼ ▲</b> or type it in the box.</li>
       <li>Set each value with <b>▼</b> and <b>▲</b> (hold to go faster; the <b>↑ ↓</b> keys or the mouse wheel in the box also work, Shift = ×10), or <b>type a value</b> in the box. <b>↺</b> puts it back to its start value. Outside the classroom range the box turns <b>amber ⚠</b>: fine to explore, but the lab can't do this.</li>
       <li>Move the pointer over any <b>graph</b> (or tap it): a dashed line shows the values where it cuts each curve, or the values of the nearest data point.</li>
-      <li>Press <b>▶ Start</b>. The contact lasts only 0.1–0.2 s, like a real collision. <b>◂ / ▸</b> (or the <b>← →</b> keys) step through it and pause.</li>
+      <li>Press <b>▶ Start</b>. The contact lasts only 0.01 s — almost instant, like hard balls. <b>◂ / ▸</b> (or the <b>← →</b> keys) step through it in 1 ms steps and pause.</li>
       <li>The middle column shows the <b>free-body diagrams</b> of A and B during the contact — the two contact forces are a Newton's third law
         pair: equal in size, opposite in direction, for the same time — and a bar chart of the <b>momentum before and after</b>.
         After the contact the largest pair stays on the diagram, faded.</li>
@@ -459,10 +459,10 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
         <b>Explosion</b>: KE increases (from the spring's elastic energy, or chemical energy). Momentum is conserved in all of them.</li>
     </ul>
     <p class="hint">Model: frictionless surface (no track: the bench is smooth enough over a short time). The bodies act like a spring that
-      gives back all of the relative speed (elastic) or none of it (inelastic: they stick); the contact lasts about 0.1–0.2 s.
+      gives back all of the relative speed (elastic) or none of it (inelastic: they stick); the contact lasts 0.01 s (almost instant, for every body).
       Explosion: a spring plunger releases over 0.1 s. Bodies are drawn the same size whatever their mass; the scale bar gives distances.</p>
     <!-- NEWTON HELP --><h3>Newton's laws</h3>
-<p>The badge above the scene says which law applies at this moment: <b>1st law</b> — at rest or moving at a constant velocity, the resultant force is zero (Σ<i>F</i> = 0); <b>2nd law</b> — accelerating, Σ<i>F</i> = <i>ma</i>. The table under the free-body diagram adds up the forces (Σ<i>F</i>) and compares them with <i>m a</i> (▾ folds it). The two purple contact forces in the free-body diagrams are a 3rd-law pair: the same size and type, in the opposite direction, acting on the <b>other</b> body.</p><!-- /NEWTON HELP -->
+<p>The badge above the scene says which law applies at this moment: <b>1st law</b> — at rest or moving at a constant velocity, the resultant force is zero (Σ<i>F</i> = 0); <b>2nd law</b> — accelerating, Σ<i>F</i> = <i>ma</i>. The table under the free-body diagram adds up the forces (Σ<i>F</i>) and compares them with <i>m a</i> (▾ folds it). The two purple contact forces in the free-body diagrams are a 3rd-law pair: the same size and type, in the opposite direction, acting on the <b>other</b> body. During the 0.01 s hit they are far bigger than <i>W</i> and <i>F</i><sub>N</sub>; when <i>W</i> and <i>F</i><sub>N</sub> would be too short to see they are drawn <b>dashed</b> (not to scale — read their values).</p><!-- /NEWTON HELP -->
 <p style="text-align:right"><button class="btn primary" id="helpClose">Close</button></p>
   </div>
 </div>
@@ -884,7 +884,8 @@ const NEWTON = (() => {
 /* ==== NEWTON END ==== */
 /* ============================ 3 CONFIG ============================ */
 const g = 9.81, TWO_PI = 2 * Math.PI;
-const T1 = 0.10;                                        // s: bumper compression time (and spring release time)
+const TC = 0.01;                                        // s: the whole contact, almost instant (like hard balls)
+const tq = sc => sc === "el" ? TC / 2 : TC;              // squash time: elastic squashes and springs back in TC; inelastic and explosion take TC
 const COL = {W:"#2A5D8A", N:"#2E7D32", F:"#C62828", P:"#6A1B9A", v:"#1565C0", a:"#E65100", p:"#00838F",
              A:"#C62828", B:"#1565C0", T:"#37474F",
              navy:"#1F3A5F", accent:"#E65100", ink:"#263238", muted:"#606A72", grid:"#E3E9F0", grey:"#90A4AE"};
@@ -922,11 +923,11 @@ const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 const fmtF = F => Math.abs(F) >= 1e6 ? `${sci(F)} N` : Math.abs(F) >= 1000 ? `${Number(F / 1000).toPrecision(3)} kN` : `${Number(F).toPrecision(3)} N`;
 function originFit(pts){ const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0);
   return sxx && pts.length >= 2 ? {k:pts.reduce((a, p) => a + p[0] * p[1], 0) / sxx, b:0} : null; }
-// One collision (A on the left hits B) or explosion from rest. Bumper model: a spring that is loaded for T1 and gives
+// One collision (A on the left hits B) or explosion from rest. Bumper model: a stiff spring that is loaded for tq(sc) and gives
 // back a fraction e of the relative speed (e = 1 elastic, 0 inelastic: they stick). J = impulse on B (+) = −impulse on A.
 function bounciness(sc){ return sc === "el" ? 1 : 0; }
 function collide(sc, mA, mB, uA, uB, vBx){
-  const M = mA + mB, mu = mA * mB / M, w1 = Math.PI / (2 * T1);
+  const M = mA + mB, mu = mA * mB / M, T1 = tq(sc), w1 = Math.PI / (2 * T1);
   if (sc === "ex"){
     const J = mB * vBx, vA = -J / mA, vB = vBx, w = vB - vA;
     return {sc, mA, mB, uA:0, uB:0, vA, vB, J, e:null, w, dur:T1, Fm:mu * w * w1, E:mu * w * w / 2, hit:true, V:0};
@@ -943,7 +944,7 @@ function totals(c){
 }
 // relative motion during the contact: d = x_A − x_B (> 0 compressed), its rate, and the force on B
 function contactAt(c, s){
-  const w1 = Math.PI / (2 * T1), mu = c.mA * c.mB / (c.mA + c.mB);
+  const T1 = tq(c.sc), w1 = Math.PI / (2 * T1), mu = c.mA * c.mB / (c.mA + c.mB);
   if (c.sc === "ex"){ const S = Math.min(s, T1);
     return {d:-(c.w / w1) * (1 - Math.cos(w1 * S)), dd:-c.w * Math.sin(w1 * S), F:s < T1 ? mu * c.w * w1 * Math.cos(w1 * s) : 0}; }
   const dm = c.w / w1, ee = c.e;
@@ -1140,7 +1141,7 @@ function drawFBD(){
   const nl = wrap(ctx, note, w - 20, 11.5), noteTop = top - 12 - (nl.length - 1) * 14 - 8;
   // short panel (tablets): size the arrows so the W and F labels end above the note
   const LWmax = Math.min(small ? Math.max(12, (noteTop - 77) / 2) : top * 0.32, w * 0.22);
-  const WA = C.mA * g, WB = C.mB * g, Fmax = Math.max(WA, WB, C.Fm, 1e-9), kk = LWmax / Fmax;
+  const WA = C.mA * g, WB = C.mB * g, Fmax = Math.max(WA, WB, a.ph === "before" ? 0 : C.Fm, 1e-9), kk = LWmax / Fmax;   // before the hit: scaled to the weights
   const cy = small ? 34 + LWmax : top * 0.48;
 /*NF*/  [["A", C.mA, WA, -a.F], ["B", C.mB, WB, a.F]].forEach(([who, m, W, F]) => { NF.body(who, m, Math.abs(F) > 1e-9 ? F / m : 0, 0, {v:1});
     NF.force("W", 0, -W, COL.W, "the Earth", "grav"); NF.force("F<sub>N</sub>", 0, W, COL.N, "the track", "normal");
@@ -1148,10 +1149,11 @@ function drawFBD(){
   [["A", w * 0.27, WA, -a.F, COL.A], ["B", w * 0.73, WB, a.F, COL.B]].forEach(([who, cx, W, F, col]) => {
     ctx.save(); ctx.globalAlpha = .5; ctx.fillStyle = col; ctx.fillRect(cx - 22, cy - 14, 44, 28); ctx.restore();
     label(ctx, who, cx - 30, cy - 24, col, "right", 14);
-    const LW = W * kk;
-    if (LW > 3){ arrow(ctx, cx, cy, cx, cy + LW, COL.W, 4); arrow(ctx, cx, cy, cx, cy - LW, COL.N, 4); }
-    const yW = cy + Math.max(LW, 12) + 12; subLabel(ctx, "W", "", ` = ${fmtF(W)}`, cx + 8, yW, COL.W, "left", 12.5);
-    subLabel(ctx, "F", "N", ` = ${fmtF(W)}`, cx + 8, cy - Math.max(LW, 12) - 4, COL.N, "left", 12.5);
+    // during the 0.01 s hit the contact force is far bigger than W and F_N: too short to see → drawn dashed at 22 px (not to scale)
+    const LW0 = W * kk, small = LW0 < 22, LW = Math.max(LW0, 22);
+    arrow(ctx, cx, cy, cx, cy + LW, COL.W, 4, small); arrow(ctx, cx, cy, cx, cy - LW, COL.N, 4, small);
+    const yW = cy + LW + 12; subLabel(ctx, "W", "", ` = ${fmtF(W)}`, cx + 8, yW, COL.W, "left", 12.5);
+    subLabel(ctx, "F", "N", ` = ${fmtF(W)}`, cx + 8, cy - LW - 4, COL.N, "left", 12.5);
     const Fd = held ? (who === "A" ? -C.Fm : C.Fm) : F;
     if (Math.abs(Fd) > 1e-9){ const L = Fd * kk; ctx.save(); if (held) ctx.globalAlpha = .4; arrow(ctx, cx, cy, cx + L, cy, COL.P, 4);
       subLabel(ctx, "F", `on ${who}`, ` = ${mn(fmtF(Fd))}`, cx, yW + 20, COL.P, "center", 12.5); ctx.restore(); }
@@ -1594,7 +1596,7 @@ function setDir(d){                                   // masses and A's speed st
 function setScenarioUI(){
   document.querySelectorAll("#scen button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sc === set.sc));
   $("graphHint").innerHTML = {
-    el:"Elastic: the dashed total momentum line stays flat. KE–<i>t</i>: the total KE dips during the contact (stored while the bodies are squashed) and comes back.",
+    el:"Elastic: the dashed total momentum line stays flat. KE–<i>t</i>: the total KE dips during the 0.01 s contact (stored while the bodies are squashed; tick Zoom on the contact to see it) and comes back.",
     st:"Inelastic: they stick, so after the contact both velocity lines are the same. The total momentum line stays flat; KE–<i>t</i>: the total KE ends lower.",
     ex:"Explosion: total momentum stays 0. The areas under the two <i>F</i>–<i>t</i> curves are equal and opposite. KE increases (from the spring)."}[set.sc];
 }
