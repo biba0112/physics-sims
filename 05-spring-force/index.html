@@ -77,6 +77,8 @@ main{flex:1;min-height:500px;display:grid;grid-template-columns:minmax(0,1.1fr) 
 .panel.on{display:flex;flex-direction:column;gap:8px}
 #graphWrap{position:relative;flex:1;min-height:200px}
 #graph{width:100%;height:100%;display:block;touch-action:none}
+#elasticWrap{position:relative;flex:1;min-height:200px}
+#elastic{width:100%;height:100%;display:block}
 .hint{font-size:.85rem;color:var(--muted)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 #trials{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
@@ -247,7 +249,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
   .cardhead .btn{min-height:40px;padding:4px 10px}
   .panel{overflow:visible}
   .panel.on{flex:none}
-  #graphWrap,#ffnWrap{flex:none!important;height:300px!important;min-height:0}
+  #graphWrap,#elasticWrap,#ffnWrap{flex:none!important;height:300px!important;min-height:0}
   #taskList{overflow:visible;flex:none}
   .tableBox{max-height:220px}
   canvas{touch-action:pan-y!important}                     /* a finger on a graph or diagram still scrolls the page */
@@ -296,12 +298,17 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
   <section class="card right">
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true" data-tab="pGraph">Graph</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pElastic">Elastic limit</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="pData">Data &amp; analysis</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="pTasks">Tasks</button>
     </div>
     <div class="panel on" id="pGraph">
       <div id="graphWrap"><canvas id="graph" aria-label="Force against extension"></canvas></div>
       <div class="hint" id="graphHint"></div>
+    </div>
+    <div class="panel" id="pElastic">
+      <div id="elasticWrap"><canvas id="elastic" aria-label="Force against extension: elastic limit"></canvas></div>
+      <div class="hint" id="elasticHint"></div>
     </div>
     <div class="panel" id="pData">
       <div class="row">
@@ -911,7 +918,8 @@ const rulerText = (c, lab) => lab >= 100 ? `${c / 100} m` : String(c);
 /* ============================ 5 RUN ============================ */
 const set = {mode:"hang", spr:"inv", g:0, myst:false, noise:false, d:0};
 const S = {set:{inv:0, st3:0, soft:0, stiff:0}, worst:{inv:0, st3:0, soft:0, stiff:0},
-           x:0, v:0, offset:0, history:[]};        // spring state, the hanging mass's motion, reading error
+           x:0, v:0, offset:0, history:[], trail:[], dir:"load", Fprev:0,
+           peak:{inv:null, st3:null, soft:null, stiff:null}};   // + the largest settled load past E, for the Elastic limit tab   // spring state, the mass's motion, reading error, graph path
 const load = () => set.myst ? MYSTERY : set.g / 1000;
 const scaleF = sp => Math.max(sp.maxG / 1000 * G, load() * G, set.mode === "cycle" ? Math.max(C.Fm, C.prev ? C.prev.Fm : 0) : 0,
   ...(set.mode === "hang" ? S.history.map(p => p.F) : []));   // force (N) the scene and graphs are scaled for
@@ -927,7 +935,8 @@ function relax(){                                                   // after unl
 }
 function changeLoad(){
   if (set.mode === "cycle"){ cycleLoad(sprById(set.spr), load() * G); S.offset = 0; renderActions(); return; }
-  if (load() * G <= sprById(set.spr).Flim) relax();
+  const Fn = load() * G; if (Math.abs(Fn - S.Fprev) > 1e-9){ S.dir = Fn > S.Fprev ? "load" : "unload"; S.Fprev = Fn; }
+  if (Fn <= sprById(set.spr).Flim) relax();
   target(); S.offset = set.noise ? (Math.random() * 2 - 1) * 0.001 : 0; renderActions();
 }
 function step(dt){                                                  // the mass bounces and settles (damped)
@@ -1172,7 +1181,7 @@ function drawGraph(){
   if (set.mode === "cycle"){
     drawLoopGraph(ctx, w, h, sp, load() * G, scaleF(sp));
     $("graphHint").textContent = isBand(sp) ? "Rubber band: area under the loading curve = energy stored; under the unloading curve = energy given back; loop area = energy turned into heat."
-      : "Steel spring: below E the unloading line retraces the loading line (no loop). Past E it comes back along a straight line almost parallel to the Hooke's-law line and stays longer: a permanent extension.";
+      : "Steel spring: below E the unloading line retraces the loading line (no loop). Past E it comes back along a straight line almost parallel to the Hooke's-law line and stays longer: a permanent extension, so the next loading curve (dashed teal) has moved right — see the red arrow.";
     return;
   }
   if (set.mode === "push"){
@@ -1183,15 +1192,47 @@ function drawGraph(){
     $("graphHint").textContent = "FH = −kx: stretch (x > 0) gives a negative (backwards) force, squash (x < 0) a positive one.";
     return;
   }
-  const Fh = scaleF(sp), xM = Math.max(10, niceCeil(Math.max(100 * extension(sp, Fh, S.set[set.spr]), ...S.history.map(p => p.x)) * 1.05)), FM = niceCeil(Fh * 1.08);
-  const g = axesR(ctx, box, 0, xM, 0, FM, [["extension ", "n"], ["x", "i"], [" / cm", "n"]], [["load ", "n"], ["F", "i"], [" / N", "n"]]);
-  // the loads tried so far (settled points), and where the mass is now
-  ctx.fillStyle = "rgba(0,131,143,.35)"; for (const p of S.history){ ctx.beginPath(); ctx.arc(g.X(p.x), g.Y(p.F), 4, 0, 7); ctx.fill(); }
-  const F = forcesNow();
-  ctx.fillStyle = COL.accent; ctx.beginPath(); ctx.arc(g.X(100 * (S.x - S.set[set.spr])), g.Y(load() * G), 6, 0, 7); ctx.fill();
+  // F–x curve from the original length (19 Oct 2026): Hooke's law up to the elastic limit E, softer beyond it. After an
+  // over-stretch the spring keeps a permanent extension, so its whole curve moves right: the original curve stays faded
+  // and an arrow shows the shift. The dot is the spring now (it slides along the curve while the mass bounces); the trail
+  // shows the path, orange while masses go on, blue while they come off.
+  const s = S.set[set.spr], Fh = scaleF(sp), F = forcesNow();
+  const xM = Math.max(10, niceCeil(Math.max(100 * extension(sp, Fh, s), 100 * S.x, ...S.history.map(p => p.x + 100 * (p.s || 0))) * 1.05)), FM = niceCeil(Fh * 1.08);
+  const g = axesR(ctx, box, 0, xM, 0, FM, [["extension from the original length (30.0 cm) ", "n"], ["x", "i"], [" / cm", "n"]], [["load ", "n"], ["F", "i"], [" / N", "n"]]);
+  const tw = s => { ctx.save(); ctx.font = `600 13px "Segoe UI",Calibri,Arial,sans-serif`; const v = ctx.measureText(s).width; ctx.restore(); return v; };
+  const xE = s0 => s0 + sp.Flim / sp.k, xTop = s0 => extension(sp, FM, s0);
+  const seg = (pts, col, wd, dash) => { ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.lineJoin = "round"; if (dash) ctx.setLineDash(dash);
+    ctx.beginPath(); pts.forEach(([x, f], i) => i ? ctx.lineTo(g.X(100 * x), g.Y(f)) : ctx.moveTo(g.X(100 * x), g.Y(f))); ctx.stroke(); ctx.restore(); };
+  ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y - 4, box.w + 4, box.h + 8); ctx.clip();
+  if (s > 2e-4) seg([[0, 0], [xE(0), sp.Flim], [xTop(0), FM]], "#B0BEC5", 2, [6, 5]);          // the original curve, faded
+  seg([[s, 0], [xE(s), sp.Flim]], COL.H, 3); seg([[xE(s), sp.Flim], [xTop(s), FM]], COL.F, 3);    // this spring's curve now
   ctx.save(); ctx.strokeStyle = "rgba(230,81,0,.45)"; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(g.X(0), g.Y(sp.Flim)); ctx.lineTo(g.X(xM), g.Y(sp.Flim)); ctx.stroke(); ctx.restore();
-  label(ctx, "limit of proportionality", g.X(xM) - 4, g.Y(sp.Flim) - 10, COL.accent, "right", 12);
-  $("graphHint").textContent = "Each load you try leaves a dot once the mass is at rest. Extension is measured from the spring's current unloaded length.";
+  for (let i = 1; i < S.trail.length; i++){ const a = S.trail[i - 1], b = S.trail[i];               // the path the spring took
+    ctx.strokeStyle = b[2] === "load" ? "rgba(230,81,0,.75)" : "rgba(21,101,192,.75)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(g.X(a[0]), g.Y(a[1])); ctx.lineTo(g.X(b[0]), g.Y(b[1])); ctx.stroke(); }
+  ctx.restore();
+  // the loads tried so far (settled points)
+  ctx.fillStyle = "rgba(0,131,143,.35)"; for (const p of S.history){ ctx.beginPath(); ctx.arc(g.X(p.x + 100 * (p.s || 0)), g.Y(p.F), 4, 0, 7); ctx.fill(); }
+  // the curve has moved: arrow from the original curve to the new one, red bar = permanent extension
+  if (s > 2e-4){ const Fa = Math.abs(F.FH - sp.Flim / 2) < 0.2 * sp.Flim ? (F.FH < sp.Flim / 2 ? 0.8 : 0.2) * sp.Flim : sp.Flim / 2,   // the arrow keeps away from the dot
+    X1 = g.X(100 * Fa / sp.k), X2 = g.X(100 * (s + Fa / sp.k));
+    if (X2 - X1 > 8) arrow(ctx, X1, g.Y(Fa), X2, g.Y(Fa), COL.F, 2.5);
+    label(ctx, `curve moved right by ${(100 * s).toFixed(1)} cm`, Math.max(X1, X2) + 8, g.Y(Fa), COL.F, "left", 12);
+    ctx.save(); ctx.strokeStyle = COL.F; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(g.X(0), g.Y(0)); ctx.lineTo(g.X(100 * s), g.Y(0)); ctx.stroke(); ctx.restore(); }
+  // elastic limit E on the curve
+  { const X = g.X(100 * xE(s)), Y = g.Y(sp.Flim);
+    ctx.fillStyle = "#fff"; ctx.strokeStyle = COL.F; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X, Y, 6.5, 0, 7); ctx.fill(); ctx.stroke();
+    const eT = `E — elastic limit (${sp.Flim.toFixed(1)} N)`, eL = X - box.x > 175 || X + 12 + tw(eT) > box.x + box.w;   // label on the side with room
+    label(ctx, eT, eL ? X - 12 : X + 12, Y - 14, COL.F, eL ? "right" : "left", 13); }
+  // where the spring is now
+  ctx.fillStyle = COL.ink; ctx.beginPath(); ctx.arc(g.X(100 * S.x), g.Y(F.FH), 6, 0, 7); ctx.fill();
+  const notes = [], past = F.FH > sp.Flim + 1e-6;
+  if (S.trail.length > 1) notes.push([S.dir === "load" ? "loading ↑ (orange)" : "unloading ↓ (blue)", S.dir === "load" ? COL.accent : "#1565C0"]);
+  if (past) notes.push([box.w > 420 ? "past the elastic limit E: Hooke's law no longer holds" : "past E: not Hooke's law", COL.F]);
+  if (s > 2e-4) notes.push([`permanent extension = ${(100 * s).toFixed(1)} cm${box.w > 420 ? " (grey = new spring)" : ""}`, COL.F]);
+  else if (!past) notes.push(["straight line up to E: F = kx", COL.H]);
+  notes.forEach(([t, c], i) => label(ctx, t, box.x + box.w - 6, box.y + box.h - 14 - 18 * (notes.length - 1 - i), c, "right", 13));
+  $("graphHint").textContent = "The curve is straight up to the elastic limit E (Hooke's law), then it bends. Load past E and unload: the spring stays longer, so its whole curve moves right (grey dashed = the curve of a new spring). The dot is the spring now; orange/blue = its path while loading/unloading. Dots = settled loads.";
 }
 // Load & unload checkpoint: loading curve (orange) and unloading curve (blue), the finished loop shaded (its area is the
 // energy turned into heat), the elastic limit E and the permanent extension of a steel spring.
@@ -1226,6 +1267,14 @@ function drawLoopGraph(ctx, w, h, sp, F, Fmax){
     if (F < live.Fm - 1e-9){ const down = downPts(live, F); line(down, "#1565C0", 3); mid(down, "#1565C0"); }
     dots(C.dots, .9);
   }
+  // the curve moves (19 Oct 2026): after an over-stretch the next loading curve starts from the permanent extension
+  // (dashed teal); during the next cycle the curve of a new spring stays faded grey. Arrow = the shift.
+  if (!isBand(sp)){ const xs = live ? live.sB : done ? setAfter(sp, done) : 0;
+    if (xs > 2e-4){
+      if (live) line(upPts({sB:0}, Fmax), "#B0BEC5", 2, [6, 5]); else line(upPts({sB:xs}, Fmax), COL.H, 2.5, [8, 5]);
+      const Fa = Math.abs(F - sp.Flim / 2) < 0.2 * sp.Flim ? (F < sp.Flim / 2 ? 0.8 : 0.2) * sp.Flim : sp.Flim / 2, [X1, Ya] = P([Fa / sp.k, Fa]), [X2] = P([xs + Fa / sp.k, Fa]);
+      if (X2 - X1 > 8) arrow(ctx, X1, Ya, X2, Ya, COL.F, 2.5);
+      label(ctx, `${live ? "curve moved" : "next loading curve moves"} right by ${(100 * xs).toFixed(1)} cm`, Math.max(X1, X2) + 8, Ya, COL.F, "left", 12); } }
   // elastic limit E (steel only), drawn on top
   if (!isBand(sp)){ const [X, Y] = P([s0 + sp.Flim / sp.k, sp.Flim]);
     ctx.fillStyle = "#fff"; ctx.strokeStyle = COL.F; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X, Y, 6.5, 0, 7); ctx.fill(); ctx.stroke();
@@ -1246,6 +1295,86 @@ function drawLoopGraph(ctx, w, h, sp, F, Fmax){
     if (!isBand(sp) && live.Fm > sp.Flim + 1e-9) notes.push(["past the elastic limit E!", COL.F]);
   } else notes.push(["add masses to start loading", COL.muted]);
   notes.forEach(([t, c], i) => label(ctx, t, box.x + box.w - 6, box.y + box.h - 14 - 18 * (notes.length - 1 - i), c, "right", 13));
+}
+// ---- "Elastic limit" tab (19 Oct 2026, the same code in both spring simulations): a GCSE-textbook style force–extension
+// graph for one steel spring. Straight line through the origin (F = kx) up to the limit of proportionality = elastic
+// limit E, then a curve; elastic region (green) and plastic region (red) shaded; after loading past E the unloading line
+// comes back to the permanent extension. The dot is the spring now. elasticState() (per simulation) supplies
+// {sp, x, F, dot, set, back, peak, note}: x, set (permanent extension now) and back (where unloading from the peak ends) in m
+// from the original length, F in N, peak = {x, F} of the largest load past E (null if E was never passed).
+function drawElastic(){
+  const cv = $("elastic"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const es = elasticState(), sp = es.sp, narrow = w < 520;
+  if (isBand(sp)){
+    label(ctx, "A rubber band has no straight part and no single elastic limit:", w / 2, h / 2 - 12, COL.muted, "center", 14);
+    label(ctx, "choose a steel spring, or see the loop on the Graph tab.", w / 2, h / 2 + 12, COL.muted, "center", 14);
+    $("elasticHint").textContent = "Rubber bands do not obey Hooke's law."; return;
+  }
+  const xE = sp.Flim / sp.k, Fpk = es.peak ? es.peak.F : 0;
+  const FM = niceCeil(Math.max(1.4 * sp.Flim, Fpk, es.dot ? es.F : 0) * 1.08);
+  const xM = niceCeil(100 * Math.max(loadX(sp, FM, 0), es.set + loadX(sp, sp.Flim, 0), es.peak ? es.peak.x : 0, es.dot ? es.x : 0) * 1.05);
+  const box = {x:62, y:40, w:w - 78, h:h - 92};
+  const g = axesR(ctx, box, 0, xM, 0, FM, [["extension ", "n"], ["x", "i"], [" / cm", "n"]], [["force ", "n"], ["F", "i"], [" / N", "n"]]);
+  const P = (x, f) => [g.X(100 * x), g.Y(f)], [XE, YE] = P(xE, sp.Flim);
+  // elastic and plastic regions
+  ctx.save(); ctx.fillStyle = "rgba(46,125,50,.08)"; ctx.fillRect(box.x, box.y, XE - box.x, box.h);
+  ctx.fillStyle = "rgba(198,40,40,.07)"; ctx.fillRect(XE, box.y, box.x + box.w - XE, box.h);
+  ctx.strokeStyle = "rgba(198,40,40,.45)"; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(XE, box.y); ctx.lineTo(XE, box.y + box.h); ctx.stroke(); ctx.restore();
+  label(ctx, narrow ? "elastic" : "ELASTIC: goes back to", (box.x + XE) / 2, box.y - 24, COL.N, "center", narrow ? 12 : 12);
+  if (!narrow) label(ctx, "its original length", (box.x + XE) / 2, box.y - 10, COL.N, "center", 12);
+  label(ctx, narrow ? "plastic" : "PLASTIC: permanently", (XE + box.x + box.w) / 2, box.y - 24, COL.F, "center", 12);
+  if (!narrow) label(ctx, "stretched", (XE + box.x + box.w) / 2, box.y - 10, COL.F, "center", 12);
+  const line = (pts, col, wd, dash) => { ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.lineJoin = ctx.lineCap = "round"; if (dash) ctx.setLineDash(dash);
+    ctx.beginPath(); pts.forEach(([x, f], i) => { const [X, Y] = P(x, f); i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); ctx.stroke(); ctx.restore(); };
+  // a spring that has been over-stretched: its new line (faded) starts from the permanent extension
+  if (es.set > 2e-4) line(Array.from({length:41}, (_, i) => { const f = FM * i / 40; return [loadX(sp, f, es.set), f]; }), "#B0BEC5", 2, [6, 5]);
+  // the straight part (Hooke's law) and the curve
+  line([[0, 0], [xE, sp.Flim]], "#1565C0", 4);
+  line(Array.from({length:41}, (_, i) => { const f = sp.Flim + (FM - sp.Flim) * i / 40; return [loadX(sp, f, 0), f]; }), COL.F, 4);
+  // gradient triangle on the straight part
+  const [Xa, Ya] = P(0.3 * xE, 0.3 * sp.Flim), [Xb, Yb] = P(0.7 * xE, 0.7 * sp.Flim);
+  ctx.save(); ctx.strokeStyle = "#1565C0"; ctx.lineWidth = 1.3; ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(Xa, Ya); ctx.lineTo(Xb, Ya); ctx.lineTo(Xb, Yb); ctx.stroke(); ctx.restore();
+  label(ctx, "Δx", (Xa + Xb) / 2, Ya + 11, "#1565C0", "center", 12);
+  label(ctx, "ΔF", Xb + 6, (Ya + Yb) / 2, "#1565C0", "left", 12);
+  const txtL = narrow ? [`straight line: F = kx`, `gradient = k = ${sp.k.toFixed(1)} N m⁻¹`] : [`straight line through the origin: F = kx (Hooke's law)`, `gradient = k = ΔF/Δx = ${sp.k.toFixed(1)} N m⁻¹`];
+  txtL.forEach((t, i) => label(ctx, t, box.x + 8, box.y + 14 + 17 * i, "#1565C0", "left", 12));       // top left: empty above the line
+  // unloading after going past E: back to the permanent extension
+  if (es.peak && es.peak.F > sp.Flim + 1e-9){
+    line([[es.peak.x, es.peak.F], [es.back, 0]], "#6A1B9A", 2.5, [8, 5]);
+    const [X1, Y1] = P(es.peak.x, es.peak.F), [X2, Y2] = P(es.back, 0), mx = (X1 + X2) / 2, my = (Y1 + Y2) / 2;
+    arrow(ctx, mx + (X1 - X2) * 0.06, my + (Y1 - Y2) * 0.06, mx - (X1 - X2) * 0.06, my - (Y1 - Y2) * 0.06, "#6A1B9A", 2.5);
+    if (!narrow) label(ctx, "unloading", mx + 10, my, "#6A1B9A", "left", 12);
+    ctx.save(); ctx.strokeStyle = COL.F; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(g.X(0), g.Y(0)); ctx.lineTo(X2, g.Y(0)); ctx.stroke(); ctx.restore();
+  }
+  // the curve label
+  { const fC = sp.Flim + (FM - sp.Flim) * 0.7, [Xc, Yc] = P(loadX(sp, fC, 0), fC);
+    const cT = narrow ? "curve: not F = kx" : "curve: Hooke's law no longer holds"; ctx.font = `600 12px "Segoe UI",Calibri,Arial,sans-serif`;
+    label(ctx, cT, Math.min(Xc + 8, box.x + box.w - 6 - ctx.measureText(cT).width), Yc + 18, COL.F, "left", 12); }   // below the line
+  // E: limit of proportionality = elastic limit
+  ctx.fillStyle = "#fff"; ctx.strokeStyle = COL.F; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(XE, YE, 7, 0, 7); ctx.fill(); ctx.stroke();
+  const eT = narrow ? [`E: elastic limit (${sp.Flim.toFixed(1)} N)`] : [`E: limit of proportionality`, `= elastic limit (${sp.Flim.toFixed(1)} N)`], lx = XE + 12;
+  ctx.font = `600 13px "Segoe UI",Calibri,Arial,sans-serif`; const ew = Math.max(...eT.map(t => ctx.measureText(t).width));
+  const right = lx + ew < box.x + box.w - 4;
+  eT.forEach((t, i) => label(ctx, t, right ? lx : XE - 12, YE + 16 + 16 * i, COL.F, right ? "left" : "right", 13));
+  // the spring now
+  if (es.dot){ const [Xd, Yd] = P(es.x, es.F); ctx.fillStyle = COL.ink; ctx.beginPath(); ctx.arc(Xd, Yd, 6.5, 0, 7); ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke(); }
+  const notes = es.note ? [[es.note, COL.muted]] : [];
+  if (es.peak && es.peak.F > sp.Flim + 1e-9) notes.push([`permanent extension = ${(100 * es.back).toFixed(1)} cm (red bar)`, COL.F]);
+  notes.forEach(([t, c], i) => label(ctx, t, box.x + box.w - 6, box.y + box.h - 14 - 17 * (notes.length - 1 - i), c, "right", 12));
+  $("elasticHint").textContent = "Up to E: straight line through the origin (F = kx), elastic. Past E: the line curves, plastic: unloading (purple) ends at a permanent extension. Dot = the spring now.";
+}
+function elasticState(){                                     // Spring force adapter for the Elastic limit tab
+  const sp = sprById(set.spr);
+  if (set.mode === "cycle"){ const c = cycView(), past = c && !isBand(sp) && c.Fm > sp.Flim + 1e-9;
+    return {sp, x:C.xe, F:load() * G, dot:true, set:C.Fm > 0 ? C.sB : C.s, back:past ? setAfter(sp, c) : 0,
+            peak:past ? {x:c.xm, F:c.Fm} : null, note:""}; }
+  if (set.mode === "push") return {sp, dot:false, set:0, back:0, peak:null, note:"Hang masses to move the dot along the line"};
+  const s = S.set[set.spr], pk = S.peak[set.spr];
+  return {sp, x:S.x, F:forcesNow().FH, dot:true, set:s, back:Math.max(s, KEEP * S.worst[set.spr]), peak:pk, note:""};
 }
 function drawAna(){
   const cv = $("ana"); if (!cv.offsetParent) return;
@@ -1429,7 +1558,7 @@ const $ = id => document.getElementById(id);
 function save(){ try { localStorage.setItem("sim05-spring", JSON.stringify({trials, taskState, curSet})); } catch (e) {} }
 function load_(){ try { const d = JSON.parse(localStorage.getItem("sim05-spring") || "{}");
   trials = d.trials || []; taskState = d.taskState || {}; curSet = d.curSet || "pre"; } catch (e) {} }
-function applySetup(st){ Object.assign(set, st); if (st.spr) S.history = []; if (set.mode === "cycle"){ set.myst = false; resetCycle(); S.x = 0; S.v = 0; }
+function applySetup(st){ Object.assign(set, st); if (st.spr){ S.history = []; S.trail = []; } if (set.mode === "cycle"){ set.myst = false; resetCycle(); S.x = 0; S.v = 0; }
   changeLoad(); syncControls(); }
 function syncControls(){
   document.querySelectorAll("#mode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === set.mode));
@@ -1475,11 +1604,11 @@ function readouts(){
   $("ro").innerHTML = rows.map(([a, b, c]) => `<tr><td>${a}</td><td class="v"${c ? ` style="color:${c}"` : ""}>${b}</td></tr>`).join("");
 }
 
-$("spr").addEventListener("change", e => { set.spr = e.target.value; S.history = [];
+$("spr").addEventListener("change", e => { set.spr = e.target.value; S.history = []; S.trail = [];
   if (set.mode === "cycle"){ resetCycle(); S.x = 0; } else S.x = S.set[set.spr]; S.v = 0; changeLoad(); syncControls(); });
 document.querySelectorAll("#mode button").forEach(b => b.addEventListener("click", () => {
   if (b.dataset.mode === set.mode) return;
-  set.mode = b.dataset.mode;
+  set.mode = b.dataset.mode; S.trail = [];
   if (set.mode !== "cycle" && sprById(set.spr).cycleOnly) set.spr = "inv";        // the rubber band only exists in Load & unload
   if (set.mode === "cycle"){ set.myst = false; resetCycle(); S.x = 0; S.v = 0; } else if (set.mode === "hang"){ S.x = S.set[set.spr]; S.v = 0; }
   changeLoad(); syncControls(); }));
@@ -1489,7 +1618,7 @@ $("noise").addEventListener("change", e => { set.noise = e.target.checked; chang
 $("disp").addEventListener("input", e => { set.d = +e.target.value; syncControls(); });
 $("actions").addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (!b) return;
   if (b.dataset.act === "rec") recordTrial();
-  if (b.dataset.act === "new"){ if (set.mode === "cycle"){ resetCycle(); S.x = 0; S.v = 0; } else { S.set[set.spr] = 0; S.worst[set.spr] = 0; S.history = []; } changeLoad(); }
+  if (b.dataset.act === "new"){ if (set.mode === "cycle"){ resetCycle(); S.x = 0; S.v = 0; } else { S.set[set.spr] = 0; S.worst[set.spr] = 0; S.peak[set.spr] = null; S.history = []; S.trail = []; } changeLoad(); }
   if (b.dataset.act === "zero"){ set.d = 0; syncControls(); } });
 $("clearBtn").addEventListener("click", () => { if (confirm("Delete all recorded trials?")){ trials = []; save(); renderTrials(); } });
 $("trials").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b){ trials.splice(+b.dataset.del, 1); save(); renderTrials(); } });
@@ -1508,10 +1637,14 @@ function frame(now){
   while (dt > 1e-6){ const hh = Math.min(0.002, dt); step(hh); dt -= hh; }
   const st = set.mode === "hang" && settled();
   if (st && !wasSettled && !set.myst){ const x = 100 * (S.x - S.set[set.spr]);     // remember each settled load for the Graph tab
-    if (!S.history.some(p => Math.abs(p.F - load() * G) < 1e-6)) S.history.push({x, F:load() * G}); }
+    if (!S.history.some(p => Math.abs(p.F - load() * G) < 1e-6)) S.history.push({x, F:load() * G, s:S.set[set.spr]}); }
+  if (set.mode === "hang"){ const p = [100 * S.x, forcesNow().FH, S.dir], q = S.trail[S.trail.length - 1];   // path on the Graph tab
+    if (!q || Math.abs(p[0] - q[0]) > 0.02 || Math.abs(p[1] - q[1]) > 0.01 || p[2] !== q[2]){ S.trail.push(p); if (S.trail.length > 600) S.trail.shift(); } }
   if (set.mode === "cycle" && settled()) cycleDot(load() * G);
+  if (st){ const sp = sprById(set.spr), F = load() * G, pk = S.peak[set.spr];   // largest load past E, for the Elastic limit tab
+    if (F > sp.Flim + 1e-9 && (!pk || F >= pk.F - 1e-9)) S.peak[set.spr] = {x:S.x, F}; }
   wasSettled = st;
-  drawScene(); drawFBD(); drawGraph(); drawAna(); readouts();
+  drawScene(); drawFBD(); drawGraph(); drawElastic(); drawAna(); readouts();
   requestAnimationFrame(frame);
 }
 
