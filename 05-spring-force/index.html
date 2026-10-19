@@ -79,6 +79,9 @@ main{flex:1;min-height:500px;display:grid;grid-template-columns:minmax(0,1.1fr) 
 #graph{width:100%;height:100%;display:block;touch-action:none}
 #elasticWrap{position:relative;flex:1;min-height:200px}
 #elastic{width:100%;height:100%;display:block}
+#hystWrap{position:relative;flex:1;min-height:200px}
+#hyst{width:100%;height:100%;display:block}
+.tab{padding:8px 10px;white-space:nowrap}                     /* five tabs (Hysteresis added) fit on one row */
 .hint{font-size:.85rem;color:var(--muted)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 #trials{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
@@ -249,7 +252,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
   .cardhead .btn{min-height:40px;padding:4px 10px}
   .panel{overflow:visible}
   .panel.on{flex:none}
-  #graphWrap,#elasticWrap,#ffnWrap{flex:none!important;height:300px!important;min-height:0}
+  #graphWrap,#elasticWrap,#hystWrap,#ffnWrap{flex:none!important;height:300px!important;min-height:0}
   #taskList{overflow:visible;flex:none}
   .tableBox{max-height:220px}
   canvas{touch-action:pan-y!important}                     /* a finger on a graph or diagram still scrolls the page */
@@ -299,6 +302,7 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true" data-tab="pGraph">Graph</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="pElastic">Elastic limit</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="pHyst">Hysteresis</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="pData">Data &amp; analysis</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="pTasks">Tasks</button>
     </div>
@@ -309,6 +313,10 @@ input[type=range]{width:150px;height:44px;accent-color:var(--accent)}
     <div class="panel" id="pElastic">
       <div id="elasticWrap"><canvas id="elastic" aria-label="Force against extension: elastic limit"></canvas></div>
       <div class="hint" id="elasticHint"></div>
+    </div>
+    <div class="panel" id="pHyst">
+      <div id="hystWrap"><canvas id="hyst" aria-label="Force against extension: hysteresis loop of a rubber band"></canvas></div>
+      <div class="hint" id="hystHint"></div>
     </div>
     <div class="panel" id="pData">
       <div class="row">
@@ -1376,6 +1384,77 @@ function elasticState(){                                     // Spring force ada
   const s = S.set[set.spr], pk = S.peak[set.spr];
   return {sp, x:S.x, F:forcesNow().FH, dot:true, set:s, back:Math.max(s, KEEP * S.worst[set.spr]), peak:pk, note:""};
 }
+// ---- "Hysteresis" tab (19 Oct 2026, the same code in both spring simulations): a textbook force–extension loop for a
+// rubber band. Loading curve (orange) above the unloading curve (blue); area under loading = energy stored, area under
+// unloading (hatched) = energy given back, the loop between them = energy → heat. It fills in live while the rubber band is
+// loaded in Load & unload; otherwise a faded 0 → 500 g → 0 example loop. hystState() (per simulation) supplies {band, live, F}.
+function drawHyst(){
+  const cv = $("hyst"); if (!cv.offsetParent) return;
+  const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  const hs = hystState(), band = hs.band, narrow = w < 520;
+  const c = hs.live ? (C.Fm > 0 ? C : C.prev) : null, done = !!(c && C.Fm === 0);
+  const ref = {sB:0, Fm:0.5 * G, xm:loadX(band, 0.5 * G, 0)}, cy = c || ref;
+  const Fmax = Math.max(0.5 * G, cy.Fm), FM = niceCeil(Fmax * 1.12);
+  const xM = niceCeil(100 * Math.max(loadX(band, Fmax, cy.sB), cy.xm) * 1.08);
+  const box = {x:62, y:22, w:w - 78, h:h - 74};
+  const g = axesR(ctx, box, 0, xM, 0, FM, [["extension ", "n"], ["x", "i"], [" / cm", "n"]], [["force ", "n"], ["F", "i"], [" / N", "n"]]);
+  const P = ([x, f]) => [g.X(100 * x), g.Y(f)];
+  const up = (cc, top) => Array.from({length:61}, (_, i) => { const f = top * i / 60; return [loadX(band, f, cc.sB), f]; });
+  const down = (cc, bot) => Array.from({length:61}, (_, i) => { const f = cc.Fm - (cc.Fm - bot) * i / 60; return [unloadX(band, f, cc), f]; });
+  const path = pts => { ctx.beginPath(); pts.forEach((p, i) => { const [X, Y] = P(p); i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); };
+  const line = (pts, col, wd, dash) => { ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.lineJoin = "round"; if (dash) ctx.setLineDash(dash); path(pts); ctx.stroke(); ctx.restore(); };
+  const fill = (pts, col) => { ctx.save(); ctx.fillStyle = col; path(pts); ctx.closePath(); ctx.fill(); ctx.restore(); };
+  const hatch = (pts, col) => { ctx.save(); path(pts); ctx.closePath(); ctx.clip(); ctx.strokeStyle = col; ctx.lineWidth = 1.2;
+    ctx.beginPath(); for (let d = -box.h; d < box.w + box.h; d += 8){ ctx.moveTo(box.x + d, box.y + box.h); ctx.lineTo(box.x + d + box.h, box.y); } ctx.stroke(); ctx.restore(); };
+  const mid = (pts, col) => { const [X1, Y1] = P(pts[27]), [X2, Y2] = P(pts[33]); if (Math.hypot(X2 - X1, Y2 - Y1) > 6) arrow(ctx, X1, Y1, X2, Y2, col, 2.5); };
+  const f3s = v => v.toFixed(3);
+  const key = [];
+  if (!c){                                                     // nothing loaded yet: the example loop, faded
+    const U = up(ref, ref.Fm), D = down(ref, 0);
+    fill(U.concat(D), "rgba(144,164,174,.18)"); line(U, "#B0BEC5", 2.5); line(D, "#B0BEC5", 2.5, [7, 5]);
+    mid(U, "#B0BEC5"); mid(D, "#B0BEC5");
+    const Ein = energyIn(band, ref), Eout = energyOut(band, ref);
+    key.push([`example loop: load to 500 g, then unload`, COL.muted, null],
+             [`${narrow ? "stored" : "energy stored"} ${f3s(Ein)} J · ${narrow ? "back" : "given back"} ${f3s(Eout)} J · heat ${f3s(Ein - Eout)} J`, COL.muted, null]);
+    label(ctx, narrow ? "Load & unload → Rubber band" : "Choose Load & unload → Rubber band to make your own loop", box.x + box.w - 6, box.y + box.h - 14, COL.accent, "right", 13);
+  } else {
+    const F = Math.max(0, hs.F), unl = F < c.Fm - 1e-9 || done, bot = done ? 0 : F;
+    const U = up(c, c.Fm), xmP = [c.xm, 0];
+    const D = unl ? down(c, bot) : null;
+    // areas: under loading (outline), under unloading (hatched), the loop (filled)
+    fill(U.concat([xmP]), "rgba(230,81,0,.07)");
+    if (D){ const xb = D[D.length - 1][0]; hatch(D.concat([[xb, 0], xmP]), "rgba(21,101,192,.55)"); }
+    if (done) fill(U.concat(down(c, 0)), "rgba(230,81,0,.28)");
+    line(U.concat([xmP]), "rgba(230,81,0,.55)", 1.2, [4, 4]);
+    line(U, COL.accent, 3.5); mid(U, COL.accent);
+    if (D){ line(D, "#1565C0", 3.5); mid(D, "#1565C0"); }
+    const Ein = energyIn(band, c), Eback = D ? energyOut(band, c, bot) : 0;
+    key.push([`${narrow ? "stored" : "energy stored (area under loading)"} = ${f3s(Ein)} J`, COL.accent, "out"]);
+    if (D) key.push([`${narrow ? "given back" : "energy given back (area under unloading)"} = ${f3s(Eback)} J`, "#1565C0", "hatch"]);
+    if (done) key.push([`${narrow ? "loop → heat" : "loop area = energy → heat"} = ${f3s(Ein - Eback)} J (${(100 * (Ein - Eback) / Ein).toFixed(0)} %)`, COL.F, "fill"]);
+    // the band keeps a little stretch and creeps back
+    if (C.Fm === 0 && C.s > 2e-5){ const X1 = g.X(100 * C.s), Y = g.Y(0) - 12;
+      if (X1 - g.X(0) > 10) arrow(ctx, X1, Y, g.X(0) + 2, Y, "#6A1B9A", 2);
+      label(ctx, narrow ? "creeps back slowly" : "creeps back to its original length (slowly)", X1 + 8, Y - 2, "#6A1B9A", "left", 12); }
+    const [Xd, Yd] = P([C.xe, F]); ctx.fillStyle = COL.ink; ctx.beginPath(); ctx.arc(Xd, Yd, 6.5, 0, 7); ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+    if (!done) label(ctx, unl ? "unloading ↓ (blue)" : "loading ↑ (orange)", box.x + box.w - 6, box.y + box.h - 14, unl ? "#1565C0" : COL.accent, "right", 13);
+    else key.push([narrow ? "unloading BELOW loading: hysteresis" : "unloading curve BELOW loading curve: hysteresis", COL.F, null]);
+  }
+  // key, top left (the loop hugs the bottom right)
+  key.forEach(([t, col, sw], i) => { const y = box.y + 14 + 19 * i, x0 = box.x + 8;
+    if (sw){ ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+      if (sw === "fill"){ ctx.fillStyle = "rgba(230,81,0,.35)"; ctx.fillRect(x0, y - 6, 14, 12); }
+      if (sw === "hatch"){ ctx.save(); ctx.beginPath(); ctx.rect(x0, y - 6, 14, 12); ctx.clip(); ctx.lineWidth = 1.2; ctx.beginPath();
+        for (let d = -12; d < 14; d += 4){ ctx.moveTo(x0 + d, y + 6); ctx.lineTo(x0 + d + 12, y - 6); } ctx.stroke(); ctx.restore(); }
+      if (sw === "out"){ ctx.setLineDash([3, 2]); ctx.fillStyle = "rgba(230,81,0,.10)"; ctx.fillRect(x0, y - 6, 14, 12); }
+      ctx.strokeRect(x0, y - 6, 14, 12); ctx.restore(); }
+    label(ctx, t, x0 + (sw ? 20 : 0), y, col, "left", 12); });
+  $("hystHint").textContent = "Area under the loading curve = energy stored; under the unloading curve = energy given back; the loop = energy turned into heat (the band gets warm). Large loop = good at absorbing energy (car shock absorbers, trainers' soles); small loop = good at storing and returning it (bouncy ball, catapult band).";
+}
+function hystState(){                                        // Spring force adapter for the Hysteresis tab
+  return {band:SPRINGS.find(isBand), live:set.mode === "cycle" && isBand(sprById(set.spr)), F:load() * G};
+}
 function drawAna(){
   const cv = $("ana"); if (!cv.offsetParent) return;
   const {ctx, w, h} = fitCanvas(cv); ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
@@ -1644,7 +1723,7 @@ function frame(now){
   if (st){ const sp = sprById(set.spr), F = load() * G, pk = S.peak[set.spr];   // largest load past E, for the Elastic limit tab
     if (F > sp.Flim + 1e-9 && (!pk || F >= pk.F - 1e-9)) S.peak[set.spr] = {x:S.x, F}; }
   wasSettled = st;
-  drawScene(); drawFBD(); drawGraph(); drawElastic(); drawAna(); readouts();
+  drawScene(); drawFBD(); drawGraph(); drawElastic(); drawHyst(); drawAna(); readouts();
   requestAnimationFrame(frame);
 }
 
